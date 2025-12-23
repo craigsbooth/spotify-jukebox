@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config'; // Using updated config
+import pkg from '../../package.json';
 
 interface Track {
   id: string;
@@ -30,21 +31,39 @@ export default function Guest() {
 
   useEffect(() => {
     document.title = "Pinfold Guest"; 
+    
+    // 1. Handle Guest ID
     let storedId = localStorage.getItem('jukebox_guest_id');
-    if (!storedId) { storedId = 'guest_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('jukebox_guest_id', storedId); }
+    if (!storedId) { 
+        storedId = 'guest_' + Math.random().toString(36).substr(2, 9); 
+        localStorage.setItem('jukebox_guest_id', storedId); 
+    }
     setGuestId(storedId);
 
+    // 2. Handle Guest Name
     const storedName = localStorage.getItem('jukebox_guest_name');
-    if (storedName) { setGuestName(storedName); } else { setTimeout(() => setShowHint(true), 1000); }
+    if (storedName) { 
+        setGuestName(storedName); 
+    } else { 
+        setTimeout(() => setShowHint(true), 1000); 
+    }
 
+    // 4. Initial Data
     fetchQueue();
     fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
     
+    // 5. Poll Queue
     const interval = setInterval(fetchQueue, 3000);
-    return () => clearInterval(interval);
+    
+    return () => {
+        clearInterval(interval);
+      
+    };
   }, []);
 
-  const fetchQueue = () => { fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue); };
+  const fetchQueue = () => { 
+      fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue); 
+  };
 
   const showToast = (msg: string, type: 'success'|'error' = 'success') => {
       setToast({ msg, type });
@@ -59,6 +78,7 @@ export default function Guest() {
       });
   };
 
+  // Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim()) {
@@ -77,11 +97,26 @@ export default function Guest() {
       localStorage.setItem('jukebox_guest_name', finalName);
       setIsEditingName(false);
       setShowHint(false);
-      if (finalName !== "Guest") await fetch(`${API_URL}/join`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ guestId, name: finalName }) });
+      // Notify server of the name change so it shows on the Dashboard correctly
+      await fetch(`${API_URL}/join`, { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify({ guestId, name: finalName }) 
+      });
   };
 
   const handleVoteOrAdd = async (track: Track) => {
-    const res = await fetch(`${API_URL}/queue`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uri: track.uri, name: track.name, artist: track.artist, albumArt: track.albumArt, guestId }) });
+    const res = await fetch(`${API_URL}/queue`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+            uri: track.uri, 
+            name: track.name, 
+            artist: track.artist, 
+            albumArt: track.albumArt, 
+            guestId 
+        }) 
+    });
     const data = await res.json();
     if (data.success) { 
         setQuery(''); 
@@ -100,9 +135,11 @@ export default function Guest() {
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', background: '#121212', minHeight: '100vh', color: 'white', paddingBottom: '140px' }}>
       
+      {/* HEADER SECTION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#000', padding: '15px 15px 10px', borderBottom: '1px solid #333', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h1 style={{ margin: 0, color: '#D4AF37', fontSize: '1.1rem', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '800' }}>{partyName} JukeBox</h1>
+            
             {isEditingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <input autoFocus placeholder="Name" value={tempName} onChange={(e) => setTempName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveName()} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #D4AF37', background: '#222', color: 'white', width: '100px', fontSize: '0.9rem' }} />
@@ -115,23 +152,28 @@ export default function Guest() {
                 </div>
             )}
         </div>
+
         {showHint && !isEditingName && (
             <div style={{ background: 'linear-gradient(90deg, #222, #333)', padding: '10px 15px', borderRadius: '8px', marginBottom: '15px', fontSize: '0.85rem', color: '#ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '3px solid #D4AF37' }}>
                 <span>💡 <strong>Tip:</strong> Tap your icon above to add your name!</span>
                 <button onClick={() => setShowHint(false)} style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '1.2rem', padding: '0 0 0 10px' }}>×</button>
             </div>
         )}
+
         <div style={{ position: 'relative' }}>
-            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="🔍  Search for a song..." style={{ width: '100%', padding: '12px 15px', borderRadius: '12px', border: 'none', background: '#222', color: 'white', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="🔍   Search for a song..." style={{ width: '100%', padding: '12px 15px', borderRadius: '12px', border: 'none', background: '#222', color: 'white', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
             {query && <button onClick={() => setQuery('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#999', fontSize: '18px', padding: '10px' }}>✕</button>}
         </div>
       </div>
 
+      {/* CONTENT LIST */}
       <div style={{ padding: '10px' }}>
         <h3 style={{ marginLeft: '10px', color: '#666', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{isSearching ? 'Search Results' : 'Coming Up Next'}</h3>
         <ul style={{ listStyle: 'none', padding: 0 }}>
             {(isSearching ? results : queue).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>{isSearching ? 'No songs found...' : <><p style={{fontSize: '1.2rem'}}>The queue is empty.</p><p>Be the DJ! Search above to start the party.</p></>}</div>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+                    {isSearching ? 'No songs found...' : <><p style={{fontSize: '1.2rem'}}>The queue is empty.</p><p>Be the DJ! Search above to start the party.</p></>}
+                </div>
             ) : (
                 (isSearching ? results : queue).map((track, i) => {
                   const status = getButtonStatus(track);
@@ -141,10 +183,19 @@ export default function Guest() {
                        <div style={{ flex: 1, overflow: 'hidden' }}>
                           <div style={{ fontWeight: 'bold', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.name}</div>
                           <div style={{ color: '#aaa', fontSize: '0.85rem' }}>{track.artist}</div>
-                          {!isSearching && <div style={{marginTop:'5px', display:'flex', justifyContent:'space-between', paddingRight:'10px'}}><span style={{ fontSize: '0.75rem', color: '#D4AF37' }}>🔥 {track.votes} Votes</span>{track.addedBy && track.addedBy !== 'Guest' && <span style={{fontSize: '0.7rem', color: '#666'}}>Added by {track.addedBy}</span>}</div>}
+                          {!isSearching && (
+                            <div style={{marginTop:'5px', display:'flex', justifyContent:'space-between', paddingRight:'10px'}}>
+                                <span style={{ fontSize: '0.75rem', color: '#D4AF37' }}>🔥 {track.votes} Votes</span>
+                                {track.addedBy && track.addedBy !== 'Guest' && <span style={{fontSize: '0.7rem', color: '#666'}}>Added by {track.addedBy}</span>}
+                            </div>
+                          )}
                        </div>
                        <div style={{ marginLeft: '10px' }}>
-                          {isSearching ? <button onClick={() => handleVoteOrAdd(track)} style={{ background: '#D4AF37', color: 'black', border: 'none', width: '40px', height: '40px', borderRadius: '50%', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>+</button> : <button onClick={() => !status.disabled && handleVoteOrAdd(track)} disabled={status.disabled} style={{ background: status.disabled ? 'transparent' : '#333', border: status.disabled ? '1px solid transparent' : '1px solid #D4AF37', color: status.color, padding: '8px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '70px' }}>{status.text}</button>}
+                          {isSearching ? (
+                            <button onClick={() => handleVoteOrAdd(track)} style={{ background: '#D4AF37', color: 'black', border: 'none', width: '40px', height: '40px', borderRadius: '50%', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>+</button>
+                          ) : (
+                            <button onClick={() => !status.disabled && handleVoteOrAdd(track)} disabled={status.disabled} style={{ background: status.disabled ? 'transparent' : '#333', border: status.disabled ? '1px solid transparent' : '1px solid #D4AF37', color: status.color, padding: '8px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '70px' }}>{status.text}</button>
+                          )}
                        </div>
                     </li>
                   );
@@ -153,6 +204,7 @@ export default function Guest() {
         </ul>
       </div>
 
+      {/* REACTION BAR */}
       <div style={{ 
           position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', 
           background: 'rgba(30,30,30,0.95)', backdropFilter: 'blur(10px)', 
@@ -165,28 +217,24 @@ export default function Guest() {
           scrollbarWidth: 'none' 
       }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
-          
-          {['🔥', '❤️', '💃', '🕺', '🤘', '🎵', '🎶', '🎤', '🎧', '🍻', '🍹', '🍾', '🥳', '🎉', '✨', '🐑', '🐏', '😎'].map(emoji => (
+          {['🔥', '❤️', '💃', '🕺', '🤘', '🎵', '🎶', '🎤', '🎧', '🍻', '🍹', '🍾', '🥳', '🎉', '✨', '😎'].map(emoji => (
               <button 
                 key={emoji} 
                 onClick={() => sendReaction(emoji)} 
                 style={{ background: 'transparent', border: 'none', fontSize: '1.8rem', cursor: 'pointer', transition: 'transform 0.1s', padding: '0 5px' }} 
-                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.8)'} 
-                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
                   {emoji}
               </button>
           ))}
       </div>
 
+      {/* TOAST SYSTEM */}
       {toast && (
           <div style={{
               position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)',
               background: toast.type === 'error' ? '#ef5350' : '#333', color: 'white',
               padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-              zIndex: 1000, fontWeight: 'bold', fontSize: '0.9rem',
-              animation: 'fadeIn 0.3s'
+              zIndex: 1000, fontWeight: 'bold', fontSize: '0.9rem'
           }}>
               {toast.msg}
           </div>

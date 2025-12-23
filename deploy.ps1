@@ -1,5 +1,5 @@
 # ==========================================
-# JUKEBOX DEPLOY SCRIPT - NO EMOJI VERSION
+# JUKEBOX DEPLOY SCRIPT - FINAL SYNC VER
 # ==========================================
 
 # --- CONFIGURATION ---
@@ -21,15 +21,17 @@ $NewVersion | Out-File $VersionFile -Encoding ascii
 
 Write-Host "--- Starting Deployment: v$NewVersion ---" -ForegroundColor Yellow
 
-# --- 1. PREPARE AND BUILD ---
-Write-Host "--- Building Frontend ---" -ForegroundColor Cyan
+# --- 1. SAFETY CHECK: RUN UNIT TESTS ---
+Write-Host "--- Running Unit Tests ---" -ForegroundColor Magenta
 Set-Location "$LocalProject\client"
+npm test -- --watchAll=false
+if ($LASTEXITCODE -ne 0) { Write-Host "TESTS FAILED. Deployment Aborted." -ForegroundColor Red; pause; exit }
 
+# --- 2. PREPARE AND BUILD ---
+Write-Host "--- Building Frontend ---" -ForegroundColor Cyan
 $PkgFile = "package.json"
 $PkgContent = Get-Content $PkgFile | ConvertFrom-Json
 $PkgContent.version = $NewVersion
-
-# Save WITHOUT BOM character
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $JsonString = $PkgContent | ConvertTo-Json
 [System.IO.File]::WriteAllText((Resolve-Path $PkgFile), $JsonString, $Utf8NoBom)
@@ -38,36 +40,24 @@ $env:NEXT_PUBLIC_APP_VERSION = $NewVersion
 npm run build
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed!"; pause; exit }
 
-# --- 2. ZIP THE FILES ---
-Write-Host "--- Zipping deployment package ---" -ForegroundColor Cyan
+# --- 3. ZIP AND UPLOAD ---
+Write-Host "--- Packaging and Uploading ---" -ForegroundColor Cyan
 $ZipFile = "$env:TEMP\jukebox_deploy.zip"
 if (Test-Path $ZipFile) { Remove-Item $ZipFile }
-Compress-Archive -Path ".\.next", ".\public", ".\package.json", ".\next.config.ts" -DestinationPath $ZipFile -Force
 
-# --- 3. UPLOAD ---
-Write-Host "--- Uploading to AWS ---" -ForegroundColor Cyan
+# We package the build AND the server.js file from the parent directory
+Compress-Archive -Path ".\.next", ".\public", ".\package.json", ".\next.config.ts", "$LocalProject\server.js" -DestinationPath $ZipFile -Force
 scp -i $KeyPath $ZipFile ${ServerUser}@${ServerIP}:${RemotePath}/client/
 
 # --- 4. EXECUTE REMOTE COMMANDS ---
-Write-Host "--- Configuring and Restarting Server ---" -ForegroundColor Cyan
+Write-Host "--- Server Config & Restart ---" -ForegroundColor Cyan
+# 1. Unzip inside client folder
+# 2. Move server.js up one level to root ~/jukebox
+# 3. Regenerate .env
+# 4. Restart all processes via PM2
+$RemoteCmd = "cd ${RemotePath}/client; unzip -o jukebox_deploy.zip; mv server.js ../; rm jukebox_deploy.zip; echo 'SPOTIFY_CLIENT_ID=3c5e00fa03dc46109048d2905f87332e' > ${RemotePath}/.env; echo 'SPOTIFY_CLIENT_SECRET=0035087b530a4a30a447a280cbb9b9fd' >> ${RemotePath}/.env; echo 'REDIRECT_URI=https://${Domain}/api/callback' >> ${RemotePath}/.env; echo 'PORT=8888' >> ${RemotePath}/.env; echo 'FRONTEND_URL=https://${Domain}' >> ${RemotePath}/.env; sudo chown -R ${ServerUser}:${ServerUser} ${RemotePath}; cd ${RemotePath}; npm install --production --legacy-peer-deps; pm2 restart all"
 
-# We define the commands as a single line separated by semicolons 
-# This prevents Windows from adding \r (Carriage Returns) at the end of lines
-$Cmd1 = "cd ${RemotePath}/client"
-$Cmd2 = "unzip -o jukebox_deploy.zip && rm jukebox_deploy.zip"
-$Cmd3 = "echo 'SPOTIFY_CLIENT_ID=3c5e00fa03dc46109048d2905f87332e' > ${RemotePath}/.env"
-$Cmd4 = "echo 'SPOTIFY_CLIENT_SECRET=0035087b530a4a30a447a280cbb9b9fd' >> ${RemotePath}/.env"
-$Cmd5 = "echo 'REDIRECT_URI=https://${Domain}/api/callback' >> ${RemotePath}/.env"
-$Cmd6 = "echo 'PORT=8888' >> ${RemotePath}/.env"
-$Cmd7 = "echo 'FRONTEND_URL=https://${Domain}' >> ${RemotePath}/.env"
-$Cmd8 = "sudo chown -R ${ServerUser}:${ServerUser} ${RemotePath}"
-$Cmd9 = "npm install --production --legacy-peer-deps"
-$Cmd10 = "pm2 restart all"
+ssh -i $KeyPath ${ServerUser}@${ServerIP} $RemoteCmd
 
-# Combine them all into one string
-$FullRemoteCmd = "$Cmd1; $Cmd2; $Cmd3; $Cmd4; $Cmd5; $Cmd6; $Cmd7; $Cmd8; $Cmd9; $Cmd10"
-
-ssh -i $KeyPath ${ServerUser}@${ServerIP} $FullRemoteCmd
-
-Write-Host "--- Deployment Successful ---" -ForegroundColor Green
+Write-Host "--- Deployment Successful: v$NewVersion ---" -ForegroundColor Green
 Start-Process "https://$Domain"

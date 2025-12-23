@@ -1,1 +1,9 @@
-{"fallbackPlaylist":{"id":"2mwXysb0t3wK2c4oK2LygC","name":"Christmas Party Songs 🎄🎉  2025 Holiday Classics"},"currentTheme":"none","partyName":"The Pinfold Club"}
+{
+  "fallbackPlaylist": {
+    "id": "2mwXysb0t3wK2c4oK2LygC",
+    "name": "Christmas Party Songs 🎄🎉 2025 Holiday Classics"
+  },
+  "currentTheme": "none",
+  "partyName": "The Pinfold Club",
+  "showLyrics": false
+}

@@ -6,8 +6,29 @@ import pkg from '../package.json';
 
 const HOST_PIN = "1234"; 
 
-interface Track { name: string; artist: string; uri: string; votes: number; addedBy?: string; isFallback?: boolean; }
+interface Track { 
+  name: string; 
+  artist: string; 
+  album?: string; 
+  uri: string; 
+  votes: number; 
+  addedBy?: string; 
+  isFallback?: boolean; 
+}
 interface Playlist { id: string; name: string; image: string; owner: string; total: number; }
+
+// Component for High-End Audio Metrics
+const MetricBar = ({ label, value, color }: { label: string, value: number, color: string }) => (
+    <div style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', fontWeight: 800, color: '#888', marginBottom: '4px', textTransform: 'uppercase' }}>
+            <span>{label}</span>
+            <span>{value || 0}%</span>
+        </div>
+        <div style={{ height: '6px', background: '#222', borderRadius: '10px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${value || 0}%`, background: color, transition: 'width 1.2s cubic-bezier(0.22, 1, 0.36, 1)' }} />
+        </div>
+    </div>
+);
 
 export default function Home() {
   const [token, setToken] = useState<string>('');
@@ -22,10 +43,19 @@ export default function Home() {
   const [viewMode, setViewMode] = useState('standard'); 
   const [partyName, setPartyName] = useState('The Pinfold');
   const [nameInput, setNameInput] = useState('');
+  const [crossfadeSec, setCrossfadeSec] = useState(8);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showDebug, setShowDebug] = useState(false); 
   const [isLocked, setIsLocked] = useState(false); 
-  const [isShuffling, setIsShuffling] = useState(false); // Feedback for reshuffle
+  const [isShuffling, setIsShuffling] = useState(false); 
+  const [isDjMode, setIsDjMode] = useState(false);
+
+  const [djStatus, setDjStatus] = useState<any>({ 
+      message: 'DJ Idle', bpm: null, key: null, scale: null, mood: null, source: 'none',
+      year: null, label: 'Loading...', singleArtwork: null, albumArtwork: null,
+      valence: 0, danceability: 0, acousticness: 0, speechiness: 0, popularity: 0,
+      lineup: "Loading roster...", location: "Locating studio...", genres: [], timbre: "Analyzing..."
+  });
   
   const isFetchingNext = useRef(false);
   const hasPlayedRef = useRef(false); 
@@ -34,45 +64,25 @@ export default function Home() {
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === HOST_PIN) { 
-      setIsAuthorized(true); 
-      localStorage.setItem('jukebox_host_auth', 'true'); 
-      setPinInput(''); 
-    } else { 
-      alert('Incorrect PIN'); 
-      setPinInput(''); 
-    }
+    if (pinInput === HOST_PIN) { setIsAuthorized(true); localStorage.setItem('jukebox_host_auth', 'true'); setPinInput(''); } 
+    else { alert('Incorrect PIN'); setPinInput(''); }
   };
 
   const engageLock = () => { setPinInput(''); setIsLocked(true); };
   const handleUnlock = (e: React.FormEvent) => {
       e.preventDefault();
-      if (pinInput === HOST_PIN) { 
-        setIsLocked(false); 
-        setPinInput(''); 
-      } else { 
-        alert('Incorrect PIN'); 
-        setPinInput(''); 
-      }
+      if (pinInput === HOST_PIN) { setIsLocked(false); setPinInput(''); } 
+      else { alert('Incorrect PIN'); setPinInput(''); }
   };
 
   const fetchQueue = () => {
     if (Date.now() - lastActionRef.current < 3000) return;
-    fetch(`${API_URL}/queue`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setQueue(data); })
-      .catch(err => console.error("Queue fetch error:", err));
+    fetch(`${API_URL}/queue`).then(res => res.json()).then(data => { if (Array.isArray(data)) setQueue(data); }).catch(() => {});
   };
 
   const handleManualShuffle = async () => {
     setIsShuffling(true);
-    try {
-      await fetch(`${API_URL}/shuffle`, { method: 'POST' });
-      fetchQueue();
-      setTimeout(() => setIsShuffling(false), 2000);
-    } catch (e) {
-      setIsShuffling(false);
-    }
+    try { await fetch(`${API_URL}/shuffle`, { method: 'POST' }); fetchQueue(); setTimeout(() => setIsShuffling(false), 2000); } catch (e) { setIsShuffling(false); }
   };
 
   useEffect(() => {
@@ -85,31 +95,28 @@ export default function Home() {
     reqWL();
     fetchToken();
     fetchCurrentState();
-    const tokenInterval = setInterval(fetchToken, 1000 * 60 * 30);
+    
+    // Sync 30m refresh interval
+    const tokenInterval = setInterval(fetchToken, 1000 * 60 * 30); 
     const queueInterval = setInterval(fetchQueue, 2000);
-    return () => { 
-      clearInterval(tokenInterval); 
-      clearInterval(queueInterval); 
-      if (wakeLock.current) wakeLock.current.release(); 
-    };
+
+    const djInterval = setInterval(() => {
+      fetch(`${API_URL}/dj-status`).then(res => res.json()).then(data => {
+          setDjStatus(data); 
+          setIsDjMode(!!data.isDjMode);
+          if (data.crossfadeSec) setCrossfadeSec(data.crossfadeSec);
+        }).catch(() => {});
+    }, 1000);
+
+    return () => { clearInterval(tokenInterval); clearInterval(queueInterval); clearInterval(djInterval); if (wakeLock.current) wakeLock.current.release(); };
   }, [isAuthorized]);
 
   const fetchToken = () => fetch(`${API_URL}/token`).then(res => res.json()).then(d => setToken(d.access_token));
 
   const fetchCurrentState = () => {
-      fetch(`${API_URL}/fallback`).then(res => res.json()).then(d => {
-          setFallbackName(d.name);
-          setFallbackTotal(d.total || 0);
-      });
-      fetch(`${API_URL}/theme`).then(res => res.json()).then(d => { 
-        setViewMode(d.theme || 'standard'); 
-        setShowLyrics(!!d.showLyrics); 
-        setShowDebug(!!d.showDebug); 
-      });
-      fetch(`${API_URL}/name`).then(res => res.json()).then(d => { 
-        setPartyName(d.name); 
-        setNameInput(d.name); 
-      });
+      fetch(`${API_URL}/fallback`).then(res => res.json()).then(d => { setFallbackName(d.name); setFallbackTotal(d.total || 0); });
+      fetch(`${API_URL}/theme`).then(res => res.json()).then(d => { setViewMode(d.theme || 'standard'); setShowLyrics(!!d.showLyrics); setShowDebug(!!d.showDebug); });
+      fetch(`${API_URL}/name`).then(res => res.json()).then(d => { setPartyName(d.name); setNameInput(d.name); });
       fetch(`${API_URL}/current`).then(res => res.json()).then(track => { if (track?.uri) setCurrentTrack(track.uri); });
   };
 
@@ -126,42 +133,28 @@ export default function Home() {
   const reorderQueue = async (index: number, direction: 'up' | 'down') => {
       const newIndex = direction === 'up' ? index - 1 : index + 1;
       if (newIndex < 0 || newIndex >= queue.length || queue[index].isFallback || queue[newIndex].isFallback) return;
-      
       lastActionRef.current = Date.now();
-      const newQueue = [...queue];
-      const temp = newQueue[index];
-      newQueue[index] = newQueue[newIndex];
-      newQueue[newIndex] = temp;
+      const newQueue = [...queue]; const temp = newQueue[index]; newQueue[index] = newQueue[newIndex]; newQueue[newIndex] = temp;
       setQueue(newQueue);
-
-      await fetch(`${API_URL}/reorder`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ queue: newQueue }) 
-      });
+      await fetch(`${API_URL}/reorder`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ queue: newQueue }) });
   };
 
-  const toggleOverlay = async (key: string, currentVal: boolean) => {
-      const newVal = !currentVal;
-      if (key === 'showLyrics') setShowLyrics(newVal);
-      if (key === 'showDebug') setShowDebug(newVal);
-      await fetch(`${API_URL}/theme`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ [key]: newVal }) });
+  const updateCrossfade = async (val: number) => {
+    setCrossfadeSec(val);
+    await fetch(`${API_URL}/theme`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ crossfadeSec: val }) });
   };
 
-  const searchPlaylists = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetch(`${API_URL}/search-playlists?q=${encodeURIComponent(playlistQuery)}`).then(res => res.json()).then(setPlaylistResults);
+  const toggleDjMode = async () => {
+    const newVal = !isDjMode;
+    setIsDjMode(newVal);
+    await fetch(`${API_URL}/dj-mode`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ enabled: newVal }) });
   };
+
+  const searchPlaylists = (e: React.FormEvent) => { e.preventDefault(); fetch(`${API_URL}/search-playlists?q=${encodeURIComponent(playlistQuery)}`).then(res => res.json()).then(setPlaylistResults); };
 
   const setFallback = (playlist: Playlist) => {
-    fetch(`${API_URL}/fallback`, { 
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json'}, 
-        body: JSON.stringify({ id: playlist.id, name: playlist.name, total: playlist.total }) 
-    });
-    setFallbackName(playlist.name);
-    setFallbackTotal(playlist.total);
-    setPlaylistResults([]);
+    fetch(`${API_URL}/fallback`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: playlist.id, name: playlist.name, total: playlist.total }) });
+    setFallbackName(playlist.name); setFallbackTotal(playlist.total); setPlaylistResults([]);
   };
 
   if (!isAuthorized) return (
@@ -187,9 +180,9 @@ export default function Home() {
 
       <header style={{ position: 'sticky', top: 0, zIndex: 100, background: '#121212', borderBottom: '1px solid #D4AF37', padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
         <div>
-            <h1 style={{ margin: 0, color: '#D4AF37', fontSize: '1.2rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>{partyName} Dashboard</h1>
+            <h1 style={{ margin: 0, color: '#D4AF37', fontSize: '1.2rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>{partyName}</h1>
             <div style={{ display: 'flex', gap: '15px', marginTop: '4px' }}>
-                <div style={{ color: '#2ecc71', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ height: '8px', width: '8px', background: '#2ecc71', borderRadius: '50%', boxShadow: '0 0 10px #2ecc71' }}></span> AWAKE</div>
+                <div style={{ color: '#2ecc71', fontSize: '0.7rem', fontWeight: 800, display: 'center', alignItems: 'center', gap: '6px' }}><span style={{ height: '8px', width: '8px', background: '#2ecc71', borderRadius: '50%', boxShadow: '0 0 10px #2ecc71' }}></span> AWAKE</div>
                 <div style={{ color: '#666', fontSize: '0.7rem', fontWeight: 800 }}>v{pkg.version}</div>
             </div>
         </div>
@@ -210,26 +203,62 @@ export default function Home() {
                 </div>
             </div>
 
+            {/* --- TRACK INTELLIGENCE PANEL (STAYS VISIBLE) --- */}
+            <div style={{ background: '#181818', borderRadius: '20px', padding: '25px', border: '1px solid #333' }}>
+                <h3 style={{ margin: '0 0 20px 0', fontSize: '0.8rem', color: '#D4AF37', letterSpacing: '2px', fontWeight: 900, textTransform: 'uppercase' }}>🧠 Track Intelligence</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                    <div>
+                        <MetricBar label="Mood (Valence)" value={djStatus.valence} color="#2ecc71" />
+                        <MetricBar label="Danceability" value={djStatus.danceability} color="#f1c40f" />
+                        <MetricBar label="Acoustic Factor" value={djStatus.acousticness} color="#3498db" />
+                        <MetricBar label="Speech/Vocal Intensity" value={djStatus.speechiness} color="#9b59b6" />
+                        <MetricBar label="Global Popularity" value={djStatus.popularity} color="#e74c3c" />
+                    </div>
+                    <div style={{ borderLeft: '1px solid #222', paddingLeft: '20px' }}>
+                        <div style={{ marginBottom: '15px' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#555', display: 'block', fontWeight: 900, textTransform: 'uppercase' }}>Band Lineup</span>
+                            <p style={{ margin: '4px 0', fontSize: '0.75rem', color: '#fff', lineHeight: 1.4 }}>{djStatus.lineup || "Studio roster unknown"}</p>
+                        </div>
+                        <div style={{ marginBottom: '15px' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#555', display: 'block', fontWeight: 900, textTransform: 'uppercase' }}>Recording Studio</span>
+                            <p style={{ margin: '4px 0', fontSize: '0.75rem', color: '#fff' }}>{djStatus.location || "Location unknown"}</p>
+                        </div>
+                        <div style={{ marginBottom: '15px' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#555', display: 'block', fontWeight: 900, textTransform: 'uppercase' }}>Technical Timbre</span>
+                            <p style={{ margin: '4px 0', fontSize: '0.75rem', color: '#3498db', fontWeight: 700 }}>{djStatus.timbre || "Analyzing..."}</p>
+                        </div>
+                        <div>
+                            <span style={{ fontSize: '0.55rem', color: '#555', display: 'block', fontWeight: 900, textTransform: 'uppercase' }}>Sub-Genres</span>
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                {djStatus.genres?.length ? djStatus.genres.map((g: string) => (
+                                    <span key={g} style={{ fontSize: '0.6rem', padding: '2px 8px', background: '#333', borderRadius: '4px', color: '#aaa' }}>{g}</span>
+                                )) : <span style={{fontSize:'0.65rem', color:'#444'}}>None detected</span>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div style={{ background: '#181818', borderRadius: '20px', padding: '30px', border: '1px solid #333', minHeight: '400px' }}>
                 <h2 style={{ margin: '0 0 20px 0', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>PRIORITY QUEUE</span>
                     <span style={{ color: '#D4AF37', fontSize: '0.9rem', background: '#252525', padding: '4px 12px', borderRadius: '20px' }}>{queue.length} Tracks</span>
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {queue.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>Queue empty. Searching Fallback...</p> : queue.map((t, i) => (
-                        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', background: t.isFallback ? '#111' : '#222', borderRadius: '12px', border: t.isFallback ? '1px dashed #444' : '1px solid #2a2a2a', opacity: t.isFallback ? 0.5 : 1 }}>
+                    {queue.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>Queue empty...</p> : queue.map((t, i) => (
+                        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', background: t.isFallback ? '#111' : '#222', borderRadius: '12px', border: t.isFallback ? '1px dashed #444' : '1px solid #2a2a2a', opacity: t.isFallback ? 0.6 : 1 }}>
                             <div style={{ overflow: 'hidden', flex: 1 }}>
                                 <div style={{ fontWeight: 700, fontSize: '1rem', color: t.isFallback ? '#888' : '#fff' }}>{t.name}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#666' }}>{t.artist} {!t.isFallback && `• ${t.votes} Votes`}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#666' }}>{t.artist}</div>
+                                {!t.isFallback && <div style={{ fontSize: '0.7rem', color: '#D4AF37', marginTop: '4px' }}>Requested by {t.addedBy || "Guest"} • {t.votes} Votes</div>}
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                {!t.isFallback ? (
+                                {!t.isFallback && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                         <button onClick={() => reorderQueue(i, 'up')} style={{ background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '0.7rem' }}>🔼</button>
                                         <button onClick={() => reorderQueue(i, 'down')} style={{ background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', fontSize: '0.7rem' }}>🔽</button>
                                     </div>
-                                ) : (
-                                    <span style={{ fontSize: '0.6rem', color: '#D4AF37', border: '1px solid #D4AF37', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, marginRight: '10px' }}>BUFFER</span>
                                 )}
                                 <button onClick={() => { fetch(`${API_URL}/remove`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ uri: t.uri }) }); fetchQueue(); }} style={{ background: '#331111', color: '#ff4444', border: 'none', width: '35px', height: '35px', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem' }}>🗑️</button>
                             </div>
@@ -240,6 +269,80 @@ export default function Home() {
         </section>
 
         <section style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            <div style={{ background: '#181818', borderRadius: '20px', padding: '25px', border: '2px solid #D4AF37', boxShadow: isDjMode ? '0 0 20px rgba(212, 175, 55, 0.2)' : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#D4AF37', letterSpacing: '1px', fontWeight: 900 }}>🎧 DIGITAL DJ ENGINE</h3>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {isDjMode && (
+                      <div style={{ 
+                        color: djStatus.source === 'spotify' ? '#2ecc71' : djStatus.source === 'external' ? '#3498db' : '#D4AF37', 
+                        fontSize: '0.6rem', border: '1px solid', padding: '2px 8px', borderRadius: '10px', fontWeight: 800 
+                      }}>
+                        {djStatus.source.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ background: isDjMode ? '#2ecc71' : '#444', color: '#000', fontSize: '0.6rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 900 }}>{isDjMode ? 'ACTIVE' : 'OFF'}</div>
+                  </div>
+                </div>
+                
+                <div style={{ background: '#000', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #222' }}>
+                  
+                  <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', justifyContent: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.5rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 900 }}>SINGLE ART</span>
+                      <img src={djStatus.singleArtwork || '/placeholder.png'} style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #333', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.5rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 900 }}>ALBUM ART</span>
+                      <img src={djStatus.albumArtwork || '/placeholder.png'} style={{ width: '100px', height: '100px', borderRadius: '10px', border: '1px solid #333', objectFit: 'cover' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '12px', textAlign: 'center' }}>
+                    {djStatus.message || "DJ Waiting..."}
+                  </div>
+
+                  {isDjMode && (
+                    <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', borderTop: '1px solid #222', paddingTop: '12px', marginTop: '5px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#888', display: 'block', fontWeight: 900 }}>TEMPO</span>
+                            <span style={{ color: '#D4AF37', fontWeight: 950, fontSize: '1.3rem' }}>{djStatus.bpm || '--'} <small style={{fontSize:'0.6rem'}}>BPM</small></span>
+                        </div>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px', borderTop: '1px solid #111', paddingTop: '15px' }}>
+                        <div style={{ textAlign:'center', background:'#111', padding:'8px', borderRadius:'8px' }}>
+                            <span style={{ fontSize: '0.5rem', color: '#555', display: 'block' }}>KEY</span>
+                            <span style={{ color: '#3498db', fontWeight: 800, fontSize: '0.8rem' }}>{djStatus.key || '--'}</span>
+                        </div>
+                        <div style={{ textAlign:'center', background:'#111', padding:'8px', borderRadius:'8px' }}>
+                            <span style={{ fontSize: '0.5rem', color: '#555', display: 'block' }}>SCALE</span>
+                            <span style={{ color: '#3498db', fontWeight: 800, fontSize: '0.8rem' }}>{djStatus.scale?.toUpperCase() || '--'}</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                        <div style={{ textAlign:'center', background:'#111', padding:'8px', borderRadius:'8px' }}>
+                            <span style={{ fontSize: '0.5rem', color: '#555', display: 'block', fontWeight: 900 }}>YEAR</span>
+                            <span style={{ color: '#e67e22', fontWeight: 800, fontSize: '0.9rem' }}>{djStatus.year || '--'}</span>
+                        </div>
+                        <div style={{ textAlign:'center', background:'#111', padding:'8px', borderRadius:'8px' }}>
+                            <span style={{ fontSize: '0.5rem', color: '#555', display: 'block', fontWeight: 900 }}>LABEL</span>
+                            <span style={{ color: '#e67e22', fontWeight: 800, fontSize: '0.65rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                                {djStatus.label || '--'}
+                            </span>
+                        </div>
+                    </div>
+                    </>
+                  )}
+                </div>
+
+                <button onClick={toggleDjMode} style={{ width: '100%', padding: '15px', background: isDjMode ? '#333' : '#D4AF37', color: isDjMode ? '#fff' : '#000', border: 'none', fontWeight: 900, borderRadius: '10px', cursor: 'pointer' }}>
+                  {isDjMode ? 'DISABLE DJ MODE' : 'ENABLE DIGITAL DJ'}
+                </button>
+            </div>
+
             <div style={{ background: '#181818', borderRadius: '20px', padding: '25px', border: '1px solid #333' }}>
                 <h3 style={{ margin: '0 0 15px 0', fontSize: '0.9rem', color: '#888', letterSpacing: '1px' }}>PROJECTOR VIEW MODE</h3>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -247,66 +350,39 @@ export default function Home() {
                         <button key={m} onClick={() => { setViewMode(m); fetch(`${API_URL}/theme`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ theme: m }) }); }} style={{ flex: 1, padding: '12px', background: viewMode === m ? '#D4AF37' : '#222', color: viewMode === m ? '#000' : '#fff', border: 'none', fontWeight: 800, borderRadius: '8px', cursor: 'pointer', fontSize: '0.75rem' }}>{m.toUpperCase()}</button>
                     ))}
                 </div>
-
-                <h3 style={{ margin: '25px 0 15px 0', fontSize: '0.9rem', color: '#888', letterSpacing: '1px' }}>OVERLAYS</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '15px' }}>
-                    <button onClick={() => toggleOverlay('showLyrics', showLyrics)} style={{ padding: '12px', background: showLyrics ? '#2ecc71' : '#222', color: showLyrics ? '#000' : '#fff', border: 'none', fontWeight: 800, borderRadius: '8px', cursor: 'pointer' }}>LYRICS: {showLyrics ? 'ON' : 'OFF'}</button>
-                    <label style={{ display:'flex', alignItems:'center', gap:'10px', fontSize:'0.85rem', color: '#aaa', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={showDebug} onChange={() => toggleOverlay('showDebug', showDebug)} style={{ width: '18px', height: '18px', accentColor: '#D4AF37' }} /> Show Console Debug
-                    </label>
-                </div>
             </div>
 
             <div style={{ background: '#181818', borderRadius: '20px', padding: '25px', border: '1px solid #333' }}>
-                <h3 style={{ margin: '0 0 15px 0', fontSize: '0.9rem', color: '#888' }}>PARTY BRANDING</h3>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <input value={nameInput} onChange={e => setNameInput(e.target.value)} style={{ flex: 1, padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
-                    <button onClick={() => { fetch(`${API_URL}/name`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: nameInput }) }); setPartyName(nameInput); }} style={{ padding: '12px 25px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Save</button>
+                <h3 style={{ margin: '0 0 15px 0', fontSize: '0.9rem', color: '#888' }}>PARTY BRANDING & MIX</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input value={nameInput} onChange={e => setNameInput(e.target.value)} style={{ flex: 1, padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                        <button onClick={() => { fetch(`${API_URL}/name`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: nameInput }) }); setPartyName(nameInput); }} style={{ padding: '12px 25px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700 }}>Save</button>
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                        <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '8px' }}>DJ CROSSFADE: {crossfadeSec}s</label>
+                        <input type="range" min="2" max="15" value={crossfadeSec} onChange={(e) => updateCrossfade(parseInt(e.target.value))} style={{ width: '100%', accentColor: '#D4AF37' }} />
+                    </div>
                 </div>
             </div>
 
             <div style={{ background: '#181818', borderRadius: '20px', padding: '25px', border: '1px solid #333' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#888' }}>FALLBACK POOL</h3>
-                    <button 
-                        onClick={handleManualShuffle}
-                        disabled={isShuffling}
-                        style={{ 
-                            background: isShuffling ? '#2ecc71' : '#333', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '6px 12px', 
-                            borderRadius: '6px', 
-                            fontSize: '0.7rem', 
-                            fontWeight: 800, 
-                            cursor: 'pointer',
-                            transition: 'all 0.3s'
-                        }}
-                    >
-                        {isShuffling ? 'SHUFFLED! ✅' : '🔄 PURGE & RESHUFFLE'}
+                    <button onClick={handleManualShuffle} disabled={isShuffling} style={{ background: isShuffling ? '#2ecc71' : '#333', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>
+                        {isShuffling ? 'SHUFFLED! ✅' : '🔄 PURGE & SHUFFLE'}
                     </button>
                 </div>
+                <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '15px' }}>Active: <span style={{ color: '#D4AF37' }}>{fallbackName}</span></p>
                 <form onSubmit={searchPlaylists} style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                    <input placeholder="Search Spotify..." value={playlistQuery} onChange={e => setPlaylistQuery(e.target.value)} style={{ flex: 1, padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
-                    <button type="submit" style={{ padding: '12px 20px', background: '#D4AF37', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 800 }}>Find</button>
+                    <input placeholder="Search playlists..." value={playlistQuery} onChange={e => setPlaylistQuery(e.target.value)} style={{ flex: 1, padding: '12px', background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                    <button type="submit" style={{ padding: '12px 20px', background: '#D4AF37', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 800 }}>Search</button>
                 </form>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '15px', maxHeight: '450px', overflowY: 'auto', padding: '5px' }} className="no-scrollbar">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '15px', maxHeight: '350px', overflowY: 'auto' }} className="no-scrollbar">
                     {playlistResults.map(p => (
-                        <div key={p.id} onClick={() => setFallback(p)} style={{ 
-                            background: '#222', 
-                            padding: '12px', 
-                            borderRadius: '12px', 
-                            cursor: 'pointer', 
-                            textAlign: 'center', 
-                            border: '1px solid #2a2a2a',
-                            transition: 'transform 0.2s, background 0.2s' 
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#282828'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#222'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                        >
-                            <img src={p.image} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }} />
-                            <div style={{ fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.65rem', color: '#D4AF37', marginTop: '4px', fontWeight: 800 }}>{p.total} TRACKS</div>
+                        <div key={p.id} onClick={() => setFallback(p)} style={{ background: '#222', padding: '10px', borderRadius: '12px', cursor: 'pointer', textAlign: 'center', border: '1px solid #2a2a2a' }}>
+                            <img src={p.image} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                         </div>
                     ))}
                 </div>
@@ -316,9 +392,9 @@ export default function Home() {
 
       <style dangerouslySetInnerHTML={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        input:focus { border-color: #D4AF37 !important; }
+        input:focus { border-color: #D4AF37 !important; outline: none; }
         button:active { transform: scale(0.98); }
-        button:disabled { cursor: not-allowed; opacity: 0.8; }
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
       `}} />
     </div>
   );

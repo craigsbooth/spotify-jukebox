@@ -56,7 +56,30 @@ export default function Projector() {
       return (l.length - costs[s.length]) / l.length;
   };
 
-  // --- DATA ENGINE ---
+  // --- 1. REACTION ENGINE (Continuous Polling) ---
+  useEffect(() => {
+    const reactionInterval = setInterval(() => {
+        fetch(`${API_URL}/reaction-event`)
+            .then(res => res.json())
+            .then((data: any) => {
+                if (data?.id && data.id > lastReactionIdRef.current && data.emoji) {
+                    lastReactionIdRef.current = data.id;
+                    const newReaction: Reaction = { 
+                        id: data.id, 
+                        emoji: data.emoji, 
+                        left: Math.floor(Math.random() * 80) + 10 
+                    };
+                    setActiveReactions(prev => [...prev, newReaction]);
+                    setTimeout(() => {
+                        setActiveReactions(current => current.filter(r => r.id !== newReaction.id));
+                    }, 7000);
+                }
+            }).catch(() => {});
+    }, 500);
+    return () => clearInterval(reactionInterval);
+  }, []);
+
+  // --- 2. DATA ENGINE ---
   useEffect(() => {
     const fetchData = () => {
       fetch(`${API_URL}/current`).then(res => res.json()).then(data => {
@@ -82,17 +105,6 @@ export default function Projector() {
     };
     fetchData();
     const interval = setInterval(fetchData, 2000);
-    
-    const reactionInterval = setInterval(() => {
-        fetch(`${API_URL}/reaction-event`).then(res => res.json()).then((data: any) => {
-            if (data?.id > lastReactionIdRef.current && data.emoji) {
-                lastReactionIdRef.current = data.id;
-                const newReaction: Reaction = { id: data.id, emoji: data.emoji, left: Math.random() * 80 + 10 };
-                setActiveReactions(prev => [...prev, newReaction]);
-                setTimeout(() => setActiveReactions(p => p.filter(r => r.id !== newReaction.id)), 6000);
-            }
-        });
-    }, 500);
 
     const progInterval = setInterval(() => {
         if (!nowPlaying?.startedAt) return;
@@ -101,10 +113,13 @@ export default function Projector() {
         setProgress(Math.min((elapsed / (nowPlaying.duration || 1)) * 100, 100));
     }, 50);
 
-    return () => { clearInterval(interval); clearInterval(reactionInterval); clearInterval(progInterval); };
-  }, [nowPlaying?.uri]);
+    return () => { 
+        clearInterval(interval); 
+        clearInterval(progInterval); 
+    };
+  }, [nowPlaying?.uri]); 
 
-  // --- LYRICS ENGINE ---
+  // --- 3. LYRICS ENGINE ---
   useEffect(() => {
     if (nowPlaying && showLyrics) {
         setLyricStatus("Searching...");
@@ -136,13 +151,20 @@ export default function Projector() {
     <div style={{ position: 'fixed', inset: 0, background: '#000', color: 'white', overflow: 'hidden', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes meshDrift { 0% { transform: scale(1); } 50% { transform: scale(1.1) rotate(1deg); } 100% { transform: scale(1); } }
-        @keyframes emojiDrop { 0% { transform: translateY(-15vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; } }
+        
+        @keyframes emojiDrop { 
+            0% { transform: translateY(-20vh) rotate(0deg); opacity: 0; } 
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } 
+        }
+
         @keyframes slideDown { from { transform: translateY(-200%); } to { transform: translateY(0); } }
-        .lyric-line { transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1); margin: 1.5rem 0; text-align: center; }
+        .lyric-line { transition: all 0.6s cubic-bezier(0.2, 1, 0.2, 1); margin: 2.5rem 0; text-align: center; }
         .active { font-size: 3.5rem; font-weight: 950; opacity: 1; }
         .inactive { font-size: 2rem; font-weight: 700; opacity: 0.2; transform: scale(0.9); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .reflect-image { -webkit-box-reflect: below 4px linear-gradient(transparent, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.2) 100%); object-fit: cover; }
+        .reflect-image { -webkit-box-reflect: below 4px linear-gradient(transparent, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.25) 100%); object-fit: cover; }
         .cover-container { transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1); transform-style: preserve-3d; backface-visibility: hidden; }
         .pill { background: rgba(255,255,255,0.12); padding: 10px 25px; border-radius: 100px; backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.25); }
         .qr-pill { background: white; padding: 15px 30px; border-radius: 30px; display: flex; alignItems: center; gap: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -162,19 +184,28 @@ export default function Projector() {
           )}
       </div>
 
+      {/* --- EMOJI LAYER --- */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 250 }}>
+          {activeReactions.map(r => ( 
+              <div key={r.id} style={{ position: 'absolute', left: `${r.left}%`, fontSize: '8rem', animation: 'emojiDrop 7s linear forwards', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))' }}>
+                {r.emoji}
+              </div> 
+          ))}
+      </div>
+
       {/* --- BRANDING --- */}
       <div style={{ position: 'absolute', top: '3vh', left: '3vw', zIndex: 100 }}>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '8px', textTransform: 'uppercase', opacity: 0.5, margin: 0 }}>{partyName}</h1>
       </div>
 
-      {/* --- JOIN NOTIFICATION --- */}
+      {/* --- NOTIFICATIONS --- */}
       {joinNotification && (
           <div style={{ position: 'absolute', top: '10vh', left: '50%', transform: 'translateX(-50%)', zIndex: 200, animation: 'slideDown 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div className="pill" style={{ background: 'rgba(255,255,255,0.3)', padding: '2vh 5vw' }}><h2 style={{ margin: 0, fontWeight: 900, fontSize: '2rem' }}>👋 {joinNotification} joined!</h2></div>
+              <div className="pill" style={{ background: 'rgba(255,255,255,0.3)', padding: '20px 60px' }}><h2 style={{ margin: 0, fontWeight: 900, fontSize: '2rem' }}>👋 {joinNotification} joined!</h2></div>
           </div>
       )}
 
-      {/* --- 1. COVERFLOW CAROUSEL VIEW (FIXED DIMENSIONS - NO QR) --- */}
+      {/* --- 1. CAROUSEL VIEW --- */}
       {viewMode === 'carousel' && (
         <div style={{ position: 'relative', height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', perspective: '1500px' }}>
           <div style={{ position: 'relative', width: '100%', height: '70vh', marginTop: '-10vh', display: 'flex', alignItems: 'center', justifyContent: 'center', transformStyle: 'preserve-3d' }}>
@@ -185,7 +216,6 @@ export default function Projector() {
               const isCenter = relIndex === 0;
               const absIndex = Math.abs(relIndex);
               
-              // Recalculated spacing for edge-to-edge but contained
               let translateX = relIndex * 12 + 'vw'; 
               if (relIndex < 0) translateX = `calc(${relIndex * 12}vw - 12vw)`; 
               if (relIndex > 0) translateX = `calc(${relIndex * 12}vw + 12vw)`;
@@ -197,7 +227,7 @@ export default function Projector() {
               return (
                 <div key={`${track.uri}-${index}`} className="cover-container" style={{ position: 'absolute', width: (relIndex === 0) ? '22vw' : '16vw', zIndex: 100 - absIndex, transform: `translateX(${translateX}) translateY(${translateY}) translateZ(${translateZ}) rotateY(${rotateY}deg)`, opacity: 1, textAlign: 'center' }}>
                   <img src={track.albumArt || RECORD_PLACEHOLDER} className="reflect-image" style={{ width: '100%', aspectRatio: '1/1', borderRadius: '10px', boxShadow: (relIndex === 0) ? '0 5vh 10vh rgba(0,0,0,0.8)' : '0 2vh 5vh rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                  {relIndex === 0 && (
+                  {isCenter && (
                     <div style={{ marginTop: '6vh', width: '140%', marginLeft: '-20%' }}>
                       <h1 style={{ fontSize: '3.5vw', margin: 0, fontWeight: 950, lineHeight: 1 }}>{track.name}</h1>
                       <h2 style={{ fontSize: '1.8vw', color: '#D4AF37', fontWeight: 800, marginTop: '0.5vh' }}>{track.artist}</h2>
@@ -211,11 +241,10 @@ export default function Projector() {
               );
             })}
           </div>
-          {/* QR PILL REMOVED FROM HERE */}
         </div>
       )}
 
-      {/* --- 2. STANDARD VIEW (UNCHANGED) --- */}
+      {/* --- 2. STANDARD VIEW --- */}
       {viewMode === 'standard' && (
           <div style={{ position: 'relative', zIndex: 10, height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '6vw' }}>
               <div style={{ position: 'absolute', top: '4vh', right: '4vw' }}>
@@ -246,7 +275,7 @@ export default function Projector() {
           </div>
       )}
 
-      {/* --- 3. MONITOR VIEW (UNCHANGED) --- */}
+      {/* --- 3. MONITOR VIEW --- */}
       {viewMode === 'monitor' && (
           <div style={{ position: 'relative', zIndex: 10, height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '10vh 8vw' }}>
               <div style={{ position: 'absolute', top: '4vh', right: '4vw' }}>
@@ -269,7 +298,12 @@ export default function Projector() {
           </div>
       )}
 
-      {showDebug && ( <div style={{ position: 'fixed', bottom: '2vh', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: 'rgba(0,0,0,0.8)', padding: '5px 20px', borderRadius: '50px', color: '#0f0', fontSize: '0.7rem' }}>🛠️ v1.0.85 | Q: {queue.length}</div> )}
+      {/* --- RESTORED DEBUG OVERLAY --- */}
+      {showDebug && ( 
+        <div style={{ position: 'fixed', bottom: '2vh', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: 'rgba(0,0,0,0.85)', padding: '8px 25px', borderRadius: '50px', color: '#0f0', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #0f0', boxShadow: '0 0 20px rgba(0,255,0,0.2)', pointerEvents: 'none', letterSpacing: '1px' }}>
+          🛠️ v2.0.0 | Q: {queue.length} | {viewMode.toUpperCase()} | LYRICS: {syncedLyrics.length > 0 ? 'SYNC' : plainLyrics ? 'PLAIN' : 'OFF'}
+        </div> 
+      )}
     </div>
   );
 }

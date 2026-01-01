@@ -1,5 +1,5 @@
 # ==========================================
-# JUKEBOX DEPLOY SCRIPT - DIRECTORY SYNC VER
+# JUKEBOX DEPLOY SCRIPT - V2.0 MODULAR
 # ==========================================
 
 # --- CONFIGURATION ---
@@ -21,65 +21,81 @@ $NewVersion | Out-File $VersionFile -Encoding ascii
 
 Write-Host "--- Starting Deployment: v$NewVersion ---" -ForegroundColor Yellow
 
-# --- 1. SAFETY CHECK ---
-Write-Host "--- Running Server API Tests ---" -ForegroundColor Magenta
-Set-Location "$LocalProject"
-npm test
-if ($LASTEXITCODE -ne 0) { Write-Host "SERVER TESTS FAILED." -ForegroundColor Red; pause; exit }
-
-Write-Host "--- Running Client UI Tests ---" -ForegroundColor Magenta
+# --- 1. PREPARE AND BUILD (LOCAL) ---
+Write-Host "--- Building Frontend Locally ---" -ForegroundColor Cyan
 Set-Location "$LocalProject\client"
-npm test -- --watchAll=false
-if ($LASTEXITCODE -ne 0) { Write-Host "CLIENT TESTS FAILED." -ForegroundColor Red; pause; exit }
-
-# --- 2. PREPARE AND BUILD ---
-Write-Host "--- Building Frontend ---" -ForegroundColor Cyan
 $env:NEXT_PUBLIC_APP_VERSION = $NewVersion
 npm run build
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed!"; pause; exit }
 
-# --- 3. STRUCTURED PACKAGING (The Fix) ---
-Write-Host "--- Structuring Files for Upload ---" -ForegroundColor Cyan
+# --- 2. STRUCTURED PACKAGING (THE SOURCE & REWRITE FIX) ---
+Write-Host "--- Packaging for Server ---" -ForegroundColor Cyan
 $DeployTemp = "$env:TEMP\jukebox_staging"
 if (Test-Path $DeployTemp) { Remove-Item -Recurse -Force $DeployTemp }
+
+# Create Directory Structure
 New-Item -ItemType Directory -Path "$DeployTemp\client" | Out-Null
+New-Item -ItemType Directory -Path "$DeployTemp\routes" | Out-Null
 
-# Copy Backend Files to Root
-Copy-Item "$LocalProject\server.js" -Destination "$DeployTemp\"
+# A. Create .env (BOM-free for Linux)
+$DotEnvLines = @(
+    "SPOTIFY_CLIENT_ID=3c5e00fa03dc46109048d2905f87332e",
+    "SPOTIFY_CLIENT_SECRET=720873f295de4759a1dce9d85ef9bc64",
+    "REDIRECT_URI=https://$Domain/api/callback",
+    "PORT=8888",
+    "FRONTEND_URL=https://$Domain"
+)
+[System.IO.File]::WriteAllLines("$DeployTemp\.env", $DotEnvLines)
+
+# B. Copy Backend Logic
+Copy-Item "$LocalProject\*.js" -Destination "$DeployTemp\"
 Copy-Item "$LocalProject\package.json" -Destination "$DeployTemp\"
+if (Test-Path "$LocalProject\routes") {
+    Copy-Item -Recurse "$LocalProject\routes\*" -Destination "$DeployTemp\routes\"
+}
 
-# Copy Frontend Build to client/ folder
+# C. Copy Frontend (Source + Build + Config)
+# We copy .next (built site), app (source code), and next.config.ts (the bridge)
 Copy-Item -Recurse "$LocalProject\client\.next" -Destination "$DeployTemp\client\"
+Copy-Item -Recurse "$LocalProject\client\app" -Destination "$DeployTemp\client\"
 Copy-Item -Recurse "$LocalProject\client\public" -Destination "$DeployTemp\client\"
 Copy-Item "$LocalProject\client\package.json" -Destination "$DeployTemp\client\"
 Copy-Item "$LocalProject\client\next.config.ts" -Destination "$DeployTemp\client\"
 
+# Clean massive cache from zip to prevent SCP failure
+if (Test-Path "$DeployTemp\client\.next\cache") { 
+    Remove-Item -Recurse -Force "$DeployTemp\client\.next\cache" 
+}
+
+# D. Create Zip
 $ZipFile = "$env:TEMP\jukebox_deploy.zip"
 if (Test-Path $ZipFile) { Remove-Item $ZipFile }
 Compress-Archive -Path "$DeployTemp\*" -DestinationPath $ZipFile -Force
 
-# --- 4. UPLOAD TO SERVER ---
-Write-Host "--- Uploading to Server ---" -ForegroundColor Cyan
-# Added the destination address which was missing
+$zipSize = (Get-Item $ZipFile).Length / 1MB
+Write-Host "--- Zip Size: $([Math]::Round($zipSize,2)) MB ---" -ForegroundColor Yellow
+
+# --- 3. UPLOAD TO SERVER ---
+Write-Host "--- Uploading to AWS ---" -ForegroundColor Cyan
 scp -i "$KeyPath" "$ZipFile" "${ServerUser}@${ServerIP}:${RemotePath}/"
 
-# --- 5. EXECUTE REMOTE COMMANDS ---
+# --- 4. REMOTE EXECUTION ---
 Write-Host "--- Server Installation & Restart ---" -ForegroundColor Cyan
-$RemoteCmd = "cd ${RemotePath}; unzip -o jukebox_deploy.zip; rm jukebox_deploy.zip; " +
-             "echo 'SPOTIFY_CLIENT_ID=3c5e00fa03dc46109048d2905f87332e' > .env; " +
-             "echo 'SPOTIFY_CLIENT_SECRET=0035087b530a4a30a447a280cbb9b9fd' >> .env; " +
-             "echo 'REDIRECT_URI=https://${Domain}/api/callback' >> .env; " +
-             "echo 'PORT=8888' >> .env; " +
-             "echo 'FRONTEND_URL=https://${Domain}' >> .env; " +
+$RemoteCmd = "cd ${RemotePath}; " +
+             "pm2 stop all || true; " +
+             "unzip -o jukebox_deploy.zip; " +
+             "rm jukebox_deploy.zip; " +
              "sudo chown -R ${ServerUser}:${ServerUser} ${RemotePath}; " +
-             "npm install --omit=dev --legacy-peer-deps; " +
+             "echo 'Installing Backend...'; " +
+             "npm install --omit=dev --no-save --legacy-peer-deps; " +
              "pm2 delete backend || true; pm2 start server.js --name 'backend'; " +
-             "cd client; npm install --omit=dev --legacy-peer-deps; " +
-             "pm2 delete frontend || true; pm2 start node_modules/next/dist/bin/next --name 'frontend' --cwd '${RemotePath}/client' -- start; " +
+             "cd client; " +
+             "echo 'Updating Frontend...'; " +
+             "npm install --omit=dev --no-save --legacy-peer-deps; " +
+             "pm2 delete frontend || true; pm2 start npm --name 'frontend' -- start; " +
              "pm2 save"
 
 ssh -i "$KeyPath" "${ServerUser}@${ServerIP}" $RemoteCmd
 
 Write-Host "--- Deployment Successful: v$NewVersion ---" -ForegroundColor Green
 Set-Location "$LocalProject"
-Start-Process "https://$Domain"

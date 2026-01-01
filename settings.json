@@ -1,9 +1,54 @@
 {
   "fallbackPlaylist": {
-    "id": "2mwXysb0t3wK2c4oK2LygC",
-    "name": "Christmas Party Songs 🎄🎉 2025 Holiday Classics"
+    "id": "287dG5nl9Jw9ySZGTRoYhe",
+    "name": "Craigs"
   },
-  "currentTheme": "none",
-  "partyName": "The Pinfold Club",
-  "showLyrics": false
+  "currentTheme": "carousel",
+  "partyName": "The Sycamores",
+  "showLyrics": true,
+  "showDebug": false,
+  "crossfadeSec": 3,
+  "partyQueue": [],
+  "currentPlayingTrack": {
+    "uri": "spotify:track:1t0cpbl4u8PDW3u29z60x8",
+    "name": "Moving Mountains",
+    "artist": "Skylar Grey",
+    "album": "Natural Causes",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b2732ffab5b5bfbdf1446f793d2c",
+    "duration": 253613,
+    "isFallback": true,
+    "votes": 0,
+    "startedAt": 1767204160059
+  },
+  "guestNames": {
+    "guest_d1qjlesy6": "Craig"
+  },
+  "latestJoiner": null,
+  "isDjMode": false,
+  "djStatus": {
+    "message": "Playing: Moving Mountains",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2732ffab5b5bfbdf1446f793d2c",
+    "bpm": 94,
+    "key": "D# major",
+    "genres": [
+      "Alternative"
+    ],
+    "year": "1985",
+    "isDjMode": false,
+    "researchTitle": "Moving Mountains",
+    "researchArtist": "Skylar Grey",
+    "researchAlbum": "Natural Causes",
+    "valence": 84,
+    "publisher": "Kid Ina Corner (Skylar Grey)/Shady Records",
+    "isrc": "USUM71601013",
+    "releaseDate": "2016-09-23",
+    "crossfadeSec": 3
+  },
+  "lastSavedAt": "2025-12-31T18:02:44.305Z",
+  "playedHistory": [
+    "spotify:track:3KZcrZ36LW9RnChK1iIkth",
+    "spotify:track:0ipgwTDtFYgMrO6N0IdLUk",
+    "spotify:track:5vefQfYc9Oxn8VHfgUCi1q",
+    "spotify:track:1t0cpbl4u8PDW3u29z60x8"
+  ]
 }

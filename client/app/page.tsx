@@ -64,7 +64,11 @@ export default function Home() {
     requestWakeLock();
     const fetchMetadata = () => {
         fetch(`${API_URL}/token`).then(res => res.json()).then(d => setToken(d.access_token));
-        fetch(`${API_URL}/theme`).then(res => res.json()).then(d => { if (isStable('viewMode')) setViewMode(d.theme); if (isStable('lyrics')) setShowLyrics(!!d.showLyrics); });
+        // Properly sync view mode and lyrics status from the unified theme endpoint
+        fetch(`${API_URL}/theme`).then(res => res.json()).then(d => { 
+            if (isStable('viewMode')) setViewMode(d.theme); 
+            if (isStable('lyrics')) setShowLyrics(!!d.showLyrics); 
+        });
         fetch(`${API_URL}/fallback`).then(res => res.json()).then(d => setFallbackName(d.name));
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => { setPartyName(d.name); setNameInput(d.name); });
         fetch(`${API_URL}/current`).then(res => res.json()).then(t => setCurrentTrack(t?.uri || null));
@@ -89,7 +93,17 @@ export default function Home() {
     removeItem: async (uri: string) => { lastActionRef.current = Date.now(); setQueue(prev => prev.filter(t => t.uri !== uri)); await fetch(`${API_URL}/remove`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ uri }) }); },
     toggleDJ: () => { const nv = !isDjMode; setIsDjMode(nv); setStability('djMode'); fetch(`${API_URL}/dj-mode`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ enabled: nv }) }); },
     updateMixer: (val: number) => { setCrossfadeSec(val); setStability('crossfade'); fetch(`${API_URL}/theme`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ crossfadeSec: val }) }); },
-    toggleLyrics: () => { const nv = !showLyrics; setShowLyrics(nv); setStability('lyrics'); fetch(`${API_URL}/lyrics-status`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ showLyrics: nv }) }); },
+    toggleLyrics: () => { 
+        const nv = !showLyrics; 
+        setShowLyrics(nv); 
+        setStability('lyrics'); 
+        // Logic Update: Hits the unified /theme endpoint instead of the old /lyrics-status
+        fetch(`${API_URL}/theme`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ showLyrics: nv }) 
+        }); 
+    },
     changeView: (m: string) => { setViewMode(m); setStability('viewMode'); fetch(`${API_URL}/theme`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ theme: m }) }); },
     saveStationName: () => { fetch(`${API_URL}/name`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: nameInput }) }); setPartyName(nameInput); },
     searchPlaylists: (e: any) => { e.preventDefault(); fetch(`${API_URL}/search-playlists?q=${playlistQuery}`).then(res=>res.json()).then(setPlaylistResults); },

@@ -7,18 +7,20 @@ const spotifyApi = require('../spotify_instance');
 const spotifyCtrl = require('../spotify_ctrl');
 
 // --- 1. AUTH & TOKEN ACCESS ---
-// Frontend calls: https://jukebox.boldron.info/api/system/token
+// Frontend calls: https://jukebox.boldron.info/api/token
 router.get('/token', (req, res) => {
     const token = spotifyApi.getAccessToken();
     res.json({ access_token: token || null });
 });
 
 // --- 2. DJ ENGINE CONTROL ---
+// Frontend calls: https://jukebox.boldron.info/api/dj-mode
 router.post('/dj-mode', (req, res) => {
     const result = sm.setDjMode(req.body.enabled);
     res.json(result);
 });
 
+// Frontend calls: https://jukebox.boldron.info/api/dj-status
 router.get('/dj-status', (req, res) => {
     res.json({ 
         ...state.djStatus,
@@ -28,6 +30,7 @@ router.get('/dj-status', (req, res) => {
 });
 
 // --- 3. THEME & SETTINGS ---
+// Frontend calls: https://jukebox.boldron.info/api/theme
 router.get('/theme', (req, res) => {
     res.json({ 
         theme: state.currentTheme, 
@@ -88,6 +91,7 @@ router.post('/reaction-event', (req, res) => {
 router.get('/reaction-event', (req, res) => res.json(state.reactionEvent));
 
 // --- 7. SEARCH & FALLBACK POOL ---
+// Frontend calls: https://jukebox.boldron.info/api/search
 router.get('/search', async (req, res) => {
     try {
         const results = await spotifyCtrl.searchTracks(req.query.q); 
@@ -97,6 +101,7 @@ router.get('/search', async (req, res) => {
     }
 });
 
+// Frontend calls: https://jukebox.boldron.info/api/search-playlists
 router.get('/search-playlists', async (req, res) => {
     try {
         const data = await spotifyApi.searchPlaylists(req.query.q);
@@ -125,6 +130,12 @@ router.post('/fallback', async (req, res) => {
         console.error("❌ System: Fallback Refresh Crash:", e.message);
         res.status(500).json({ error: "Fallback update failed" });
     }
+});
+
+// --- 8. CURRENT TRACK ALIAS ---
+// Frontend calls: https://jukebox.boldron.info/api/current
+router.get('/current', (req, res) => {
+    res.json(state.currentPlayingTrack || null);
 });
 
 module.exports = router;

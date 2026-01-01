@@ -9,6 +9,20 @@ const sm = require('./state_manager');
 const TOKEN_FILE = path.join(__dirname, 'tokens.json');
 
 /**
+ * HELPER: Handle Silent Refresh
+ * Used within catch blocks to recover from 401 errors.
+ */
+async function handleExpiredToken() {
+    console.log("🔄 Token System: Access token expired. Attempting silent refresh...");
+    const data = await spotifyApi.refreshAccessToken();
+    const newAccess = data.body['access_token'];
+    spotifyApi.setAccessToken(newAccess);
+    // Use the existing saveTokens logic to persist the new token
+    await saveTokens(newAccess, spotifyApi.getRefreshToken());
+    return newAccess;
+}
+
+/**
  * 1. TOKEN PERSISTENCE (Hardened with Auto-Recovery)
  */
 async function saveTokens(access, refresh) {
@@ -112,6 +126,13 @@ async function refreshShuffleBag() {
         console.log(`✅ Controller: ${state.shuffleBag.length} tracks loaded into pool.`);
         return state.shuffleBag.length;
     } catch (err) {
+        // --- THE FIX: Silent Refresh & Retry ---
+        if (err.statusCode === 401) {
+            try {
+                await handleExpiredToken();
+                return await refreshShuffleBag();
+            } catch (re) { /* Fall through to original error */ }
+        }
         console.error("❌ Controller: Playlist Load Failed:", err.message);
         return 0;
     }
@@ -150,7 +171,68 @@ async function getNextTrack() {
 }
 
 /**
- * 4. SEARCH
+ * 4. ACTIVE PLAYBACK EXECUTION
+ * This is the function that physically talks to your speakers/LAPTOP.
+ */
+async function playTrack(uri) {
+    if (!uri) return;
+    try {
+        // Step 1: Attempt playback on whatever Spotify thinks is active
+        await spotifyApi.play({ uris: [uri] });
+        console.log(`🎵 Spotify: Now Playing URI: ${uri}`);
+        return true;
+    } catch (err) {
+        // --- THE FIX: Silent Refresh & Retry ---
+        if (err.statusCode === 401) {
+            try {
+                await handleExpiredToken();
+                return await playTrack(uri);
+            } catch (re) { /* Fall through */ }
+        }
+
+        console.error("⚠️ Spotify Playback Error:", err.message);
+        
+        // Step 2: Fallback if no device is active. We look specifically for a "Web Player" or "Computer"
+        if (err.message.includes("NO_ACTIVE_DEVICE")) {
+            console.log("🔍 Controller: No active device found. Searching for a Web Player...");
+            const devices = await spotifyApi.getMyDevices();
+            const webPlayer = devices.body.devices.find(d => d.name.includes("Web Player") || d.type === "Computer");
+            const anyActive = webPlayer || devices.body.devices[0];
+
+            if (anyActive) {
+                console.log(`📡 Controller: Forcing playback to: ${anyActive.name}`);
+                await spotifyApi.play({ uris: [uri], device_id: anyActive.id });
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+/**
+ * 5. DEVICE MANAGEMENT
+ * Used to hijack playback from other devices (like Living Room) to the Browser.
+ */
+async function transferPlayback(deviceId) {
+    try {
+        await spotifyApi.transferMyPlayback([deviceId], { play: true });
+        console.log(`📱 Controller: Playback transferred to device: ${deviceId}`);
+        return { success: true };
+    } catch (err) {
+        // --- THE FIX: Silent Refresh & Retry ---
+        if (err.statusCode === 401) {
+            try {
+                await handleExpiredToken();
+                return await transferPlayback(deviceId);
+            } catch (re) { /* Fall through */ }
+        }
+        console.error("❌ Controller: Transfer failed:", err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * 6. SEARCH
  */
 async function searchTracks(query) {
     if (!query) return [];
@@ -165,9 +247,16 @@ async function searchTracks(query) {
             id: t.id
         }));
     } catch (e) {
+        // --- THE FIX: Silent Refresh & Retry ---
+        if (e.statusCode === 401) {
+            try {
+                await handleExpiredToken();
+                return await searchTracks(query);
+            } catch (re) { /* Fall through */ }
+        }
         console.error("❌ Search failed:", e.message);
         return [];
     }
 }
 
-module.exports = { saveTokens, refreshShuffleBag, getNextTrack, searchTracks };
+module.exports = { saveTokens, refreshShuffleBag, getNextTrack, searchTracks, playTrack, transferPlayback };

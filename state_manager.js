@@ -1,6 +1,10 @@
 // state_manager.js - Centralized, Hardened Logic Fortress
 const state = require('./state');
 const fs = require('fs');
+const path = require('path');
+
+// Ensure we use a consistent absolute path for settings
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
 const stateManager = {
     // 1. DJ ENGINE CONTROL
@@ -102,7 +106,7 @@ const stateManager = {
         try {
             // Use a temporary variable for stringification to catch errors before writing
             const jsonString = JSON.stringify(dataToSave, null, 2);
-            fs.writeFileSync('settings.json', jsonString);
+            fs.writeFileSync(SETTINGS_FILE, jsonString);
         } catch (e) {
             console.error("💾 Critical Failure: Could not save settings.json:", e.message);
         }

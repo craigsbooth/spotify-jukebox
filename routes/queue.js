@@ -16,6 +16,7 @@ const isInHistory = (uri) => {
 /**
  * FIXED: Deduplicated Queue Delivery
  * Ensures that if a track is in the Party Queue, it is REMOVED from the shuffle buffer.
+ * Mounted at: GET /api/queue
  */
 router.get('/queue', (req, res) => {
     const bag = Array.isArray(state.shuffleBag) ? state.shuffleBag : [];
@@ -32,6 +33,10 @@ router.get('/queue', (req, res) => {
     res.json([...state.partyQueue, ...buffer]);
 });
 
+/**
+ * Handle Guest Requests and Voting
+ * Mounted at: POST /api/queue
+ */
 router.post('/queue', (req, res) => {
     const { uri, name, artist, albumArt, album, guestId } = req.body;
     if (!guestId) return res.status(400).json({ error: "No Guest ID" });
@@ -91,6 +96,10 @@ router.post('/pop', async (req, res) => {
             state.playedHistory = new Set([nextTrack.uri]);
         }
 
+        // --- EXECUTION LINK ---
+        // Added the play command to physically start the music
+        await spotifyCtrl.playTrack(nextTrack.uri);
+
         // --- CRITICAL FIX ---
         // We REMOVED 'await'. The research now happens in the background.
         // The music starts IMMEDIATELY.
@@ -119,8 +128,11 @@ router.post('/reorder', (req, res) => {
     res.json({ success: true });
 });
 
-// --- UPDATED INTELLIGENCE BRIDGE ---
-router.get('/current', async (req, res) => {
+/**
+ * --- UPDATED INTELLIGENCE BRIDGE ---
+ * Mounted at: GET /api/queue/current
+ */
+router.get('/queue/current', async (req, res) => {
     try {
         // If state is empty, perform a live fetch from Spotify to re-sync
         if (!state.currentPlayingTrack) {

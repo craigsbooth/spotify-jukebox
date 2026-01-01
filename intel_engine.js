@@ -87,7 +87,8 @@ async function analyzeTrack(track) {
         researchTitle: track.name,
         researchArtist: track.artist,
         researchAlbum: track.album || 'Loading...',
-        albumArtwork: track.albumArt,
+        // FIX: Ensure placeholder doesn't 404 if albumArt is missing
+        albumArtwork: track.albumArt || "https://developer.spotify.com/assets/branding-guidelines/icon3@2x.png",
         bpm: '--',
         key: 'N/A',
         publisher: 'Scanning Registry...',

@@ -7,6 +7,9 @@ const spotifyCtrl = require('../spotify_ctrl');
 // 1. THE LOGIN REDIRECT
 router.get('/login', (req, res) => {
     const scopes = [
+        'streaming',
+        'user-read-email',
+        'user-read-private',
         'user-read-playback-state',
         'user-modify-playback-state',
         'user-read-currently-playing',

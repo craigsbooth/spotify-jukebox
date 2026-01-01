@@ -3,22 +3,22 @@
     "id": "287dG5nl9Jw9ySZGTRoYhe",
     "name": "Craigs"
   },
-  "currentTheme": "carousel",
+  "currentTheme": "standard",
   "partyName": "The Sycamores",
   "showLyrics": true,
   "showDebug": false,
   "crossfadeSec": 3,
   "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:1t0cpbl4u8PDW3u29z60x8",
-    "name": "Moving Mountains",
-    "artist": "Skylar Grey",
-    "album": "Natural Causes",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b2732ffab5b5bfbdf1446f793d2c",
-    "duration": 253613,
+    "uri": "spotify:track:4llK75pXNWZz6KAho2Gp16",
+    "name": "She Will Be Loved - Radio Mix",
+    "artist": "Maroon 5",
+    "album": "Songs About Jane: 10th Anniversary Edition",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b27392f2d790c6a97b195f66d51e",
+    "duration": 259453,
     "isFallback": true,
     "votes": 0,
-    "startedAt": 1767204160059
+    "startedAt": 1767293179123
   },
   "guestNames": {
     "guest_d1qjlesy6": "Craig"
@@ -26,29 +26,24 @@
   "latestJoiner": null,
   "isDjMode": false,
   "djStatus": {
-    "message": "Playing: Moving Mountains",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2732ffab5b5bfbdf1446f793d2c",
-    "bpm": 94,
-    "key": "D# major",
+    "message": "Playing: She Will Be Loved - Radio Mix",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b27392f2d790c6a97b195f66d51e",
+    "bpm": 102.1,
+    "key": "N/A",
     "genres": [
-      "Alternative"
+      "Pop"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Moving Mountains",
-    "researchArtist": "Skylar Grey",
-    "researchAlbum": "Natural Causes",
-    "valence": 84,
-    "publisher": "Kid Ina Corner (Skylar Grey)/Shady Records",
-    "isrc": "USUM71601013",
-    "releaseDate": "2016-09-23",
+    "researchTitle": "She Will Be Loved",
+    "researchArtist": "Maroon 5",
+    "researchAlbum": "Songs About Jane",
+    "valence": 0,
+    "publisher": "Interscope Records*",
+    "isrc": "USJAY0300082",
+    "releaseDate": "2007-06-21",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2025-12-31T18:02:44.305Z",
-  "playedHistory": [
-    "spotify:track:3KZcrZ36LW9RnChK1iIkth",
-    "spotify:track:0ipgwTDtFYgMrO6N0IdLUk",
-    "spotify:track:5vefQfYc9Oxn8VHfgUCi1q",
-    "spotify:track:1t0cpbl4u8PDW3u29z60x8"
-  ]
+  "lastSavedAt": "2026-01-01T18:46:47.000Z",
+  "playedHistory": []
 }

@@ -52,7 +52,19 @@ const handleCallback = async (req, res) => {
     }
 };
 
-// 3. REGISTER BOTH PATHS (Catch any Nginx/Express prefixing differences)
+/**
+ * 3. TOKEN ACCESSOR (FIX: Resolves 404 on /token)
+ * Provides the current access token to the frontend.
+ */
+const getToken = (req, res) => {
+    const token = spotifyApi.getAccessToken();
+    res.json({ access_token: token || null });
+};
+
+router.get('/token', getToken);
+router.get('/api/token', getToken); // Alias for modular compatibility
+
+// 4. REGISTER CALLBACK PATHS (Catch any Nginx/Express prefixing differences)
 router.get('/callback', handleCallback);
 router.get('/api/callback', handleCallback);
 

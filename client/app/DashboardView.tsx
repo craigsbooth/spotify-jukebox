@@ -30,8 +30,6 @@ const LogisticsPanel = ({ state, handlers }: DashboardProps) => (
                 ))}
             </div>
         </div>
-        
-        {/* Fallback Pool moved to Column 3 (Configuration) */}
     </section>
 );
 
@@ -45,12 +43,16 @@ const CommandDeck = ({ state, handlers }: DashboardProps) => {
             <div style={styles.card}>
                 <span style={styles.label}>Playback Console</span>
                 <div style={{ background: '#000', borderRadius: '20px', padding: '20px', marginBottom: '25px', border: '1px solid #D4AF3722' }}>
-                    <title>Playback Control</title>
-                    <SpotifyPlayer token={state.token} uris={state.currentTrack ? [state.currentTrack] : []} play={true} callback={handlers.onPlayerCallback} styles={{ activeColor: '#D4AF37', bgColor: '#000', color: '#fff' }} />
+                    <SpotifyPlayer 
+                        token={state.token} 
+                        uris={state.currentTrack ? [state.currentTrack] : []} 
+                        play={true} 
+                        callback={handlers.onPlayerCallback} 
+                        styles={{ activeColor: '#D4AF37', bgColor: '#000', color: '#fff' }} 
+                    />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
                     <button style={styles.btn(true)} onClick={handlers.skipTrack}>Skip Track ⏩</button>
-                    {/* Projector Button moved to Column 3 (Configuration) */}
                 </div>
             </div>
 
@@ -66,7 +68,6 @@ const CommandDeck = ({ state, handlers }: DashboardProps) => {
                     </div>
                 </div>
 
-                {/* CONDITIONAL RENDER: INTELLIGENCE SECTION (Only when DJ is Active) */}
                 {state.isDjMode && (
                     <div style={{ marginTop: '25px', borderTop: '1px solid #D4AF3722', paddingTop: '25px' }}>
                         <div style={styles.intelHeader}>
@@ -121,7 +122,6 @@ const CommandDeck = ({ state, handlers }: DashboardProps) => {
 const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            {/* MOVED: STATION CONFIGURATION */}
             <div style={styles.configCard}>
                 <span style={styles.label}>STATION CONFIGURATION</span>
                 
@@ -138,7 +138,6 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                             </button> 
                         ))}
                     </div>
-                    {/* MOVED: PROJECTOR BUTTON */}
                     <button 
                         style={{ ...styles.outlineBtn, width: '100%', height: '35px', fontSize: '0.7rem' }} 
                         onClick={() => window.open('/projector', '_blank')}
@@ -155,6 +154,7 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                                 {state.showLyrics ? 'VISIBLE' : 'HIDDEN'}
                             </span>
                         </div>
+                        {/* THE FIX: Ensuring the handler is explicitly passed the current state to avoid backend theme validation errors */}
                         <button 
                             style={{ ...styles.btn(state.showLyrics), width: '100%', height: '35px', fontSize: '0.7rem' }} 
                             onClick={handlers.toggleLyrics}
@@ -181,7 +181,6 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                 </div>
             </div>
 
-            {/* MOVED: FALLBACK POOL SETTINGS */}
             <div style={styles.card}>
                 <span style={styles.label}>FALLBACK POOL: {state.fallbackName}</span>
                 <form onSubmit={handlers.searchPlaylists} style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>

@@ -35,18 +35,32 @@ router.get('/queue', (req, res) => {
 
 /**
  * Handle Guest Requests and Voting
+ * UPDATED: Integrated Token Economy
  * Mounted at: POST /api/queue
  */
 router.post('/queue', (req, res) => {
     const { uri, name, artist, albumArt, album, guestId } = req.body;
     if (!guestId) return res.status(400).json({ error: "No Guest ID" });
     
-    // Delegation to state manager to ensure saveSettings() is called
+    // --- TOKEN GATEKEEPER ---
+    // If tokens are enabled, this will check balance, deduct 1, or return an error with countdown.
+    const tokenCheck = sm.spendToken(guestId);
+    if (!tokenCheck.success) {
+        return res.status(403).json(tokenCheck); 
+    }
+
     const existingIndex = state.partyQueue.findIndex(t => t.uri === uri);
     
     if (existingIndex !== -1) {
         const track = state.partyQueue[existingIndex];
-        if (track.votedBy?.includes(guestId)) return res.json({ success: false, message: "Already voted!" });
+        
+        // If already voted, refund the token (since we spent it at the start of the route)
+        if (track.votedBy?.includes(guestId)) {
+            if (state.tokensEnabled && state.tokenRegistry[guestId]) {
+                state.tokenRegistry[guestId].balance += 1;
+            }
+            return res.json({ success: false, message: "Already voted!" });
+        }
         
         track.votes += 1;
         track.votedBy.push(guestId);
@@ -54,7 +68,11 @@ router.post('/queue', (req, res) => {
         
         state.partyQueue.sort((a, b) => b.votes - a.votes);
         sm.saveSettings();
-        return res.json({ success: true, message: "Upvoted!" });
+        return res.json({ 
+            success: true, 
+            message: "Upvoted!", 
+            tokens: tokenCheck.balance 
+        });
     } else {
         // SANITIZATION UPDATE: Sanitize the track before pushing to the queue
         const sanitized = sm.sanitizeTrack({ uri, name, artist, albumArt, album });
@@ -68,7 +86,11 @@ router.post('/queue', (req, res) => {
         });
         state.partyQueue.sort((a, b) => b.votes - a.votes);
         sm.saveSettings();
-        return res.json({ success: true, message: "Added to Queue!" });
+        return res.json({ 
+            success: true, 
+            message: "Added to Queue!", 
+            tokens: tokenCheck.balance 
+        });
     }
 });
 
@@ -100,6 +122,7 @@ router.post('/pop', async (req, res) => {
         }
 
         // --- EXECUTION LINK ---
+        // Added the play command to physically start the music
         await spotifyCtrl.playTrack(nextTrack.uri);
 
         // --- SANITIZATION FIX ---
@@ -156,6 +179,7 @@ router.get('/queue/current', async (req, res) => {
         }
         res.json(state.currentPlayingTrack);
     } catch (err) {
+        // Fallback to current state if API call fails
         res.json(state.currentPlayingTrack || null);
     }
 });

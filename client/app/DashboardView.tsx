@@ -14,7 +14,6 @@ const LogisticsPanel = ({ state, handlers }: DashboardProps) => (
                 {state.queue.map((t: any, i: number) => (
                     <div key={i} style={styles.qItem(!!t.isFallback)}>
                         <div style={{ flex: 1, overflow: 'hidden' }}>
-                            {/* SANITIZATION UPDATE: Use displayName and displayArtist with fallbacks */}
                             <div style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                                 {t.displayName ?? t.name}
                             </div>
@@ -125,6 +124,24 @@ const CommandDeck = ({ state, handlers }: DashboardProps) => {
 
 // --- SUB-COMPONENT: STATION CONFIG & FALLBACK (COLUMN 3) ---
 const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
+    // Local state to handle economy adjustments before saving
+    const [localTokens, setLocalTokens] = React.useState({
+        tokensEnabled: state.tokensEnabled,
+        tokensInitial: state.tokensInitial,
+        tokensPerHour: state.tokensPerHour,
+        tokensMax: state.tokensMax
+    });
+
+    // Update local state if props change (syncing)
+    React.useEffect(() => {
+        setLocalTokens({
+            tokensEnabled: state.tokensEnabled,
+            tokensInitial: state.tokensInitial,
+            tokensPerHour: state.tokensPerHour,
+            tokensMax: state.tokensMax
+        });
+    }, [state.tokensEnabled, state.tokensInitial, state.tokensPerHour, state.tokensMax]);
+
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
             <div style={styles.configCard}>
@@ -178,9 +195,71 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                             <label style={{ fontSize: '0.6rem', color: '#888', fontWeight: 900 }}>AUTO-CROSSFADE</label>
-                            <span style={{ fontSize: '0.6rem', color: '#D4AF37', fontWeight: 900 }}>{state.crossfadeSec}s</span>
+                            <span style={{ fontSize: '0.6rem', color: '#D4AF37', fontWeight: 950 }}>{state.crossfadeSec}s</span>
                         </div>
                         <input type="range" min="2" max="15" style={{ width: '100%' }} value={state.crossfadeSec} onChange={e => handlers.updateMixer(parseInt(e.target.value))} />
+                    </div>
+                </div>
+            </div>
+
+            {/* FEATURE: TOKEN ECONOMY CONTROL PANEL */}
+            <div style={styles.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                    <span style={styles.label}>TOKEN ECONOMY</span>
+                    <span style={{ fontSize: '0.6rem', color: localTokens.tokensEnabled ? '#2ecc71' : '#444', fontWeight: 900 }}>
+                        {localTokens.tokensEnabled ? '● SYSTEM ACTIVE' : '○ DISABLED'}
+                    </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button 
+                        style={{ ...styles.btn(localTokens.tokensEnabled), height: '35px', fontSize: '0.7rem', width: '100%' }}
+                        onClick={() => handlers.saveTokenSettings({ ...localTokens, tokensEnabled: !localTokens.tokensEnabled })}
+                    >
+                        {localTokens.tokensEnabled ? 'SHUT DOWN ECONOMY' : 'ACTIVATE GUEST TOKENS'}
+                    </button>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', opacity: localTokens.tokensEnabled ? 1 : 0.4 }}>
+                        <div>
+                            <label style={{ fontSize: '0.55rem', color: '#888', fontWeight: 900 }}>INITIAL TOKENS</label>
+                            <input 
+                                type="number" 
+                                style={{ ...styles.input, height: '30px', fontSize: '0.8rem' }} 
+                                value={localTokens.tokensInitial} 
+                                onChange={e => setLocalTokens({...localTokens, tokensInitial: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '0.55rem', color: '#888', fontWeight: 900 }}>MAX ACCUMULATION</label>
+                            <input 
+                                type="number" 
+                                style={{ ...styles.input, height: '30px', fontSize: '0.8rem' }} 
+                                value={localTokens.tokensMax} 
+                                onChange={e => setLocalTokens({...localTokens, tokensMax: parseInt(e.target.value)})} 
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ opacity: localTokens.tokensEnabled ? 1 : 0.4 }}>
+                        <label style={{ fontSize: '0.55rem', color: '#888', fontWeight: 900 }}>ACCRUAL RATE (TOKENS / HOUR)</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input 
+                                type="number" 
+                                style={{ ...styles.input, height: '30px', fontSize: '0.8rem' }} 
+                                value={localTokens.tokensPerHour} 
+                                onChange={e => setLocalTokens({...localTokens, tokensPerHour: parseInt(e.target.value)})} 
+                            />
+                            <button 
+                                style={{ ...styles.btn(true), height: '30px', padding: '0 15px', fontSize: '0.6rem' }} 
+                                onClick={() => handlers.saveTokenSettings(localTokens)}
+                                disabled={!localTokens.tokensEnabled}
+                            >
+                                APPLY
+                            </button>
+                        </div>
+                        <div style={{ fontSize: '0.5rem', color: '#666', marginTop: '4px' }}>
+                            Accrual: 1 token every {Math.floor(60 / (localTokens.tokensPerHour || 1))} minutes.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -195,7 +274,6 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                     {state.playlistResults.map((p: any) => (
                         <div key={p.id} onClick={() => handlers.setFallback(p)} style={styles.playlistItem} className="playlist-item">
                             <img src={p.image} alt="" style={styles.playlistArt} />
-                            {/* SANITIZATION UPDATE: Fallback pattern for playlist names */}
                             <div style={{ fontSize: '0.65rem', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden' }}>
                                 {p.displayName ?? p.name}
                             </div>

@@ -36,13 +36,18 @@ router.get('/theme', (req, res) => {
         theme: state.currentTheme, 
         showLyrics: state.showLyrics,
         crossfadeSec: state.crossfadeSec,
-        youtubeId: state.youtubeId // FEATURE: Expose YouTube ID for Projector Sync
+        youtubeId: state.youtubeId,
+        // FEATURE: Expose global token settings
+        tokensEnabled: state.tokensEnabled,
+        tokensInitial: state.tokensInitial,
+        tokensPerHour: state.tokensPerHour,
+        tokensMax: state.tokensMax
     });
 });
 
 router.post('/theme', (req, res) => {
     // BUG 3 FIX: Pass the entire body to sm.setTheme instead of just req.body.theme
-    // This allows the state manager to see and update showLyrics
+    // This allows the state manager to see and update showLyrics and Token settings
     const result = sm.setTheme(req.body);
     res.json(result);
 });
@@ -77,6 +82,8 @@ router.post('/name', (req, res) => {
 router.post('/join', (req, res) => {
     if (req.body.guestId && req.body.name) {
         sm.registerGuest(req.body.guestId, req.body.name);
+        const tokenInfo = sm.syncGuestTokens(req.body.guestId);
+        return res.json({ success: true, tokens: tokenInfo?.balance || 0 });
     }
     res.json({ success: true });
 });
@@ -147,6 +154,23 @@ router.post('/fallback', async (req, res) => {
 // Frontend calls: https://jukebox.boldron.info/api/current
 router.get('/current', (req, res) => {
     res.json(state.currentPlayingTrack || null);
+});
+
+// --- 9. TOKEN ECONOMY ENDPOINT ---
+// Frontend calls: https://jukebox.boldron.info/api/tokens?guestId=xyz
+router.get('/tokens', (req, res) => {
+    const { guestId } = req.query;
+    if (!guestId) return res.status(400).json({ error: "Missing guestId" });
+    
+    const info = sm.syncGuestTokens(guestId);
+    if (!info) return res.status(404).json({ error: "Guest not found" });
+    
+    res.json({
+        enabled: state.tokensEnabled,
+        balance: info.balance,
+        nextIn: info.nextIn,
+        max: state.tokensMax
+    });
 });
 
 module.exports = router;

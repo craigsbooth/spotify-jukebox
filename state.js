@@ -27,6 +27,13 @@ let state = {
     // Stores the current active video ID for the Projector display
     youtubeId: null,
 
+    // FEATURE: GUEST TOKEN ECONOMY
+    tokensEnabled: false,
+    tokensInitial: 5,
+    tokensPerHour: 6,
+    tokensMax: 10,
+    tokenRegistry: {}, // guestId -> { balance: number, lastAccrual: timestamp }
+
     // INITIALIZED FOR RESEARCH ENGINE (Default Template)
     djStatus: { 
         message: "Digital DJ Idle", 

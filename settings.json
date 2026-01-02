@@ -8,55 +8,354 @@
   "showLyrics": false,
   "showDebug": false,
   "crossfadeSec": 3,
-  "partyQueue": [],
+  "partyQueue": [
+    {
+      "uri": "spotify:track:646J2jOtUe4Jflrmh6JFjN",
+      "name": "Bring Me To Life",
+      "artist": "Evanescence",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273f3302494cdc2c9f2eef99a18",
+      "album": "Fallen",
+      "displayName": "Bring Me To Life",
+      "displayArtist": "Evanescence",
+      "votes": 2,
+      "addedBy": "Guest",
+      "votedBy": [
+        "g-yzr4butkt",
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:2VAlwOewe5c40VHyqozF1V",
+      "name": "Steady, As She Goes",
+      "artist": "The Raconteurs",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b27337e44bf7f7c12c9f1d803984",
+      "album": "Broken Boy Soldiers",
+      "displayName": "Steady, As She Goes",
+      "displayArtist": "The Raconteurs",
+      "votes": 2,
+      "addedBy": "Guest",
+      "votedBy": [
+        "g-yzr4butkt",
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:4w9soAM7IrmYDhSXLp14p6",
+      "name": "Peaches",
+      "artist": "Jack Black",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273c21aa4015cb02b6b8eca09a4",
+      "album": "The Super Mario Bros. Movie (Original Motion Picture Soundtrack)",
+      "displayName": "Peaches",
+      "displayArtist": "Jack Black",
+      "votes": 2,
+      "addedBy": "Guest",
+      "votedBy": [
+        "g-yzr4butkt",
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:0GcWf1Cc4ixN35D3O9VdcP",
+      "name": "Get on Top",
+      "artist": "Red Hot Chili Peppers",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b27394d08ab63e57b0cae74e8595",
+      "album": "Californication (Deluxe Edition)",
+      "displayName": "Get on Top",
+      "displayArtist": "Red Hot Chili Peppers",
+      "votes": 2,
+      "addedBy": "Guest",
+      "votedBy": [
+        "g-yzr4butkt",
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:1mj3t3VY7mm0APmibyG8LT",
+      "name": "Promises - Skrillex & Nero Remix",
+      "artist": "NERO",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273c2763bcf17e305cb689a9cdd",
+      "album": "100% Clubland Hardcore",
+      "displayName": "Promises",
+      "displayArtist": "NERO",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:0Aa0G2l7rZpYUaIxsZ7uov",
+      "name": "Brick By Brick",
+      "artist": "Arctic Monkeys",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273662a3ccb72244f4950375368",
+      "album": "Suck It and See",
+      "displayName": "Brick By Brick",
+      "displayArtist": "Arctic Monkeys",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:6jae8rCDFxbRkMDZF32owU",
+      "name": "Jamming - Live At Music Hall, Boston / 1978",
+      "artist": "Bob Marley & The Wailers",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273d8a7eb5e89390014c149c8c9",
+      "album": "Easy Skanking In Boston '78",
+      "displayName": "Jamming",
+      "displayArtist": "Bob Marley",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:47UFoOuvrkt4khE7c5aap6",
+      "name": "Cradles",
+      "artist": "Sub Urban",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273c6bc82f5cafb58545331ef23",
+      "album": "Cradles",
+      "displayName": "Cradles",
+      "displayArtist": "Sub Urban",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:28schZiul25BFFiPTHbzjC",
+      "name": "Can't Hide",
+      "artist": "Sarah Jarosz",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2730ad214690717b553b2913e73",
+      "album": "Song Up In Her Head",
+      "displayName": "Can't Hide",
+      "displayArtist": "Sarah Jarosz",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:1xhGIelTraV73DmTRbjvS9",
+      "name": "She's Thunderstorms",
+      "artist": "Arctic Monkeys",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273662a3ccb72244f4950375368",
+      "album": "Suck It and See",
+      "displayName": "She's Thunderstorms",
+      "displayArtist": "Arctic Monkeys",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:4GRYjEZJFqpkhsfEFcT9zl",
+      "name": "Praise You",
+      "artist": "GAMPER & DADONI",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273bd108c6e4a950316de5e41d8",
+      "album": "Praise You",
+      "displayName": "Praise You",
+      "displayArtist": "GAMPER",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:6r2V4pFScENYFApssdPcfp",
+      "name": "Fly Me to the Moon",
+      "artist": "Angelina Jordan",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273b19bf51ff460bcaa81d18c9c",
+      "album": "It's Magic",
+      "displayName": "Fly Me to the Moon",
+      "displayArtist": "Angelina Jordan",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:47npAmYQaQDQAeVzxN1JGG",
+      "name": "Cassy O'",
+      "artist": "George Ezra",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273bc2236e12cde94b4724e59b7",
+      "album": "Cassy O' (EP)",
+      "displayName": "Cassy O'",
+      "displayArtist": "George Ezra",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:0di7hMT6o1ogeUN1XDB9Ft",
+      "name": "Israelites",
+      "artist": "Desmond Dekker",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273aca5ea27a0fb4679bcd5d571",
+      "album": "The Israelites",
+      "displayName": "Israelites",
+      "displayArtist": "Desmond Dekker",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:57bgtoPSgt236HzfBOd8kj",
+      "name": "Thunderstruck",
+      "artist": "AC/DC",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2739a9b1cc067e4460da04adce2",
+      "album": "The Razors Edge",
+      "displayName": "Thunderstruck",
+      "displayArtist": "AC/DC",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:2vpkLvyod4DAhOe57yWmmb",
+      "name": "Equinoxe, Pt. 1",
+      "artist": "Jean-Michel Jarre",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2733d70ce0abd4c2e65b4b54f23",
+      "album": "Equinoxe",
+      "displayName": "Equinoxe, Pt. 1",
+      "displayArtist": "Jean-Michel Jarre",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:1gyaQpujNoRXJBdNJSUIZI",
+      "name": "In Love - Robin Schulz Remix",
+      "artist": "David K feat. Yo-C",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2736121d5b105ac544428a902f5",
+      "album": "In Love",
+      "displayName": "In Love",
+      "displayArtist": "David K",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:2p5nnjrfMCL0ux5qW6kMcc",
+      "name": "Amnesia",
+      "artist": "Shiny Goose",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2733b68f7a398777f6b64d27514",
+      "album": "Amnesia",
+      "displayName": "Amnesia",
+      "displayArtist": "Shiny Goose",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:2zYzyRzz6pRmhPzyfMEC8s",
+      "name": "Highway to Hell",
+      "artist": "AC/DC",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b27343058ea096fa35ac33c43587",
+      "album": "Highway to Hell",
+      "displayName": "Highway to Hell",
+      "displayArtist": "AC/DC",
+      "votes": 1,
+      "addedBy": "Craig",
+      "votedBy": [
+        "guest_d1qjlesy6"
+      ],
+      "isFallback": false
+    }
+  ],
   "currentPlayingTrack": {
-    "uri": "spotify:track:0HTTYoAKHZOOybFJH24lbv",
-    "name": "Forget You (feat. Gabry Ponte) [LUM!X VIP MIX]",
-    "artist": "LUM!X",
-    "album": "Forget You (feat. Gabry Ponte) [LUM!X VIP MIX]",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b27308c9e310db833070ae294014",
-    "duration": 169090,
-    "isFallback": true,
-    "votes": 0,
-    "displayName": "Forget You",
-    "displayArtist": "LUM!X",
-    "startedAt": 1767374396143
+    "uri": "spotify:track:67ByPZWH3E3peoesXrY3Nx",
+    "name": "Take It All",
+    "artist": "Adele",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b273ba764098164f221484bcc309",
+    "album": "21",
+    "displayName": "Take It All",
+    "displayArtist": "Adele",
+    "votes": 1,
+    "addedBy": "Guest",
+    "votedBy": [
+      "g-yzr4butkt"
+    ],
+    "isFallback": false,
+    "startedAt": 1767376200062
   },
   "guestNames": {
-    "guest_d1qjlesy6": "Craig"
+    "guest_d1qjlesy6": "Craig",
+    "g-yzr4butkt": "craig"
   },
   "latestJoiner": null,
   "isDjMode": true,
-  "startedAt": 1767374396138,
-  "youtubeId": "8luvKRhDZEs",
+  "startedAt": 1767376200033,
+  "youtubeId": "UHE7qT9f3Ok",
+  "tokensEnabled": true,
+  "tokensInitial": 5,
+  "tokensPerHour": 200,
+  "tokensMax": 10,
+  "tokenRegistry": {
+    "g-yzr4butkt": {
+      "balance": 0,
+      "lastAccrual": 1767376106854
+    },
+    "guest_d1qjlesy6": {
+      "balance": 0,
+      "lastAccrual": 1767376623700
+    }
+  },
   "djStatus": {
-    "message": "Playing: Forget You",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b27308c9e310db833070ae294014",
-    "bpm": 0,
-    "key": "N/A",
+    "message": "Playing: Take It All",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273ba764098164f221484bcc309",
+    "bpm": 137,
+    "key": "C major",
     "genres": [
-      "Dance"
+      "Pop"
     ],
     "year": "1985",
     "isDjMode": true,
-    "researchTitle": "Forget You (with Gabry Ponte)",
-    "researchArtist": "LUM!X",
-    "researchAlbum": "Forget You (with Gabry Ponte)",
-    "valence": 0,
-    "publisher": "Spinnin' Records",
-    "isrc": "ITV952200129",
-    "releaseDate": "2023-02-10",
+    "researchTitle": "Take It All",
+    "researchArtist": "Adele",
+    "researchAlbum": "21",
+    "valence": 52,
+    "publisher": "XL Recordings",
+    "isrc": "GBBKS1000347",
+    "releaseDate": "2011-01-24",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-02T17:20:05.187Z",
-  "playedHistory": [
-    "spotify:track:0j435npcd5sfBrR9ab45sJ",
-    "spotify:track:0tV8pOpiNsKqUys0ilUcXz",
-    "spotify:track:5sPoju3oZHg9Wq5KXxBH3a",
-    "spotify:track:7wnC64YPj2YH2oHYBmCzHt",
-    "spotify:track:23ez4fX7gSUuLNG0dfskgO",
-    "spotify:track:2UIRHeHi72VP5WBMAfkPe5",
-    "spotify:track:5vEzhZ9iwk5XFUHBZuDjfI",
-    "spotify:track:0HTTYoAKHZOOybFJH24lbv"
-  ]
+  "lastSavedAt": "2026-01-02T17:57:06.614Z",
+  "playedHistory": []
 }

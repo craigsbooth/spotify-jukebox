@@ -11,7 +11,7 @@ export default function Home() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [queue, setQueue] = useState<any[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<any | null>(null); // UPDATED: Changed from string to object to support metadata/displayName
+  const [currentTrack, setCurrentTrack] = useState<any | null>(null); 
   const [fallbackName, setFallbackName] = useState('Loading...');
   const [playlistQuery, setPlaylistQuery] = useState('');
   const [playlistResults, setPlaylistResults] = useState<any[]>([]);
@@ -30,6 +30,12 @@ export default function Home() {
     publisher: '--',
     isrc: '--' 
   });
+
+  // FEATURE: Token Economy State
+  const [tokensEnabled, setTokensEnabled] = useState(false);
+  const [tokensInitial, setTokensInitial] = useState(5);
+  const [tokensPerHour, setTokensPerHour] = useState(6);
+  const [tokensMax, setTokensMax] = useState(10);
   
   const isFetchingNext = useRef(false);
   const hasPlayedRef = useRef(false); 
@@ -64,15 +70,23 @@ export default function Home() {
     requestWakeLock();
     const fetchMetadata = () => {
         fetch(`${API_URL}/token`).then(res => res.json()).then(d => setToken(d.access_token));
-        // Properly sync view mode and lyrics status from the unified theme endpoint
+        
+        // Sync Theme & Token settings
         fetch(`${API_URL}/theme`).then(res => res.json()).then(d => { 
             if (isStable('viewMode')) setViewMode(d.theme); 
             if (isStable('lyrics')) setShowLyrics(!!d.showLyrics); 
+            
+            // Sync Token Values
+            if (isStable('tokens')) {
+              setTokensEnabled(!!d.tokensEnabled);
+              setTokensInitial(d.tokensInitial || 5);
+              setTokensPerHour(d.tokensPerHour || 6);
+              setTokensMax(d.tokensMax || 10);
+            }
         });
+
         fetch(`${API_URL}/fallback`).then(res => res.json()).then(d => setFallbackName(d.name));
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => { setPartyName(d.name); setNameInput(d.name); });
-        
-        // UPDATED: fetch current track object to get displayName/displayArtist
         fetch(`${API_URL}/current`).then(res => res.json()).then(t => setCurrentTrack(t || null));
     };
     fetchMetadata();
@@ -110,6 +124,22 @@ export default function Home() {
     searchPlaylists: (e: any) => { e.preventDefault(); fetch(`${API_URL}/search-playlists?q=${playlistQuery}`).then(res=>res.json()).then(setPlaylistResults); },
     onPlayerCallback: (s: any) => { if (!s.isPlaying && hasPlayedRef.current && s.progressMs === 0) handlers.skipTrack(); if (s.isPlaying) hasPlayedRef.current = true; },
     setFallback: (p: any) => { fetch(`${API_URL}/fallback`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(p) }); setFallbackName(p.name); setPlaylistResults([]); },
+    
+    // NEW HANDLER: Save Token Economy Config
+    saveTokenSettings: (settings: any) => {
+      setStability('tokens');
+      setTokensEnabled(settings.tokensEnabled);
+      setTokensInitial(settings.tokensInitial);
+      setTokensPerHour(settings.tokensPerHour);
+      setTokensMax(settings.tokensMax);
+      
+      fetch(`${API_URL}/theme`, { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify(settings) 
+      });
+    },
+
     setPinInput, setPlaylistQuery, setNameInput, setIsLocked
   };
 
@@ -123,5 +153,17 @@ export default function Home() {
     </div>
   );
 
-  return <DashboardView state={{ token, queue, currentTrack: currentTrack?.uri || null, trackData: currentTrack, fallbackName, playlistQuery, playlistResults, viewMode, partyName, nameInput, crossfadeSec, showLyrics, isLocked, isDjMode, isWakeLocked, djStatus, pinInput }} handlers={handlers} />;
+  return (
+    <DashboardView 
+      state={{ 
+        token, queue, currentTrack: currentTrack?.uri || null, trackData: currentTrack, 
+        fallbackName, playlistQuery, playlistResults, viewMode, partyName, 
+        nameInput, crossfadeSec, showLyrics, isLocked, isDjMode, 
+        isWakeLocked, djStatus, pinInput,
+        // Passing Token State
+        tokensEnabled, tokensInitial, tokensPerHour, tokensMax
+      }} 
+      handlers={handlers} 
+    />
+  );
 }

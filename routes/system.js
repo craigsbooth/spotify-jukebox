@@ -35,15 +35,16 @@ router.get('/theme', (req, res) => {
     res.json({ 
         theme: state.currentTheme, 
         showLyrics: state.showLyrics,
-        crossfadeSec: state.crossfadeSec 
+        crossfadeSec: state.crossfadeSec,
+        youtubeId: state.youtubeId // FEATURE: Expose YouTube ID for Projector Sync
     });
 });
 
 router.post('/theme', (req, res) => {
-    if (req.body.crossfadeSec !== undefined) {
-        return res.json(sm.setCrossfade(req.body.crossfadeSec));
-    }
-    res.json(sm.setTheme(req.body.theme));
+    // BUG 3 FIX: Pass the entire body to sm.setTheme instead of just req.body.theme
+    // This allows the state manager to see and update showLyrics
+    const result = sm.setTheme(req.body);
+    res.json(result);
 });
 
 // --- 4. LYRICS DATA PROXY ---
@@ -94,8 +95,10 @@ router.get('/reaction-event', (req, res) => res.json(state.reactionEvent));
 // Frontend calls: https://jukebox.boldron.info/api/search
 router.get('/search', async (req, res) => {
     try {
-        const results = await spotifyCtrl.searchTracks(req.query.q); 
-        res.json(results);
+        const rawResults = await spotifyCtrl.searchTracks(req.query.q); 
+        // SANITIZATION UPDATE: Ensure search results are cleaned before hitting the UI
+        const sanitizedResults = rawResults.map(t => sm.sanitizeTrack(t));
+        res.json(sanitizedResults);
     } catch (e) {
         res.status(500).json({ error: "Search failed" });
     }
@@ -105,9 +108,17 @@ router.get('/search', async (req, res) => {
 router.get('/search-playlists', async (req, res) => {
     try {
         const data = await spotifyApi.searchPlaylists(req.query.q);
-        res.json(data.body.playlists.items.filter(p => p).map(p => ({ 
-            id: p.id, name: p.name, image: p.images[0]?.url, total: p.tracks.total 
-        })));
+        res.json(data.body.playlists.items.filter(p => p).map(p => {
+            // SANITIZATION UPDATE: Clean playlist names for the fallback selector
+            const sanitized = sm.sanitizeTrack({ name: p.name, artist: '' });
+            return { 
+                id: p.id, 
+                name: p.name, 
+                displayName: sanitized.displayName,
+                image: p.images[0]?.url, 
+                total: p.tracks.total 
+            };
+        }));
     } catch (e) { 
         res.status(500).json({ error: "Playlist search failed" }); 
     }

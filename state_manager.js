@@ -34,7 +34,10 @@ const stateManager = {
 
     // 3. QUEUE LOGIC
     processQueueRequest: (trackData, guestId) => {
-        const { uri, name, artist, albumArt, album } = trackData;
+        // We sanitize the track data here to create clean display names
+        const sanitized = stateManager.sanitizeTrack(trackData);
+        const { uri, name, artist, albumArt, album, displayName, displayArtist } = sanitized;
+        
         const gid = guestId || 'anonymous';
         const guestName = state.guestNames[gid] || "Guest";
 
@@ -51,7 +54,8 @@ const stateManager = {
             }
         } else {
             state.partyQueue.push({ 
-                uri, name, artist, albumArt, album, 
+                uri, name, artist, albumArt, album,
+                displayName, displayArtist, // Store the sanitized versions
                 votes: 1, 
                 addedBy: guestName, 
                 votedBy: [gid], 
@@ -120,14 +124,38 @@ const stateManager = {
         }
     },
 
-    // 8. THEME & LYRICS
-    setTheme: (newTheme) => {
+    // 8. THEME & SETTINGS (BUG 3 FIX)
+    // Updated to accept an object so showLyrics can be updated independently of theme
+    setTheme: (config) => {
         const validThemes = ['standard', 'monitor', 'carousel'];
-        if (validThemes.includes(newTheme)) {
-            state.currentTheme = newTheme;
-            stateManager.saveSettings();
-            return { success: true, theme: state.currentTheme };
+        let updated = false;
+
+        // If it's a string (old format), handle it
+        if (typeof config === 'string' && validThemes.includes(config)) {
+            state.currentTheme = config;
+            updated = true;
+        } 
+        // If it's the new object format, update specific fields
+        else if (typeof config === 'object') {
+            if (config.theme && validThemes.includes(config.theme)) {
+                state.currentTheme = config.theme;
+                updated = true;
+            }
+            if (config.showLyrics !== undefined) {
+                state.showLyrics = !!config.showLyrics;
+                updated = true;
+            }
         }
+
+        if (updated) {
+            stateManager.saveSettings();
+            return { 
+                success: true, 
+                theme: state.currentTheme, 
+                showLyrics: state.showLyrics 
+            };
+        }
+        
         return { success: false, message: "Invalid Theme" };
     },
 
@@ -136,6 +164,68 @@ const stateManager = {
         if (state.playedHistory instanceof Set) return state.playedHistory.has(uri);
         if (Array.isArray(state.playedHistory)) return state.playedHistory.includes(uri);
         return false;
+    },
+
+    /**
+     * 10. SANITIZATION ENGINE (EXPANDED & HARDENED)
+     * Hardened RegEx to strip clutter from Spotify titles.
+     */
+    sanitizeTrack: (track) => {
+        if (!track || !track.name) return track;
+
+        // Expanded list of keywords to catch Remixes, Live versions, Edits, and Editions
+        const junkPatterns = [
+            /remaster(?:ed)?/gi,
+            /deluxe/gi,
+            /anniversary/gi,
+            /edition/gi,
+            /expanded/gi,
+            /version/gi,
+            /mix/gi,
+            /remix/gi,
+            /radio edit/gi,
+            /club/gi,
+            /extended/gi,
+            /original/gi,
+            /live(?: at| from)?/gi,
+            /feat(?:\.|uring)?/gi,
+            /ft(?:\.)?/gi,
+            /with/gi,
+            /vip/gi,
+            /re-recorded/gi,
+            /mono/gi,
+            /stereo/gi,
+            /acoustic/gi,
+            /instrumental/gi,
+            /bonus/gi,
+            /single/gi,
+            /unplugged/gi,
+            /vault/gi
+        ];
+
+        // Combine into a master regex check
+        const junkRegex = new RegExp(junkPatterns.map(p => p.source).join('|'), 'i');
+
+        let cleanName = track.name
+            // 1. Remove everything in parentheses if it contains junk keywords
+            .replace(/\s*\([^)]*?\)/gi, (match) => junkRegex.test(match) ? '' : match)
+            // 2. Remove everything in brackets if it contains junk keywords
+            .replace(/\s*\[[^\]]*?\]/gi, (match) => junkRegex.test(match) ? '' : match)
+            // 3. Remove everything after a dash if it contains junk keywords
+            .replace(/\s*[-–—].*$/gi, (match) => junkRegex.test(match) ? '' : match)
+            .trim();
+
+        // Safety: If we stripped too much and the string is empty, use the original
+        if (!cleanName || cleanName.length < 2) cleanName = track.name;
+
+        // Clean Artist Name: Take the first artist before any comma or "feat" variants
+        let cleanArtist = track.artist ? track.artist.split(/[,]|feat\.|ft\.|featuring|&|and/i)[0].trim() : track.artist;
+
+        return {
+            ...track,
+            displayName: cleanName,
+            displayArtist: cleanArtist
+        };
     }
 };
 

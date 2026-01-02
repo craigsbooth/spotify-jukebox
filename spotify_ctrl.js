@@ -14,13 +14,36 @@ const TOKEN_FILE = path.join(__dirname, 'tokens.json');
  */
 async function handleExpiredToken() {
     console.log("🔄 Token System: Access token expired. Attempting silent refresh...");
-    const data = await spotifyApi.refreshAccessToken();
-    const newAccess = data.body['access_token'];
-    spotifyApi.setAccessToken(newAccess);
-    // Use the existing saveTokens logic to persist the new token
-    await saveTokens(newAccess, spotifyApi.getRefreshToken());
-    return newAccess;
+    try {
+        const data = await spotifyApi.refreshAccessToken();
+        const newAccess = data.body['access_token'];
+        spotifyApi.setAccessToken(newAccess);
+        // Use the existing saveTokens logic to persist the new token
+        await saveTokens(newAccess, spotifyApi.getRefreshToken());
+        console.log("✅ Token System: Proactive refresh successful.");
+        return newAccess;
+    } catch (err) {
+        console.error("❌ Token System: Automatic refresh failed:", err.message);
+        throw err;
+    }
 }
+
+/**
+ * BUG 2 FIX: Proactive Refresh Heartbeat
+ * Triggers a token refresh every 30 minutes to prevent expiry during idle periods.
+ */
+setInterval(async () => {
+    if (spotifyApi.getRefreshToken()) {
+        await handleExpiredToken();
+    }
+}, 30 * 60 * 1000);
+
+// Immediate recovery on boot (after 5s delay to allow system initialization)
+setTimeout(() => {
+    if (spotifyApi.getRefreshToken()) {
+        handleExpiredToken().catch(() => console.log("ℹ️ Startup refresh skipped - no valid refresh token yet."));
+    }
+}, 5000);
 
 /**
  * 1. TOKEN PERSISTENCE (Hardened with Auto-Recovery)
@@ -172,13 +195,17 @@ async function getNextTrack() {
 
 /**
  * 4. ACTIVE PLAYBACK EXECUTION
- * This is the function that physically talks to your speakers/LAPTOP.
+ * FIXED: Captures startedAt timestamp for Projector progress bars.
  */
 async function playTrack(uri) {
     if (!uri) return;
     try {
         // Step 1: Attempt playback on whatever Spotify thinks is active
         await spotifyApi.play({ uris: [uri] });
+        
+        // --- BUG 1 FIX: Anchor the start time for the progress bar ---
+        state.startedAt = Date.now();
+        
         console.log(`🎵 Spotify: Now Playing URI: ${uri}`);
         return true;
     } catch (err) {
@@ -202,6 +229,10 @@ async function playTrack(uri) {
             if (anyActive) {
                 console.log(`📡 Controller: Forcing playback to: ${anyActive.name}`);
                 await spotifyApi.play({ uris: [uri], device_id: anyActive.id });
+                
+                // --- BUG 1 FIX: Anchor the start time for the progress bar ---
+                state.startedAt = Date.now();
+                
                 return true;
             }
         }
@@ -259,4 +290,4 @@ async function searchTracks(query) {
     }
 }
 
-module.exports = { saveTokens, refreshShuffleBag, getNextTrack, searchTracks, playTrack, transferPlayback };
+module.exports = { saveTokens, refreshShuffleBag, getNextTrack, searchTracks, playTrack, transferPlayback, handleExpiredToken };

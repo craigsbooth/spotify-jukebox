@@ -11,7 +11,7 @@ export default function Home() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [queue, setQueue] = useState<any[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<string | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<any | null>(null); // UPDATED: Changed from string to object to support metadata/displayName
   const [fallbackName, setFallbackName] = useState('Loading...');
   const [playlistQuery, setPlaylistQuery] = useState('');
   const [playlistResults, setPlaylistResults] = useState<any[]>([]);
@@ -71,7 +71,9 @@ export default function Home() {
         });
         fetch(`${API_URL}/fallback`).then(res => res.json()).then(d => setFallbackName(d.name));
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => { setPartyName(d.name); setNameInput(d.name); });
-        fetch(`${API_URL}/current`).then(res => res.json()).then(t => setCurrentTrack(t?.uri || null));
+        
+        // UPDATED: fetch current track object to get displayName/displayArtist
+        fetch(`${API_URL}/current`).then(res => res.json()).then(t => setCurrentTrack(t || null));
     };
     fetchMetadata();
     const interval = setInterval(() => {
@@ -88,7 +90,7 @@ export default function Home() {
   const handlers = {
     handlePinSubmit: (e: any) => { e.preventDefault(); if (pinInput === HOST_PIN) { setIsAuthorized(true); localStorage.setItem('jukebox_host_auth', 'true'); requestWakeLock(); } },
     handleUnlock: (e: any) => { e.preventDefault(); if (pinInput === HOST_PIN) { setIsLocked(false); setPinInput(''); requestWakeLock(); } },
-    skipTrack: async () => { if (isFetchingNext.current) return; isFetchingNext.current = true; try { const res = await fetch(`${API_URL}/pop`, { method: 'POST' }); const track = await res.json(); if (track?.uri) setCurrentTrack(track.uri); } finally { setTimeout(() => isFetchingNext.current = false, 2000); } },
+    skipTrack: async () => { if (isFetchingNext.current) return; isFetchingNext.current = true; try { const res = await fetch(`${API_URL}/pop`, { method: 'POST' }); const track = await res.json(); if (track?.uri) setCurrentTrack(track); } finally { setTimeout(() => isFetchingNext.current = false, 2000); } },
     reorder: async (idx: number, dir: string) => { lastActionRef.current = Date.now(); const newIdx = dir === 'up' ? idx - 1 : idx + 1; if (newIdx < 0 || newIdx >= queue.length) return; const newQ = [...queue]; const t = newQ[idx]; newQ[idx] = newQ[newIdx]; newQ[newIdx] = t; setQueue(newQ); await fetch(`${API_URL}/reorder`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ queue: newQ }) }); },
     removeItem: async (uri: string) => { lastActionRef.current = Date.now(); setQueue(prev => prev.filter(t => t.uri !== uri)); await fetch(`${API_URL}/remove`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ uri }) }); },
     toggleDJ: () => { const nv = !isDjMode; setIsDjMode(nv); setStability('djMode'); fetch(`${API_URL}/dj-mode`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ enabled: nv }) }); },
@@ -97,7 +99,6 @@ export default function Home() {
         const nv = !showLyrics; 
         setShowLyrics(nv); 
         setStability('lyrics'); 
-        // Logic Update: Hits the unified /theme endpoint instead of the old /lyrics-status
         fetch(`${API_URL}/theme`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
@@ -122,5 +123,5 @@ export default function Home() {
     </div>
   );
 
-  return <DashboardView state={{ token, queue, currentTrack, fallbackName, playlistQuery, playlistResults, viewMode, partyName, nameInput, crossfadeSec, showLyrics, isLocked, isDjMode, isWakeLocked, djStatus, pinInput }} handlers={handlers} />;
+  return <DashboardView state={{ token, queue, currentTrack: currentTrack?.uri || null, trackData: currentTrack, fallbackName, playlistQuery, playlistResults, viewMode, partyName, nameInput, crossfadeSec, showLyrics, isLocked, isDjMode, isWakeLocked, djStatus, pinInput }} handlers={handlers} />;
 }

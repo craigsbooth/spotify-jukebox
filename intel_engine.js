@@ -1,4 +1,4 @@
-// intel_engine.js - Deep Research via Deezer (ISRC) & MetaBrainz
+// intel_engine.js - Deep Research via Deezer (ISRC), MetaBrainz & YouTube
 const state = require('./state');
 const sm = require('./state_manager'); // Added for immediate saving
 
@@ -8,6 +8,35 @@ function cleanTitleForSearch(title) {
     if (!title) return "";
     return title.split(' - ')[0].split(' (')[0].split(' [')[0]
         .replace(/remastered|version|radio edit|live/gi, '').trim();
+}
+
+/**
+ * YOUTUBE SEARCH ENGINE
+ * Searches for the official music video and returns the Video ID
+ */
+async function fetchYouTubeId(artist, title) {
+    try {
+        const query = encodeURIComponent(`${title} ${artist} official music video`);
+        // Using a public search endpoint for YouTube
+        const url = `https://www.youtube.com/results?search_query=${query}`;
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+        });
+        const html = await response.text();
+        
+        // Regex to find the first video ID in the YouTube search result page
+        const regex = /"videoId":"([^"]+)"/;
+        const match = html.match(regex);
+        
+        if (match && match[1]) {
+            console.log(`🎬 [YOUTUBE] Found Video ID: ${match[1]} for ${title}`);
+            return match[1];
+        }
+        return null;
+    } catch (e) {
+        console.error("❌ YouTube Search Error:", e.message);
+        return null;
+    }
 }
 
 /**
@@ -79,15 +108,17 @@ async function fetchDeepMetadata(artist, title) {
 async function analyzeTrack(track) {
     if (!track || !track.uri) return false;
 
+    // Use sanitized names for better search accuracy
+    const searchName = track.displayName || track.name;
+    const searchArtist = track.displayArtist || track.artist;
+
     // --- STEP 1: INSTANT UI UPDATE ---
-    // Wipe old technical data immediately so the Host knows a new scan has started.
     state.djStatus = {
         ...state.djStatus,
-        message: `Researching: ${track.name}`,
-        researchTitle: track.name,
-        researchArtist: track.artist,
+        message: `Researching: ${searchName}`,
+        researchTitle: searchName,
+        researchArtist: searchArtist,
         researchAlbum: track.album || 'Loading...',
-        // FIX: Ensure placeholder doesn't 404 if albumArt is missing
         albumArtwork: track.albumArt || "https://developer.spotify.com/assets/branding-guidelines/icon3@2x.png",
         bpm: '--',
         key: 'N/A',
@@ -97,21 +128,28 @@ async function analyzeTrack(track) {
         valence: 0
     };
     
-    // Broadcast the "Scanning" state to the dashboard immediately
+    // Reset YouTube ID for the new track
+    state.youtubeId = null;
     sm.saveSettings(); 
 
     try {
-        console.log(`⏳ [INTEL] Lazy Loading Research for "${track.name}" in 3s...`);
-        await sleep(3000);
-
-        const research = await fetchDeepMetadata(track.artist, track.name);
+        // Run YouTube search and Technical metadata research in parallel for speed
+        console.log(`⏳ [INTEL] Launching Parallel Research for "${searchName}"...`);
         
+        const [ytId, research] = await Promise.all([
+            fetchYouTubeId(searchArtist, searchName),
+            // We still keep a small delay for Deezer/MB to respect rate limits if needed, 
+            // but YouTube starts immediately
+            (async () => { await sleep(2000); return fetchDeepMetadata(searchArtist, searchName); })()
+        ]);
+
         // --- STEP 2: FINAL DATA SYNC ---
+        state.youtubeId = ytId;
         state.djStatus = { 
             ...state.djStatus,
-            message: `Playing: ${track.name}`, 
-            researchTitle: research?.title || track.name,
-            researchArtist: research?.artist || track.artist,
+            message: `Playing: ${searchName}`, 
+            researchTitle: research?.title || searchName,
+            researchArtist: research?.artist || searchArtist,
             researchAlbum: research?.album || track.album || '--',
             bpm: research?.bpm ?? '--', 
             key: research?.key || 'N/A',
@@ -122,22 +160,18 @@ async function analyzeTrack(track) {
             releaseDate: research?.releaseDate || '--'
         };
 
-        // Save the finished research to disk
+        // Save the finished research and YouTube ID to disk/state
         sm.saveSettings();
 
         // --- THE FULL VERBOSE REPORT ---
         console.log("\n=============================================");
-        console.log("    TRACK INTELLIGENCE REPORT (2025)");
+        console.log("    TRACK INTELLIGENCE REPORT (2026)");
         console.log("=============================================");
         console.log(`Title       : ${state.djStatus.researchTitle}`);
         console.log(`Artist      : ${state.djStatus.researchArtist}`);
-        console.log(`Album       : ${state.djStatus.researchAlbum}`);
-        console.log(`Publisher   : ${state.djStatus.publisher}`);
+        console.log(`YouTube ID  : ${state.youtubeId || 'Not Found'}`);
         console.log(`BPM         : ${state.djStatus.bpm}`);
         console.log(`MusicalKey  : ${state.djStatus.key}`);
-        console.log(`Mood        : ${state.djStatus.valence}%`);
-        console.log(`ISRC        : ${state.djStatus.isrc}`);
-        console.log(`ReleaseDate : ${state.djStatus.releaseDate}`);
         console.log(`Genres      : ${state.djStatus.genres.join(', ') || 'N/A'}`);
         console.log("=============================================\n");
 

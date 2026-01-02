@@ -14,8 +14,13 @@ const LogisticsPanel = ({ state, handlers }: DashboardProps) => (
                 {state.queue.map((t: any, i: number) => (
                     <div key={i} style={styles.qItem(!!t.isFallback)}>
                         <div style={{ flex: 1, overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.name}</div>
-                            <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>{t.artist}</div>
+                            {/* SANITIZATION UPDATE: Use displayName and displayArtist with fallbacks */}
+                            <div style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                {t.displayName ?? t.name}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>
+                                {t.displayArtist ?? t.artist}
+                            </div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             {!t.isFallback && (
@@ -154,7 +159,6 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                                 {state.showLyrics ? 'VISIBLE' : 'HIDDEN'}
                             </span>
                         </div>
-                        {/* THE FIX: Ensuring the handler is explicitly passed the current state to avoid backend theme validation errors */}
                         <button 
                             style={{ ...styles.btn(state.showLyrics), width: '100%', height: '35px', fontSize: '0.7rem' }} 
                             onClick={handlers.toggleLyrics}
@@ -191,7 +195,10 @@ const IntelligencePanel = ({ state, handlers }: DashboardProps) => {
                     {state.playlistResults.map((p: any) => (
                         <div key={p.id} onClick={() => handlers.setFallback(p)} style={styles.playlistItem} className="playlist-item">
                             <img src={p.image} alt="" style={styles.playlistArt} />
-                            <div style={{ fontSize: '0.65rem', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden' }}>{p.name}</div>
+                            {/* SANITIZATION UPDATE: Fallback pattern for playlist names */}
+                            <div style={{ fontSize: '0.65rem', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                {p.displayName ?? p.name}
+                            </div>
                         </div>
                     ))}
                 </div>

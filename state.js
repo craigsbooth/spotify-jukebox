@@ -20,6 +20,13 @@ let state = {
     reactionEvent: { id: 0, emoji: null }, 
     isDjMode: false,
     
+    // BUG 1 FIX: Added startedAt to track playback timing across the system
+    startedAt: null,
+
+    // FEATURE: YouTube Integration for Monitor View
+    // Stores the current active video ID for the Projector display
+    youtubeId: null,
+
     // INITIALIZED FOR RESEARCH ENGINE (Default Template)
     djStatus: { 
         message: "Digital DJ Idle", 

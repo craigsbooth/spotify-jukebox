@@ -56,8 +56,11 @@ router.post('/queue', (req, res) => {
         sm.saveSettings();
         return res.json({ success: true, message: "Upvoted!" });
     } else {
+        // SANITIZATION UPDATE: Sanitize the track before pushing to the queue
+        const sanitized = sm.sanitizeTrack({ uri, name, artist, albumArt, album });
+        
         state.partyQueue.push({ 
-            uri, name, artist, albumArt, album, 
+            ...sanitized,
             votes: 1, 
             addedBy: state.guestNames[guestId] || "Guest", 
             votedBy: [guestId], 
@@ -97,15 +100,18 @@ router.post('/pop', async (req, res) => {
         }
 
         // --- EXECUTION LINK ---
-        // Added the play command to physically start the music
         await spotifyCtrl.playTrack(nextTrack.uri);
 
-        // --- CRITICAL FIX ---
-        // We REMOVED 'await'. The research now happens in the background.
-        // The music starts IMMEDIATELY.
-        intel.analyzeTrack(nextTrack).catch(err => console.error("Intel background error:", err));
+        // --- SANITIZATION FIX ---
+        // We sanitize the track right here so that currentPlayingTrack is always clean
+        // This handles tracks coming from the Shuffle Bag (like Old Thing Back)
+        const sanitized = sm.sanitizeTrack(nextTrack);
 
-        state.currentPlayingTrack = { ...nextTrack, startedAt: Date.now() };
+        // Analysis happens in background with sanitized data
+        intel.analyzeTrack(sanitized).catch(err => console.error("Intel background error:", err));
+
+        // Anchor the start time and the clean metadata
+        state.currentPlayingTrack = { ...sanitized, startedAt: Date.now() };
         res.json(state.currentPlayingTrack);
     } else {
         await spotifyCtrl.refreshShuffleBag();
@@ -134,22 +140,22 @@ router.post('/reorder', (req, res) => {
  */
 router.get('/queue/current', async (req, res) => {
     try {
-        // If state is empty, perform a live fetch from Spotify to re-sync
         if (!state.currentPlayingTrack) {
             const data = await spotifyApi.getMyCurrentPlayingTrack();
             if (data && data.body && data.body.item) {
-                state.currentPlayingTrack = {
+                // SANITIZATION UPDATE: Clean the data if we have to fetch it live
+                const rawTrack = {
                     name: data.body.item.name,
                     artist: data.body.item.artists[0].name,
                     uri: data.body.item.uri,
                     albumArt: data.body.item.album.images[0]?.url,
                     duration_ms: data.body.item.duration_ms
                 };
+                state.currentPlayingTrack = sm.sanitizeTrack(rawTrack);
             }
         }
         res.json(state.currentPlayingTrack);
     } catch (err) {
-        // Fallback to current state if API call fails
         res.json(state.currentPlayingTrack || null);
     }
 });

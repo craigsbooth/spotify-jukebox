@@ -1,4 +1,4 @@
-// state.js - Refined for Type Safety & Deep Research Support
+// state.js - Refined for Type Safety, Deep Research & Karaoke Support
 const fs = require('fs');
 const path = require('path');
 
@@ -20,12 +20,16 @@ let state = {
     reactionEvent: { id: 0, emoji: null }, 
     isDjMode: false,
     
-    // BUG 1 FIX: Added startedAt to track playback timing across the system
+    // playback timing tracking
     startedAt: null,
 
     // FEATURE: YouTube Integration for Monitor View
-    // Stores the current active video ID for the Projector display
     youtubeId: null,
+
+    // NEW FEATURE: KARAOKE ENGINE
+    isKaraokeMode: false,
+    karaokeQueue: [], // Dedicated queue for { id, title, thumb, singer, artist }
+    karaokeAnnouncement: null, // { message: string, expiresAt: number }
 
     // FEATURE: GUEST TOKEN ECONOMY
     tokensEnabled: false,

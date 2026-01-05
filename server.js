@@ -16,23 +16,17 @@ const path = require('path');
 // 4. Import Local Modular Logic
 const spotifyApi = require('./spotify_instance');
 const spotifyCtrl = require('./spotify_ctrl');
+const karaokeManager = require('./karaoke_manager'); // NEW: Stage management logic
+const pkg = require('./package.json'); // SINGLE SOURCE OF TRUTH
 
 const app = express();
 const port = process.env.PORT || 8888;
 
 /**
  * 5. VERSION DISCOVERY
- * Priority: 1. version.txt (Disk) | 2. .env (Env) | 3. Default
+ * Pulling directly from package.json to ensure 3.0.229 sync.
  */
-let APP_VERSION = process.env.APP_VERSION || "3.0.0-dev";
-try {
-    const versionPath = path.join(__dirname, 'version.txt');
-    if (fs.existsSync(versionPath)) {
-        APP_VERSION = fs.readFileSync(versionPath, 'utf8').trim();
-    }
-} catch (e) {
-    console.warn("⚠️ Version System: Could not read version.txt, falling back to env.");
-}
+const APP_VERSION = pkg.version || "3.0.229";
 
 // Middleware
 app.use(express.json());
@@ -48,6 +42,17 @@ app.use('/api', require('./routes/system'));
 // Endpoint for Dashboard Sync
 app.get('/api/version', (req, res) => {
     res.json({ version: APP_VERSION });
+});
+
+// --- NEW: KARAOKE PERFORMANCE ENDPOINTS ---
+app.post('/api/pop-karaoke', async (req, res) => {
+    const result = await karaokeManager.popNext();
+    res.json(result);
+});
+
+app.post('/api/remove-karaoke', (req, res) => {
+    const success = karaokeManager.removePerformance(req.body.index);
+    res.json({ success });
 });
 
 /**

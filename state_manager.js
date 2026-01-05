@@ -2,6 +2,7 @@
 const state = require('./state');
 const fs = require('fs');
 const path = require('path');
+const em = require('./economy_manager'); // Import dedicated credit manager
 
 // Ensure we use a consistent absolute path for settings
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
@@ -32,13 +33,57 @@ const stateManager = {
         return { success: false };
     },
 
-    // 3. QUEUE LOGIC
-    processQueueRequest: (trackData, guestId) => {
-        // TOKEN CHECK: Attempt to spend a token before processing
-        const tokenResult = stateManager.spendToken(guestId);
-        if (!tokenResult.success) {
-            return tokenResult; // Returns the error message and countdown
+    // 3. PERFORMANCE MODE (KARAOKE)
+    setKaraokeMode: (enabled) => {
+        state.isKaraokeMode = !!enabled;
+        if (state.isKaraokeMode) state.currentTheme = 'monitor';
+        stateManager.saveSettings();
+        console.log(`🎤 Performance Mode: ${state.isKaraokeMode ? 'KARAOKE' : 'JUKEBOX'}`);
+        return { success: true, isKaraokeMode: state.isKaraokeMode };
+    },
+
+    processKaraokeRequest: (trackData, guestId) => {
+        if (!state.isKaraokeMode) return { success: false, message: "Karaoke is not active." };
+        
+        const gid = guestId || 'anonymous';
+        const guestName = state.guestNames[gid];
+
+        if (!guestName || guestName === "Guest") {
+            return { success: false, message: "Please set your name to request Karaoke!" };
         }
+
+        const tokenResult = stateManager.spendToken(gid);
+        if (!tokenResult.success) return tokenResult;
+
+        state.karaokeQueue.push({
+            ...trackData,
+            singer: guestName,
+            addedAt: Date.now()
+        });
+
+        const km = require('./karaoke_manager');
+        km.updateStageAnnouncement();
+
+        stateManager.saveSettings();
+        return { 
+            success: true, 
+            message: "Karaoke Track Added!", 
+            tokens: tokenResult.balance 
+        };
+    },
+
+    setKaraokeAnnouncement: (singer, track, durationSec = 60) => {
+        state.karaokeAnnouncement = {
+            message: `Next up we have ${singer} with ${track}`,
+            expiresAt: Date.now() + (durationSec * 1000)
+        };
+        stateManager.saveSettings();
+    },
+
+    // 4. QUEUE LOGIC
+    processQueueRequest: (trackData, guestId) => {
+        const tokenResult = stateManager.spendToken(guestId);
+        if (!tokenResult.success) return tokenResult;
 
         const sanitized = stateManager.sanitizeTrack(trackData);
         const { uri, name, artist, albumArt, album, displayName, displayArtist } = sanitized;
@@ -60,9 +105,6 @@ const stateManager = {
                     tokens: tokenResult.balance 
                 };
             } else {
-                // If they've already voted, we shouldn't have spent the token.
-                // Note: The logic below in spendToken should be called carefully 
-                // but for simplicity in this flow, we refund if action fails.
                 state.tokenRegistry[gid].balance += 1; 
                 return { success: false, message: "You've already voted for this!" };
             }
@@ -85,7 +127,7 @@ const stateManager = {
         }
     },
 
-    // 4. HISTORY LOGIC - HARDENED
+    // 5. HISTORY & GUEST MANAGEMENT
     addToHistory: (uri) => {
         if (!(state.playedHistory instanceof Set)) {
             state.playedHistory = new Set();
@@ -94,12 +136,10 @@ const stateManager = {
         stateManager.saveSettings(); 
     },
 
-    // 5. GUEST MANAGEMENT
     registerGuest: (guestId, name) => {
         state.guestNames[guestId] = name;
         state.latestJoiner = name;
 
-        // Initialize Tokens for new guests
         if (!state.tokenRegistry[guestId]) {
             state.tokenRegistry[guestId] = {
                 balance: state.tokensInitial || 0,
@@ -114,7 +154,7 @@ const stateManager = {
         console.log(`👤 New Guest: ${name} (${guestId}) | Tokens: ${state.tokenRegistry[guestId].balance}`);
     },
 
-    // 6. SETTINGS PERSISTENCE - HARDENED FOR REDEPLOYS
+    // 6. PERSISTENCE & THEME
     saveSettings: () => {
         const { 
             shuffleBag, 
@@ -127,28 +167,16 @@ const stateManager = {
         const dataToSave = {
             ...persistentData,
             playedHistory: Array.from(playedHistory instanceof Set ? playedHistory : []),
-            currentPlayingTrack: state.currentPlayingTrack,
-            djStatus: state.djStatus,
             lastSavedAt: new Date().toISOString()
         };
 
         try {
-            const jsonString = JSON.stringify(dataToSave, null, 2);
-            fs.writeFileSync(SETTINGS_FILE, jsonString);
+            fs.writeFileSync(SETTINGS_FILE, JSON.stringify(dataToSave, null, 2));
         } catch (e) {
             console.error("💾 Critical Failure: Could not save settings.json:", e.message);
         }
     },
 
-    // 7. INTEL & GENRES
-    updateGenres: (genres) => {
-        if (state.djStatus) {
-            state.djStatus.genres = genres || [];
-            stateManager.saveSettings();
-        }
-    },
-
-    // 8. THEME & SETTINGS
     setTheme: (config) => {
         const validThemes = ['standard', 'monitor', 'carousel'];
         let updated = false;
@@ -166,11 +194,14 @@ const stateManager = {
                 state.showLyrics = !!config.showLyrics;
                 updated = true;
             }
-            // Configuration for Token Economy
             if (config.tokensEnabled !== undefined) { state.tokensEnabled = !!config.tokensEnabled; updated = true; }
             if (config.tokensInitial !== undefined) { state.tokensInitial = parseInt(config.tokensInitial); updated = true; }
             if (config.tokensPerHour !== undefined) { state.tokensPerHour = parseInt(config.tokensPerHour); updated = true; }
-            if (config.tokensMax !== undefined) { state.tokensMax = parseInt(config.tokensMax); updated = true; }
+            if (config.tokensMax !== undefined) { 
+                state.tokensMax = parseInt(config.tokensMax); 
+                em.enforceGlobalTokenCap(); // BUG 1 FIX: Instantly trim balances
+                updated = true; 
+            }
         }
 
         if (updated) {
@@ -182,64 +213,24 @@ const stateManager = {
                 tokensEnabled: state.tokensEnabled
             };
         }
-        
         return { success: false, message: "Invalid Config" };
     },
 
-    // 9. UTILITY
+    // 7. UTILITY & ECONOMY BRIDGE (Restored Missing Features)
     isInHistory: (uri) => {
         if (state.playedHistory instanceof Set) return state.playedHistory.has(uri);
         if (Array.isArray(state.playedHistory)) return state.playedHistory.includes(uri);
         return false;
     },
 
-    // 10. TOKEN BANKER LOGIC
-    syncGuestTokens: (guestId) => {
-        const guest = state.tokenRegistry[guestId];
-        if (!guest) return null;
-
-        const now = Date.now();
-        const msSinceLast = now - guest.lastAccrual;
-        const msPerToken = (60 * 60 * 1000) / (state.tokensPerHour || 1);
-
-        const earned = Math.floor(msSinceLast / msPerToken);
-        if (earned > 0) {
-            guest.balance = Math.min(state.tokensMax, guest.balance + earned);
-            guest.lastAccrual = guest.lastAccrual + (earned * msPerToken);
-        }
-
-        const msToNext = msPerToken - (now - guest.lastAccrual);
-        return {
-            balance: guest.balance,
-            nextIn: Math.ceil(msToNext / 1000) // seconds
-        };
-    },
-
+    // Bridging to Economy Manager so other files don't break
+    syncGuestTokens: (guestId) => em.syncGuestTokens(guestId),
     spendToken: (guestId) => {
-        if (!state.tokensEnabled) return { success: true };
-        if (!guestId) return { success: false, message: "Guest ID Required" };
-
-        const sync = stateManager.syncGuestTokens(guestId);
-        if (!sync) return { success: false, message: "Guest not registered" };
-
-        if (sync.balance > 0) {
-            state.tokenRegistry[guestId].balance -= 1;
-            stateManager.saveSettings();
-            return { success: true, balance: state.tokenRegistry[guestId].balance };
-        } else {
-            const mins = Math.floor(sync.nextIn / 60);
-            const secs = sync.nextIn % 60;
-            return { 
-                success: false, 
-                message: `Out of tokens! Next in ${mins}:${secs.toString().padStart(2, '0')}`,
-                nextIn: sync.nextIn 
-            };
-        }
+        const res = em.spendToken(guestId);
+        if (res.success) stateManager.saveSettings();
+        return res;
     },
 
-    /**
-     * 11. SANITIZATION ENGINE
-     */
     sanitizeTrack: (track) => {
         if (!track || !track.name) return track;
 

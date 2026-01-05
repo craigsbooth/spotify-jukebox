@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config'; 
 import { styles, getCarouselStyle, keyframes } from './styles';
 
-// SANITIZATION UPDATE: Added displayName and displayArtist to the interface
 interface Track { 
   name: string; 
   artist: string; 
@@ -13,7 +12,8 @@ interface Track {
   albumArt?: string; 
   uri?: string; 
   startedAt?: number; 
-  duration?: number; 
+  duration?: number;
+  is_playing?: boolean; 
 }
 interface LyricLine { time: number; text: string; }
 interface Reaction { id: number; emoji: string; left: number; }
@@ -37,144 +37,163 @@ export default function Projector() {
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [youtubeId, setYoutubeId] = useState<string | null>(null);
 
+  // KARAOKE SPECIFIC STATE
+  const [isKaraokeMode, setIsKaraokeMode] = useState(false);
+  const [karaokeQueue, setKaraokeQueue] = useState<any[]>([]);
+  const [karaokeAnnouncement, setKaraokeAnnouncement] = useState<any>(null);
+
+  // BANNER ANIMATION STATE
+  const [showUpNext, setShowUpNext] = useState(false);
+  const prevUpNextRef = useRef<string | null>(null);
+
   const lastReactionIdRef = useRef(0); 
   const prevUriRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  // SYNC BROWSER TAB TITLE
-  useEffect(() => {
-    document.title = `${partyName} Display`;
-  }, [partyName]);
+  useEffect(() => { document.title = `${partyName} Display`; }, [partyName]);
 
-  // EFFECT 1: METADATA & SESSION SYNC (Poll every 2s)
+  // --- 1. HYBRID SYNC ---
   useEffect(() => {
-    const fetchData = () => {
+    const fetchInitial = () => {
+        fetch(`${API_URL}/theme`).then(res => res.json()).then(d => {
+            setViewMode(d.theme || 'standard');
+            setShowLyrics(!!d.showLyrics);
+            setShowDebug(!!d.showDebug);
+            setIsKaraokeMode(!!d.isKaraokeMode);
+            if (d.youtubeId !== undefined) setYoutubeId(d.youtubeId || null);
+            setKaraokeQueue(d.karaokeQueue || []);
+            // Note: We ignore karaokeAnnouncement here to prevent the big popup
+        });
+        fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name || 'Pinfold'));
+    };
+    fetchInitial();
+
+    const connectSSE = () => {
+        if (eventSourceRef.current) eventSourceRef.current.close();
+        const es = new EventSource(`${API_URL}/events`);
+        eventSourceRef.current = es;
+        es.onmessage = (e) => {
+            try {
+                const { type, payload } = JSON.parse(e.data);
+                if (type === 'INIT' || type === 'THEME_UPDATE') {
+                    if (payload.theme) setViewMode(payload.theme);
+                    if (payload.youtubeId !== undefined) setYoutubeId(payload.youtubeId);
+                    if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(payload.isKaraokeMode);
+                    if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
+                }
+                if (type === 'KARAOKE_QUEUE') setKaraokeQueue(payload.karaokeQueue || []);
+                if (type === 'KARAOKE_MODE') setIsKaraokeMode(payload.isKaraokeMode);
+                if (type === 'REACTION') setActiveReactions(prev => [...prev, { id: payload.id, emoji: payload.emoji, left: Math.floor(Math.random() * 80) + 10 }]);
+            } catch (err) {}
+        };
+    };
+    try { connectSSE(); } catch (e) {}
+
+    const pollInt = setInterval(fetchInitial, 2000);
+    return () => { clearInterval(pollInt); if (eventSourceRef.current) eventSourceRef.current.close(); };
+  }, []);
+
+  // --- 2. SPOTIFY ---
+  useEffect(() => {
+    const fetchSpotify = () => {
       fetch(`${API_URL}/current`).then(res => res.json()).then(data => {
-        if (data?.uri !== prevUriRef.current) {
-          if (nowPlaying) setHistory(prev => [...prev.slice(-3), nowPlaying]);
+        const isPlayingChanged = data?.is_playing !== nowPlaying?.is_playing;
+        const uriChanged = data?.uri !== prevUriRef.current;
+        if (uriChanged || isPlayingChanged) {
+          if (uriChanged && nowPlaying) setHistory(prev => [...prev.slice(-3), nowPlaying]);
           setNowPlaying(data?.name ? data : null);
-          prevUriRef.current = data?.uri || null;
-          setActiveLineIndex(-1);
+          if (uriChanged) { prevUriRef.current = data?.uri || null; setActiveLineIndex(-1); }
         }
       });
       fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
-      fetch(`${API_URL}/theme`).then(res => res.json()).then(d => {
-        setViewMode(d.theme || 'standard');
-        setShowLyrics(!!d.showLyrics);
-        setShowDebug(!!d.showDebug);
-        
-        // FLICKER FIX: Only update state if the ID is actually different
-        if (d.youtubeId !== youtubeId) {
-            setYoutubeId(d.youtubeId || null);
-        }
-      });
-      fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name || 'Pinfold'));
-      fetch(`${API_URL}/join-event`).then(res => res.json()).then(d => {
-        if (d.name && d.name !== joinNotification) {
-          setJoinNotification(d.name);
-          setTimeout(() => setJoinNotification(null), 5000);
-        }
-      });
     };
-    
-    fetchData();
-    const interval = setInterval(fetchData, 2000);
+    fetchSpotify();
+    const interval = setInterval(fetchSpotify, 1000);
     return () => clearInterval(interval);
-  }, [nowPlaying?.uri, youtubeId]); 
+  }, [nowPlaying]);
 
-  // EFFECT 2: HIGH-FREQUENCY PROGRESS TICKER (Run every 50ms)
+  // --- 3. ANIMATION ---
   useEffect(() => {
-    const progInt = setInterval(() => {
-      if (!nowPlaying?.startedAt) {
-        setProgress(0);
-        return;
-      }
-      
+    const int = setInterval(() => {
+      if (!nowPlaying?.startedAt) { setProgress(0); return; }
       const elapsed = Date.now() - nowPlaying.startedAt;
       setCurrentTimeMs(elapsed);
-      
-      const duration = nowPlaying.duration || 1;
-      const calculatedProgress = Math.min((elapsed / duration) * 100, 100);
-      
-      setProgress(calculatedProgress);
-
+      setProgress(Math.min((elapsed / (nowPlaying.duration || 1)) * 100, 100));
       if (syncedLyrics.length > 0) {
-        const secondsElapsed = elapsed / 1000;
-        const idx = syncedLyrics.findLastIndex(l => l.time <= secondsElapsed);
-        if (idx !== -1 && idx !== activeLineIndex) {
-          setActiveLineIndex(idx);
-        }
+        const sec = elapsed / 1000;
+        const idx = syncedLyrics.findLastIndex(l => l.time <= sec);
+        if (idx !== -1 && idx !== activeLineIndex) setActiveLineIndex(idx);
       }
     }, 50);
-
-    return () => clearInterval(progInt);
+    return () => clearInterval(int);
   }, [nowPlaying?.startedAt, syncedLyrics, activeLineIndex]);
 
-  // EFFECT 3: Reactions Polling
   useEffect(() => {
-    const rInt = setInterval(() => {
-      fetch(`${API_URL}/reaction-event`).then(res => res.json()).then((data: any) => {
-        if (data?.id && data.id > lastReactionIdRef.current) {
-          lastReactionIdRef.current = data.id;
-          const newR = { id: data.id, emoji: data.emoji, left: Math.floor(Math.random() * 80) + 10 };
-          setActiveReactions(prev => [...prev, newR]);
-          setTimeout(() => setActiveReactions(curr => curr.filter(r => r.id !== newR.id)), 7000);
-        }
-      });
-    }, 500);
-    return () => clearInterval(rInt);
-  }, []);
-
-  // EFFECT 4: Lyrics Fetching
-  useEffect(() => {
-    if (nowPlaying && showLyrics) {
-      fetch(`${API_URL}/lyrics?track=${encodeURIComponent(nowPlaying.name)}&artist=${encodeURIComponent(nowPlaying.artist)}`)
-        .then(res => res.json()).then(data => {
-          if (data.syncedLyrics) {
-            const lines = data.syncedLyrics.split('\n').map((l: string) => {
-              const m = l.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
-              return m ? { time: parseInt(m[1]) * 60 + parseInt(m[2]) + parseInt(m[3].padEnd(3, '0')) / 1000, text: l.replace(/\[.*\]/, '').trim() } : null;
-            }).filter((x: any) => x && x.text !== "");
-            setSyncedLyrics(lines); setPlainLyrics("");
-          } else {
-            setSyncedLyrics([]); setPlainLyrics(data.plainLyrics || "No lyrics found");
-          }
+    if (nowPlaying && showLyrics && !isKaraokeMode) {
+        fetch(`${API_URL}/lyrics?track=${encodeURIComponent(nowPlaying.name)}&artist=${encodeURIComponent(nowPlaying.artist)}`)
+        .then(res => res.json()).then(d => {
+            if (d.syncedLyrics && Array.isArray(d.syncedLyrics)) {
+                setSyncedLyrics(d.syncedLyrics.map((l:any) => ({ time: l.seconds, text: l.content })));
+            } else { setSyncedLyrics([]); setPlainLyrics(d.plainLyrics || "No lyrics"); }
         });
     }
-  }, [nowPlaying?.uri, showLyrics]);
+  }, [nowPlaying?.uri, showLyrics, isKaraokeMode]);
 
-  // EFFECT 5: Lyrics Auto-Scroll
   useEffect(() => {
     const el = document.getElementById(`line-${activeLineIndex}`);
     if (el && scrollContainerRef.current) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [activeLineIndex]);
 
+  // --- 4. BANNER ANIMATION LOGIC ---
+  // Helper to get the next item regardless of mode
+  const nextUpItem = isKaraokeMode ? karaokeQueue[0] : queue[0];
+  const nextUpId = nextUpItem?.uri || nextUpItem?.id || 'empty';
+
+  useEffect(() => {
+    if (nextUpId !== 'empty' && nextUpId !== prevUpNextRef.current) {
+        prevUpNextRef.current = nextUpId;
+        setShowUpNext(true);
+        const timer = setTimeout(() => setShowUpNext(false), 8000); // Hide after 8s
+        return () => clearTimeout(timer);
+    }
+  }, [nextUpId]);
+
   const currentArt = nowPlaying?.albumArt || RECORD_PLACEHOLDER;
+  
+  // --- FINAL RULES ---
+  
+  // 1. VIDEO: Always show if ID exists.
+  const showVideo = !!youtubeId;
+
+  // 2. AUDIO RULE: Unmute ONLY if Karaoke Mode is ON.
+  const shouldUnmuteVideo = isKaraokeMode && !!youtubeId;
+
+  // 3. OVERLAY: Show if Karaoke Mode is OFF.
+  const showTextOverlay = !isKaraokeMode;
 
   return (
     <div style={styles.masterWrapper}>
       <style dangerouslySetInnerHTML={{__html: keyframes}} />
       <div style={styles.backgroundContainer}>
-        {viewMode === 'monitor' ? (
+        {viewMode === 'monitor' || isKaraokeMode ? (
           <>
-            {/* QUALITY UPDATE: We use a larger transform scale and hd=1 param to nudge higher bitrates */}
-            {youtubeId && nowPlaying?.uri ? (
-              <div key={nowPlaying.uri} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden', zIndex: -1 }}>
+            {showVideo ? (
+              <div key={youtubeId} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden', zIndex: -1 }}>
                 <iframe
+                  key={`${youtubeId}-${shouldUnmuteVideo ? 'LOUD' : 'SILENT'}`}
                   style={{ 
-                    width: '100vw', 
-                    height: '56.25vw', /* 16:9 Aspect Ratio */
-                    minHeight: '100vh', 
-                    minWidth: '177.77vh', /* Ensure it fills screen without bars */
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
+                    width: '100vw', height: '56.25vw', 
+                    minHeight: '100vh', minWidth: '177.77vh',
+                    position: 'absolute', top: '50%', left: '50%',
                     transform: 'translate(-50%, -50%) scale(1.05)',
                     pointerEvents: 'none' 
                   }}
-                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${youtubeId}&modestbranding=1&iv_load_policy=3&vq=hd1080`}
+                  /* 0 = Unmute, 1 = Mute */
+                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=${shouldUnmuteVideo ? '0' : '1'}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&vq=hd1080`}
                   frameBorder="0"
                   allow="autoplay; encrypted-media"
+                  loading="eager"
                 />
               </div>
             ) : (
@@ -186,11 +205,14 @@ export default function Projector() {
           <div style={styles.meshAnimation}><div style={{ ...styles.bgImage, backgroundImage: `url(${currentArt})`, filter: 'blur(80px) brightness(0.12)' }} /></div>
         )}
       </div>
+
       <div style={styles.emojiLayer}>{activeReactions.map(r => <div key={r.id} style={{ ...styles.emoji, left: `${r.left}%` }}>{r.emoji}</div>)}</div>
       <div style={styles.brandingHeader}><h1>{partyName}</h1></div>
       {joinNotification && (<div style={styles.notificationWrapper}><div className="pill" style={styles.joinPill}><h2>👋 {joinNotification} joined!</h2></div></div>)}
 
-      {viewMode === 'carousel' && (
+      {/* KARAOKE ANNOUNCEMENT REMOVED */}
+
+      {viewMode === 'carousel' && !isKaraokeMode && (
         <div style={styles.carouselPerspective}><div style={styles.carouselContainer}>
             {[...history.slice(-3), nowPlaying, ...queue.slice(0, 5)].map((track, index) => {
               if (!track) return null;
@@ -211,16 +233,19 @@ export default function Projector() {
         </div></div>
       )}
 
-      {viewMode === 'standard' && (
+      {viewMode === 'standard' && !isKaraokeMode && (
         <div style={styles.standardContainer}>
-          <div style={styles.upNextPosition}>
+           {/* RESTORED: Standard View Pill */}
+           <div style={{
+               ...styles.upNextPosition, 
+               transition: 'transform 0.5s', 
+               transform: showUpNext ? 'translateY(0)' : 'translateY(-100px)',
+               opacity: showUpNext ? 1 : 0
+            }}>
             {queue[0] && (
               <div className="pill" style={styles.upNextPill}>
                 <img src={queue[0].albumArt || RECORD_PLACEHOLDER} style={styles.upNextArt} />
-                <div>
-                  <small>UP NEXT</small>
-                  <div>{queue[0].displayName ?? queue[0].name}</div>
-                </div>
+                <div><small>UP NEXT</small><div>{queue[0].displayName ?? queue[0].name}</div></div>
               </div>
             )}
           </div>
@@ -228,15 +253,9 @@ export default function Projector() {
           {showLyrics && (
             <div ref={scrollContainerRef} className="no-scrollbar" style={styles.lyricsWindow}>
               <div style={{ height: '15vh' }} />
-              {syncedLyrics.length > 0 ? (
-                syncedLyrics.map((l, i) => (
-                  <div key={i} id={`line-${i}`} className={`lyric-line ${i === activeLineIndex ? 'active' : 'inactive'}`}>
-                    {l.text}
-                  </div>
-                ))
-              ) : (
-                <div style={styles.plainLyricsText}>{plainLyrics || "Searching..."}</div>
-              )}
+              {syncedLyrics.length > 0 ? syncedLyrics.map((l, i) => (
+                  <div key={i} id={`line-${i}`} className={`lyric-line ${i === activeLineIndex ? 'active' : 'inactive'}`}>{l.text}</div>
+              )) : <div style={styles.plainLyricsText}>{plainLyrics || "Searching..."}</div>}
               <div style={{ height: '15vh' }} />
             </div>
           )}
@@ -255,43 +274,48 @@ export default function Projector() {
         </div>
       )}
 
-      {viewMode === 'monitor' && (
+      {(viewMode === 'monitor' || isKaraokeMode) && (
         <div style={styles.monitorContainer}>
-          <div style={{ position: 'absolute', top: '4vh', right: '4vw' }}>
-            {queue[0] && (
+          {/* RESTORED & FIXED: Monitor View Pill (Shows Singer in Karaoke Mode) */}
+          <div style={{ 
+              position: 'absolute', 
+              top: '4vh', 
+              right: '4vw',
+              transition: 'transform 0.8s ease-in-out, opacity 0.8s',
+              transform: showUpNext ? 'translateY(0)' : 'translateY(-200%)',
+              opacity: showUpNext ? 1 : 0
+          }}>
+            {nextUpItem && (
               <div className="pill" style={styles.upNextPill}>
-                <img src={queue[0].albumArt || RECORD_PLACEHOLDER} style={styles.upNextArt} />
+                {/* Fallback to Record Placeholder if no art/thumb */}
+                <img src={nextUpItem.albumArt || nextUpItem.thumb || RECORD_PLACEHOLDER} style={styles.upNextArt} />
                 <div>
-                  <small style={{opacity:0.5, fontSize:'0.6rem'}}>UP NEXT</small>
-                  <div style={{fontWeight:900, fontSize:'1rem'}}>{queue[0].displayName ?? queue[0].name}</div>
+                  <small style={{opacity:0.5, fontSize:'0.6rem'}}>
+                      {isKaraokeMode ? 'NEXT SINGER' : 'UP NEXT'}
+                  </small>
+                  <div style={{fontWeight:900, fontSize:'1rem'}}>
+                      {/* In Karaoke: Show Singer Name. In Music: Show Song Name */}
+                      {isKaraokeMode ? (nextUpItem.singer || 'Guest') : (nextUpItem.displayName ?? nextUpItem.name)}
+                  </div>
+                  {/* In Karaoke: Show Song Title below Singer */}
+                  {isKaraokeMode && <div style={{fontSize:'0.7rem', opacity:0.8}}>{nextUpItem.title}</div>}
                 </div>
               </div>
             )}
           </div>
           
-          {showLyrics && (
-            <div ref={scrollContainerRef} className="no-scrollbar" style={{...styles.lyricsWindow, position: 'relative', height: '40vh', width: '80%', margin: '0 auto', background: 'transparent'}}>
-              <div style={{ height: '10vh' }} />
-              {syncedLyrics.length > 0 ? (
-                syncedLyrics.map((l, i) => (
-                  <div key={i} id={`line-${i}`} className={`lyric-line ${i === activeLineIndex ? 'active' : 'inactive'}`}>
-                    {l.text}
-                  </div>
-                ))
-              ) : (
-                <div style={styles.plainLyricsText}>{plainLyrics || "Searching..."}</div>
-              )}
-              <div style={{ height: '10vh' }} />
+          {/* Metadata Overlay: ONLY show if Karaoke Mode is OFF */}
+          {showTextOverlay && (
+            <div style={{textAlign: 'center', position: 'absolute', bottom: '10vh', left: 0, width: '100%'}}>
+                <h1 style={styles.monitorTitle}>{nowPlaying?.displayName ?? nowPlaying?.name}</h1>
+                <h2 style={styles.monitorArtist}>{nowPlaying?.displayArtist ?? nowPlaying?.artist}</h2>
+                <div style={styles.footerProgressBase}><div style={{ ...styles.footerProgressFill, width: `${progress}%` }} /></div>
             </div>
           )}
-
-          <h1 style={styles.monitorTitle}>{nowPlaying?.displayName ?? nowPlaying?.name}</h1>
-          <h2 style={styles.monitorArtist}>{nowPlaying?.displayArtist ?? nowPlaying?.artist}</h2>
-          <div style={styles.footerProgressBase}><div style={{ ...styles.footerProgressFill, width: `${progress}%` }} /></div>
         </div>
       )}
 
-      {showDebug && (<div style={styles.debugOverlay}>🛠️ Q: {queue.length} | {viewMode.toUpperCase()} | LYRICS: {syncedLyrics.length > 0 ? 'SYNC' : 'PLAIN'}</div>)}
+      {showDebug && (<div style={styles.debugOverlay}>🛠️ Q: {queue.length} | KQ: {karaokeQueue.length} | {viewMode.toUpperCase()} | MODE: {isKaraokeMode ? 'KARAOKE' : 'MUSIC'}</div>)}
     </div>
   );
 }

@@ -4,23 +4,68 @@ const router = express.Router();
 const state = require('../state');
 const sm = require('../state_manager');
 const spotifyApi = require('../spotify_instance');
-const spotifyCtrl = require('../spotify_ctrl');
+
+// --- FIX: PATH CORRECTION ---
+// We go UP one level (../) to find these controllers in the root folder
+const spotifyCtrl = require('../spotify_ctrl'); 
+const karaokeEngine = require('../karaoke_engine'); 
+const karaokeManager = require('../karaoke_manager'); 
+// ----------------------------
+
+// --- REAL-TIME EVENT STREAM (SSE) ---
+let clients = [];
+
+// Helper: Send data to all connected clients (Projectors) immediately
+const broadcastUpdate = (type, payload) => {
+    clients.forEach(client => {
+        client.res.write(`data: ${JSON.stringify({ type, payload })}\n\n`);
+    });
+};
+
+// Frontend calls: Listen to /api/events
+router.get('/events', (req, res) => {
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    // Send initial state immediately on connection
+    const initialState = {
+        theme: state.currentTheme,
+        youtubeId: state.youtubeId,
+        isKaraokeMode: state.isKaraokeMode,
+        karaokeQueue: state.karaokeQueue,
+        // We include is_playing from current track to help sync audio rules
+        isSpotifyPlaying: state.currentPlayingTrack?.is_playing || false
+    };
+    res.write(`data: ${JSON.stringify({ type: 'INIT', payload: initialState })}\n\n`);
+
+    // Add this client to the pool
+    const clientId = Date.now();
+    const newClient = { id: clientId, res };
+    clients.push(newClient);
+
+    // Remove client when they disconnect
+    req.on('close', () => {
+        clients = clients.filter(c => c.id !== clientId);
+    });
+});
+// ------------------------------------
 
 // --- 1. AUTH & TOKEN ACCESS ---
-// Frontend calls: https://jukebox.boldron.info/api/token
 router.get('/token', (req, res) => {
     const token = spotifyApi.getAccessToken();
     res.json({ access_token: token || null });
 });
 
 // --- 2. DJ ENGINE CONTROL ---
-// Frontend calls: https://jukebox.boldron.info/api/dj-mode
 router.post('/dj-mode', (req, res) => {
     const result = sm.setDjMode(req.body.enabled);
+    broadcastUpdate('DJ_MODE', { isDjMode: state.isDjMode }); // Notify clients
     res.json(result);
 });
 
-// Frontend calls: https://jukebox.boldron.info/api/dj-status
 router.get('/dj-status', (req, res) => {
     res.json({ 
         ...state.djStatus,
@@ -30,14 +75,15 @@ router.get('/dj-status', (req, res) => {
 });
 
 // --- 3. THEME & SETTINGS ---
-// Frontend calls: https://jukebox.boldron.info/api/theme
 router.get('/theme', (req, res) => {
     res.json({ 
         theme: state.currentTheme, 
         showLyrics: state.showLyrics,
         crossfadeSec: state.crossfadeSec,
         youtubeId: state.youtubeId,
-        // FEATURE: Expose global token settings
+        isKaraokeMode: state.isKaraokeMode,
+        karaokeQueue: state.karaokeQueue,
+        karaokeAnnouncement: state.karaokeAnnouncement,
         tokensEnabled: state.tokensEnabled,
         tokensInitial: state.tokensInitial,
         tokensPerHour: state.tokensPerHour,
@@ -46,13 +92,90 @@ router.get('/theme', (req, res) => {
 });
 
 router.post('/theme', (req, res) => {
-    // BUG 3 FIX: Pass the entire body to sm.setTheme instead of just req.body.theme
-    // This allows the state manager to see and update showLyrics and Token settings
     const result = sm.setTheme(req.body);
+    
+    // CRITICAL: Broadcast the change immediately so Projector reacts instantly
+    // This handles "Pop Singer" (youtubeId set) and "Stop Performance" (youtubeId null)
+    broadcastUpdate('THEME_UPDATE', { 
+        theme: state.currentTheme,
+        youtubeId: state.youtubeId,
+        showLyrics: state.showLyrics,
+        karaokeAnnouncement: state.karaokeAnnouncement,
+        isKaraokeMode: state.isKaraokeMode // Ensure this syncs too
+    });
+    
     res.json(result);
 });
 
-// --- 4. LYRICS DATA PROXY ---
+// --- 4. KARAOKE MODE CONTROL ---
+router.post('/karaoke-mode', (req, res) => {
+    const result = sm.setKaraokeMode(req.body.enabled);
+    
+    // Broadcast Mode Change
+    broadcastUpdate('KARAOKE_MODE', { isKaraokeMode: state.isKaraokeMode });
+    
+    res.json(result);
+});
+
+router.get('/search-karaoke', async (req, res) => {
+    const results = await karaokeEngine.search(req.query.q);
+    res.json(results);
+});
+
+router.get('/karaoke-suggestions', async (req, res) => {
+    const results = await karaokeManager.getSuggestions(req.query.genre);
+    res.json(results);
+});
+
+router.post('/karaoke-queue', (req, res) => {
+    const { id, title, thumb, guestId, singer } = req.body;
+    const result = sm.processKaraokeRequest({ id, title, thumb, singer }, guestId);
+    
+    // Broadcast Queue Update
+    broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
+    
+    res.json(result);
+});
+
+// --- 5. ATOMIC POP LOGIC (UPDATED) ---
+router.post('/pop-karaoke', (req, res) => {
+    const nextSinger = state.karaokeQueue[0];
+
+    if (nextSinger) {
+        console.log(`🎤 Server: Popping singer ${nextSinger.singer} (ID: ${nextSinger.id})`);
+        
+        // 1. Set the Performance ID (Server Truth)
+        state.youtubeId = nextSinger.id;
+        
+        // 2. Remove from Queue
+        state.karaokeQueue.shift();
+        sm.saveSettings();
+
+        // 3. Broadcast BOTH updates immediately
+        // This ensures Projector gets the ID and the Queue update in one sync frame
+        broadcastUpdate('THEME_UPDATE', { youtubeId: state.youtubeId }); 
+        broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
+
+        res.json({ success: true, youtubeId: state.youtubeId });
+    } else {
+        console.log("⚠️ Server: Cannot pop, queue empty.");
+        // Even if empty, we might want to ensure youtubeId is cleared or handled
+        res.json({ success: false, message: "Queue empty" });
+    }
+});
+// -------------------------------------
+
+router.post('/remove-karaoke', (req, res) => {
+    const { index } = req.body;
+    if (state.karaokeQueue[index]) {
+        state.karaokeQueue.splice(index, 1);
+        sm.saveSettings();
+    }
+    broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
+    res.json({ success: true });
+});
+
+// --- 6. LYRICS DATA PROXY ---
 router.get('/lyrics', async (req, res) => {
     const { track, artist } = req.query;
     if (!track || !artist) return res.status(400).json({ error: "Missing track or artist info" });
@@ -60,7 +183,6 @@ router.get('/lyrics', async (req, res) => {
         const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(track)}`;
         const response = await fetch(url);
         const data = await response.json();
-        
         res.json({ 
             syncedLyrics: data.syncedLyrics || null, 
             plainLyrics: data.plainLyrics || "Lyrics not found." 
@@ -70,7 +192,7 @@ router.get('/lyrics', async (req, res) => {
     }
 });
 
-// --- 5. PARTY IDENTITY & GUESTS ---
+// --- 7. PARTY IDENTITY & GUESTS ---
 router.get('/name', (req, res) => res.json({ name: state.partyName }));
 
 router.post('/name', (req, res) => {
@@ -90,33 +212,54 @@ router.post('/join', (req, res) => {
 
 router.get('/join-event', (req, res) => res.json({ name: state.latestJoiner }));
 
-// --- 6. REACTIONS ---
+// --- 8. REACTIONS ---
 router.post('/reaction-event', (req, res) => {
     if (req.body.emoji) state.reactionEvent = { id: Date.now(), emoji: req.body.emoji };
+    // Broadcast Reaction instantly to Projector
+    broadcastUpdate('REACTION', state.reactionEvent);
     res.json(state.reactionEvent);
 });
 
 router.get('/reaction-event', (req, res) => res.json(state.reactionEvent));
 
-// --- 7. SEARCH & FALLBACK POOL ---
-// Frontend calls: https://jukebox.boldron.info/api/search
+// --- 9. SEARCH & FALLBACK POOL ---
 router.get('/search', async (req, res) => {
     try {
-        const rawResults = await spotifyCtrl.searchTracks(req.query.q); 
-        // SANITIZATION UPDATE: Ensure search results are cleaned before hitting the UI
-        const sanitizedResults = rawResults.map(t => sm.sanitizeTrack(t));
-        res.json(sanitizedResults);
+        const query = req.query.q;
+        if (!query) return res.json([]);
+
+        // FIX: Context-Aware Search
+        if (state.isKaraokeMode) {
+            console.log(`🔍 YouTube Karaoke Search: ${query}`);
+            // Force "karaoke" suffix to find best backing tracks
+            const results = await karaokeEngine.search(`${query} karaoke`);
+            
+            // Map to standard format so Guest UI understands it
+            const mapped = results.map(v => ({
+                id: v.id,
+                name: v.title,
+                artist: 'YouTube Video',
+                albumArt: v.thumb,
+                isKaraoke: true, // Special flag for client logic
+                uri: `youtube:${v.id}`
+            }));
+            res.json(mapped);
+        } else {
+            // Standard Spotify Search
+            const rawResults = await spotifyCtrl.searchTracks(query); 
+            const sanitizedResults = rawResults.map(t => sm.sanitizeTrack(t));
+            res.json(sanitizedResults);
+        }
     } catch (e) {
+        console.error("Search failed:", e);
         res.status(500).json({ error: "Search failed" });
     }
 });
 
-// Frontend calls: https://jukebox.boldron.info/api/search-playlists
 router.get('/search-playlists', async (req, res) => {
     try {
         const data = await spotifyApi.searchPlaylists(req.query.q);
         res.json(data.body.playlists.items.filter(p => p).map(p => {
-            // SANITIZATION UPDATE: Clean playlist names for the fallback selector
             const sanitized = sm.sanitizeTrack({ name: p.name, artist: '' });
             return { 
                 id: p.id, 
@@ -138,33 +281,27 @@ router.post('/fallback', async (req, res) => {
         if (req.body.id === 'refresh') {
             console.log(`♻️ System: Manual Refresh triggered for ${state.fallbackPlaylist.name}`);
         } else {
-            console.log(`📡 System: Changing Fallback to ${req.body.name} (${req.body.id})`);
             state.fallbackPlaylist = { id: req.body.id, name: req.body.name };
             sm.saveSettings();
         }
         const count = await spotifyCtrl.refreshShuffleBag();
         res.json({ success: true, count });
     } catch (e) {
-        console.error("❌ System: Fallback Refresh Crash:", e.message);
         res.status(500).json({ error: "Fallback update failed" });
     }
 });
 
-// --- 8. CURRENT TRACK ALIAS ---
-// Frontend calls: https://jukebox.boldron.info/api/current
+// --- 10. CURRENT TRACK ALIAS ---
 router.get('/current', (req, res) => {
     res.json(state.currentPlayingTrack || null);
 });
 
-// --- 9. TOKEN ECONOMY ENDPOINT ---
-// Frontend calls: https://jukebox.boldron.info/api/tokens?guestId=xyz
+// --- 11. TOKEN ECONOMY ENDPOINT ---
 router.get('/tokens', (req, res) => {
     const { guestId } = req.query;
     if (!guestId) return res.status(400).json({ error: "Missing guestId" });
-    
     const info = sm.syncGuestTokens(guestId);
     if (!info) return res.status(404).json({ error: "Guest not found" });
-    
     res.json({
         enabled: state.tokensEnabled,
         balance: info.balance,

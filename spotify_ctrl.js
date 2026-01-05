@@ -1,293 +1,148 @@
-// spotify_ctrl.js - Hardened Token, Shuffle & Core Playback Control
-const path = require('path');
-const fs = require('fs');
+// spotify_ctrl.js - Playback, Shuffle & Search (Token Hardened)
 const state = require('./state');
 const spotifyApi = require('./spotify_instance'); 
 const sm = require('./state_manager'); 
+const tokenManager = require('./token_manager'); 
 
-// Ensure tokens are saved in the root directory relative to this file
-const TOKEN_FILE = path.join(__dirname, 'tokens.json');
+const spotifyCtrl = {
+    // RESTORED: Mapping for auth.js and other modules that call spotifyCtrl.saveTokens
+    saveTokens: tokenManager.saveTokens,
+    handleExpiredToken: tokenManager.handleExpiredToken,
 
-/**
- * HELPER: Handle Silent Refresh
- * Used within catch blocks to recover from 401 errors.
- */
-async function handleExpiredToken() {
-    console.log("🔄 Token System: Access token expired. Attempting silent refresh...");
-    try {
-        const data = await spotifyApi.refreshAccessToken();
-        const newAccess = data.body['access_token'];
-        spotifyApi.setAccessToken(newAccess);
-        // Use the existing saveTokens logic to persist the new token
-        await saveTokens(newAccess, spotifyApi.getRefreshToken());
-        console.log("✅ Token System: Proactive refresh successful.");
-        return newAccess;
-    } catch (err) {
-        console.error("❌ Token System: Automatic refresh failed:", err.message);
-        throw err;
-    }
-}
+    refreshShuffleBag: async () => {
+        if (!spotifyApi.getAccessToken()) {
+            console.warn("⚠️ Cannot refresh bag: No token found.");
+            return 0;
+        }
+        if (!state.fallbackPlaylist?.id) {
+            console.warn("⚠️ No fallback playlist set.");
+            return 0;
+        }
 
-/**
- * BUG 2 FIX: Proactive Refresh Heartbeat
- * Triggers a token refresh every 30 minutes to prevent expiry during idle periods.
- */
-setInterval(async () => {
-    if (spotifyApi.getRefreshToken()) {
-        await handleExpiredToken();
-    }
-}, 30 * 60 * 1000);
-
-// Immediate recovery on boot (after 5s delay to allow system initialization)
-setTimeout(() => {
-    if (spotifyApi.getRefreshToken()) {
-        handleExpiredToken().catch(() => console.log("ℹ️ Startup refresh skipped - no valid refresh token yet."));
-    }
-}, 5000);
-
-/**
- * 1. TOKEN PERSISTENCE (Hardened with Auto-Recovery)
- */
-async function saveTokens(access, refresh) {
-    console.log("💾 Token System: Attempting to save tokens...");
-    
-    // Identify strings regardless of whether wrapper passed raw string or object
-    let cleanAccess = typeof access === 'string' ? access : access?.accessToken;
-    let cleanRefresh = typeof refresh === 'string' ? refresh : refresh?.refreshToken;
-
-    // CRITICAL FIX: If access token is missing but refresh exists, recover it immediately
-    if (!cleanAccess && cleanRefresh) {
-        console.log("🔄 Token System: Access token missing from input, attempting immediate recovery via refresh...");
+        console.log(`♻️ Controller: Rebuilding Shuffle Bag for: ${state.fallbackPlaylist.name}`);
         try {
-            spotifyApi.setRefreshToken(cleanRefresh);
-            const data = await spotifyApi.refreshAccessToken();
-            cleanAccess = data.body['access_token'];
-            console.log("✅ Token System: Successfully recovered access token.");
-        } catch (e) {
-            console.error("❌ Token System: Recovery failed:", e.message);
-        }
-    }
+            let allTracks = [];
+            let offset = 0, limit = 100, total = 1;
 
-    // Update the live API instance memory
-    if (cleanAccess) spotifyApi.setAccessToken(cleanAccess);
-    if (cleanRefresh) spotifyApi.setRefreshToken(cleanRefresh);
-    
-    // Save to disk for persistence across restarts
-    if (cleanAccess || cleanRefresh) {
-        const tokenData = { 
-            access_token: cleanAccess || null, 
-            refresh_token: cleanRefresh || spotifyApi.getRefreshToken(),
-            updatedAt: new Date().toISOString()
-        };
+            while (offset < total) {
+                const data = await spotifyApi.getPlaylistTracks(state.fallbackPlaylist.id, { offset, limit });
+                total = data.body.total;
+                const batch = data.body.items
+                    .filter(i => i && i.track && i.track.uri)
+                    .map(i => ({
+                        uri: i.track.uri, name: i.track.name, artist: i.track.artists[0].name,
+                        album: i.track.album.name, albumArt: i.track.album.images[0]?.url,
+                        duration: i.track.duration_ms, isFallback: true, votes: 0
+                    }));
+                allTracks = [...allTracks, ...batch];
+                offset += limit;
+            }
 
-        try {
-            fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokenData, null, 2));
-            console.log("💾 Token System: tokens.json written successfully with active credentials.");
-        } catch (err) {
-            console.error("❌ Token System: Failed to write tokens.json:", err.message);
-        }
-    }
-}
+            for (let i = allTracks.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
+            }
 
-/**
- * 2. SHUFFLE BAG ENGINE
- */
-async function refreshShuffleBag() {
-    if (!spotifyApi.getAccessToken()) {
-        console.warn("⚠️ Cannot refresh bag: No token found.");
-        return 0;
-    }
-    
-    if (!state.fallbackPlaylist?.id) {
-        console.warn("⚠️ No fallback playlist set.");
-        return 0;
-    }
-
-    console.log(`♻️ Controller: Rebuilding Shuffle Bag for: ${state.fallbackPlaylist.name}`);
-    
-    try {
-        let allTracks = [];
-        let offset = 0;
-        let limit = 100;
-        let total = 1;
-
-        while (offset < total) {
-            const data = await spotifyApi.getPlaylistTracks(state.fallbackPlaylist.id, { offset, limit });
-            const items = data.body.items;
-            total = data.body.total;
-            
-            const batch = items
-                .filter(i => i && i.track && i.track.uri)
-                .map(i => ({
-                    uri: i.track.uri,
-                    name: i.track.name,
-                    artist: i.track.artists[0].name,
-                    album: i.track.album.name,
-                    albumArt: i.track.album.images[0]?.url,
-                    duration: i.track.duration_ms,
-                    isFallback: true,
-                    votes: 0
-                }));
-            
-            allTracks = [...allTracks, ...batch];
-            offset += limit;
-        }
-
-        // Fisher-Yates Shuffle
-        for (let i = allTracks.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
-        }
-
-        state.shuffleBag = allTracks;
-        
-        // Reset history safely
-        if (state.playedHistory && typeof state.playedHistory.clear === 'function') {
-            state.playedHistory.clear();
-        }
-        
-        console.log(`✅ Controller: ${state.shuffleBag.length} tracks loaded into pool.`);
-        return state.shuffleBag.length;
-    } catch (err) {
-        // --- THE FIX: Silent Refresh & Retry ---
-        if (err.statusCode === 401) {
-            try {
-                await handleExpiredToken();
-                return await refreshShuffleBag();
-            } catch (re) { /* Fall through to original error */ }
-        }
-        console.error("❌ Controller: Playlist Load Failed:", err.message);
-        return 0;
-    }
-}
-
-/**
- * 3. TRACK SELECTION LOGIC
- */
-async function getNextTrack() {
-    let nextTrack = null;
-
-    if (state.partyQueue.length > 0) {
-        nextTrack = state.partyQueue.shift();
-        console.log(`🎯 Dispatcher: Playing Guest Request - ${nextTrack.name}`);
-    } 
-    else if (state.shuffleBag && state.shuffleBag.length > 0) {
-        const freshTracks = state.shuffleBag.filter(t => !sm.isInHistory(t.uri));
-        
-        if (freshTracks.length === 0) {
-            console.log("♻️ Dispatcher: History full. Resetting bag...");
+            state.shuffleBag = allTracks;
             if (state.playedHistory && typeof state.playedHistory.clear === 'function') {
                 state.playedHistory.clear();
             }
-            nextTrack = state.shuffleBag[0];
-        } else {
-            nextTrack = freshTracks[0];
-        }
-        console.log(`📻 Dispatcher: Playing Fallback - ${nextTrack.name}`);
-    }
-
-    if (nextTrack) {
-        sm.addToHistory(nextTrack.uri);
-    }
-
-    return nextTrack;
-}
-
-/**
- * 4. ACTIVE PLAYBACK EXECUTION
- * FIXED: Captures startedAt timestamp for Projector progress bars.
- */
-async function playTrack(uri) {
-    if (!uri) return;
-    try {
-        // Step 1: Attempt playback on whatever Spotify thinks is active
-        await spotifyApi.play({ uris: [uri] });
-        
-        // --- BUG 1 FIX: Anchor the start time for the progress bar ---
-        state.startedAt = Date.now();
-        
-        console.log(`🎵 Spotify: Now Playing URI: ${uri}`);
-        return true;
-    } catch (err) {
-        // --- THE FIX: Silent Refresh & Retry ---
-        if (err.statusCode === 401) {
-            try {
-                await handleExpiredToken();
-                return await playTrack(uri);
-            } catch (re) { /* Fall through */ }
-        }
-
-        console.error("⚠️ Spotify Playback Error:", err.message);
-        
-        // Step 2: Fallback if no device is active. We look specifically for a "Web Player" or "Computer"
-        if (err.message.includes("NO_ACTIVE_DEVICE")) {
-            console.log("🔍 Controller: No active device found. Searching for a Web Player...");
-            const devices = await spotifyApi.getMyDevices();
-            const webPlayer = devices.body.devices.find(d => d.name.includes("Web Player") || d.type === "Computer");
-            const anyActive = webPlayer || devices.body.devices[0];
-
-            if (anyActive) {
-                console.log(`📡 Controller: Forcing playback to: ${anyActive.name}`);
-                await spotifyApi.play({ uris: [uri], device_id: anyActive.id });
-                
-                // --- BUG 1 FIX: Anchor the start time for the progress bar ---
-                state.startedAt = Date.now();
-                
-                return true;
+            console.log(`✅ Controller: ${state.shuffleBag.length} tracks loaded into pool.`);
+            return state.shuffleBag.length;
+        } catch (err) {
+            if (err.statusCode === 401) {
+                await tokenManager.handleExpiredToken();
+                return await spotifyCtrl.refreshShuffleBag();
             }
+            console.error("❌ Controller: Playlist Load Failed:", err.message);
+            return 0;
         }
-        return false;
-    }
-}
+    },
 
-/**
- * 5. DEVICE MANAGEMENT
- * Used to hijack playback from other devices (like Living Room) to the Browser.
- */
-async function transferPlayback(deviceId) {
-    try {
-        await spotifyApi.transferMyPlayback([deviceId], { play: true });
-        console.log(`📱 Controller: Playback transferred to device: ${deviceId}`);
-        return { success: true };
-    } catch (err) {
-        // --- THE FIX: Silent Refresh & Retry ---
-        if (err.statusCode === 401) {
-            try {
-                await handleExpiredToken();
-                return await transferPlayback(deviceId);
-            } catch (re) { /* Fall through */ }
+    getNextTrack: async () => {
+        let nextTrack = null;
+        if (state.partyQueue.length > 0) {
+            nextTrack = state.partyQueue.shift();
+            console.log(`🎯 Dispatcher: Playing Guest Request - ${nextTrack.name}`);
+        } else if (state.shuffleBag && state.shuffleBag.length > 0) {
+            const freshTracks = state.shuffleBag.filter(t => !sm.isInHistory(t.uri));
+            if (freshTracks.length === 0) {
+                console.log("♻️ Dispatcher: History full. Resetting bag...");
+                if (state.playedHistory && typeof state.playedHistory.clear === 'function') {
+                    state.playedHistory.clear();
+                }
+                nextTrack = state.shuffleBag[0];
+            } else {
+                nextTrack = freshTracks[0];
+            }
+            console.log(`📻 Dispatcher: Playing Fallback - ${nextTrack.name}`);
         }
-        console.error("❌ Controller: Transfer failed:", err.message);
-        return { success: false, error: err.message };
-    }
-}
+        if (nextTrack) sm.addToHistory(nextTrack.uri);
+        return nextTrack;
+    },
 
-/**
- * 6. SEARCH
- */
-async function searchTracks(query) {
-    if (!query) return [];
-    try {
-        const data = await spotifyApi.searchTracks(query);
-        return data.body.tracks.items.map(t => ({
-            name: t.name,
-            artist: t.artists[0].name,
-            album: t.album.name,
-            uri: t.uri,
-            albumArt: t.album.images[0]?.url,
-            id: t.id
-        }));
-    } catch (e) {
-        // --- THE FIX: Silent Refresh & Retry ---
-        if (e.statusCode === 401) {
-            try {
-                await handleExpiredToken();
-                return await searchTracks(query);
-            } catch (re) { /* Fall through */ }
+    playTrack: async (uri) => {
+        if (!uri) return;
+        try {
+            await spotifyApi.play({ uris: [uri] });
+            state.startedAt = Date.now();
+            console.log(`🎵 Spotify: Now Playing URI: ${uri}`); // RESTORED
+            return true;
+        } catch (err) {
+            if (err.statusCode === 401) {
+                try {
+                    await tokenManager.handleExpiredToken();
+                    return await spotifyCtrl.playTrack(uri);
+                } catch (re) { /* Fail */ }
+            }
+            console.error("⚠️ Spotify Playback Error:", err.message);
+            if (err.message.includes("NO_ACTIVE_DEVICE")) {
+                const devices = await spotifyApi.getMyDevices();
+                const webPlayer = devices.body.devices.find(d => d.name.includes("Web Player") || d.type === "Computer");
+                const anyActive = webPlayer || devices.body.devices[0];
+                if (anyActive) {
+                    console.log(`📡 Controller: Forcing playback to: ${anyActive.name}`);
+                    await spotifyApi.play({ uris: [uri], device_id: anyActive.id });
+                    state.startedAt = Date.now();
+                    return true;
+                }
+            }
+            return false;
         }
-        console.error("❌ Search failed:", e.message);
-        return [];
-    }
-}
+    },
 
-module.exports = { saveTokens, refreshShuffleBag, getNextTrack, searchTracks, playTrack, transferPlayback, handleExpiredToken };
+    transferPlayback: async (deviceId) => {
+        try {
+            await spotifyApi.transferMyPlayback([deviceId], { play: true });
+            console.log(`📱 Controller: Playback transferred to device: ${deviceId}`);
+            return { success: true };
+        } catch (err) {
+            if (err.statusCode === 401) {
+                await tokenManager.handleExpiredToken();
+                return await spotifyCtrl.transferPlayback(deviceId);
+            }
+            console.error("❌ Controller: Transfer failed:", err.message);
+            return { success: false, error: err.message };
+        }
+    },
+
+    searchTracks: async (query) => {
+        if (!query) return [];
+        try {
+            const data = await spotifyApi.searchTracks(query);
+            return data.body.tracks.items.map(t => ({
+                name: t.name, artist: t.artists[0].name, album: t.album.name,
+                uri: t.uri, albumArt: t.album.images[0]?.url, id: t.id
+            }));
+        } catch (e) {
+            if (e.statusCode === 401) {
+                await tokenManager.handleExpiredToken();
+                return await spotifyCtrl.searchTracks(query);
+            }
+            console.error("❌ Search failed:", e.message); // RESTORED
+            return [];
+        }
+    }
+};
+
+module.exports = spotifyCtrl;

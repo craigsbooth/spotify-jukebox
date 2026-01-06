@@ -68,4 +68,18 @@ router.get('/api/token', getToken); // Alias for modular compatibility
 router.get('/callback', handleCallback);
 router.get('/api/callback', handleCallback);
 
+// 5. HOST PIN SECURITY (NEW)
+// Validates the PIN against server environment variable
+router.post('/verify-pin', (req, res) => {
+    const { pin } = req.body;
+    // Default to '1234' if ENV not set, but now it's server-side controlled
+    const serverPin = process.env.HOST_PIN || '1234';
+    
+    if (pin === serverPin) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false });
+    }
+});
+
 module.exports = router;

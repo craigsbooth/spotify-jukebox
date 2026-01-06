@@ -3,37 +3,87 @@
     "id": "287dG5nl9Jw9ySZGTRoYhe",
     "name": "Craigs"
   },
-  "currentTheme": "monitor",
-  "partyName": "love",
-  "showLyrics": false,
+  "currentTheme": "standard",
+  "partyName": "The Sycamores 🌳",
+  "showLyrics": true,
   "showDebug": false,
   "crossfadeSec": 3,
-  "partyQueue": [],
+  "partyQueue": [
+    {
+      "uri": "spotify:track:7vggqxNKwd6xdRoYS0pQtM",
+      "name": "Three Little Birds",
+      "artist": "Bob Marley & The Wailers",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273413a6c2c7b296d98171e5e21",
+      "album": "Legend - The Best Of Bob Marley And The Wailers",
+      "displayName": "Three Little Birds",
+      "displayArtist": "Bob Marley",
+      "votes": 1,
+      "addedBy": "life 1",
+      "addedByGuestId": "g-aspmfmb9h",
+      "votedBy": [
+        "g-aspmfmb9h"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:5uEYRdEIh9Bo4fpjDd4Na9",
+      "name": "Goosebumps - Remix",
+      "artist": "Travis Scott",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b273261927ea4874e8f375ad27ce",
+      "album": "Goosebumps (Remix)",
+      "displayName": "Goosebumps",
+      "displayArtist": "Travis Scott",
+      "votes": 1,
+      "addedBy": "life 1",
+      "addedByGuestId": "g-aspmfmb9h",
+      "votedBy": [
+        "g-aspmfmb9h"
+      ],
+      "isFallback": false
+    },
+    {
+      "uri": "spotify:track:3JHuDEDfKiFDvRaIlyBM5h",
+      "name": "Say Something - Live From Spotify UK",
+      "artist": "All Time Low",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2732eef4a4ba2148a75caeafb6a",
+      "album": "Spotify Sessions",
+      "displayName": "Say Something",
+      "displayArtist": "All Time Low",
+      "votes": 1,
+      "addedBy": "life 1",
+      "addedByGuestId": "g-aspmfmb9h",
+      "votedBy": [
+        "g-aspmfmb9h"
+      ],
+      "isFallback": false
+    }
+  ],
   "currentPlayingTrack": {
-    "uri": "spotify:track:5xo1Gj4WTssjQgQ0w03cf2",
-    "name": "Jackie And Wilson",
-    "artist": "Hozier",
-    "album": "Hozier",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b2737a9bf5f82e32d33d4503fe7b",
-    "duration": 223120,
+    "uri": "spotify:track:31g5klhCpFHJcY3j4DYSdw",
+    "name": "Real Love",
+    "artist": "Clean Bandit",
+    "album": "I Cry When I Laugh",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b273b905ed1edb5a88c573c023b0",
+    "duration": 219691,
     "isFallback": true,
     "votes": 0,
-    "displayName": "Jackie And Wilson",
-    "displayArtist": "Hozier",
-    "startedAt": 1767617083347
+    "displayName": "Real Love",
+    "displayArtist": "Clean B",
+    "startedAt": 1767728137733
   },
   "guestNames": {
-    "guest_d1qjlesy6": "Craig",
-    "g-yzr4butkt": "craig"
+    "guest_d1qjlesy6": "Craig 1",
+    "g-yzr4butkt": "craig",
+    "g-aspmfmb9h": "life 1"
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "startedAt": 1767617083318,
-  "youtubeId": "NMLhdYjxbCs",
+  "startedAt": 1767728137731,
+  "youtubeId": "qdo_-U4PEsk",
   "isKaraokeMode": false,
   "karaokeQueue": [],
   "karaokeAnnouncement": null,
-  "tokensEnabled": false,
+  "tokensEnabled": true,
   "tokensInitial": 1,
   "tokensPerHour": 5,
   "tokensMax": 3,
@@ -43,33 +93,38 @@
       "lastAccrual": 1767380948854
     },
     "guest_d1qjlesy6": {
-      "balance": 3,
-      "lastAccrual": 1767616149700
+      "balance": 0,
+      "lastAccrual": 1767727749700
+    },
+    "g-aspmfmb9h": {
+      "balance": 0,
+      "lastAccrual": 1767728118248
     }
   },
   "djStatus": {
-    "message": "Playing: Jackie And Wilson",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2737a9bf5f82e32d33d4503fe7b",
-    "bpm": 164,
-    "key": "F# major",
+    "message": "Playing: Real Love",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273b905ed1edb5a88c573c023b0",
+    "bpm": 125,
+    "key": "F major",
     "genres": [
-      "Alternative"
+      "Dance"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Jackie And Wilson",
-    "researchArtist": "Hozier",
-    "researchAlbum": "Hozier",
-    "valence": 96,
-    "publisher": "Universal-Island Records Ltd.",
-    "isrc": "IEACJ1400141",
+    "researchTitle": "Real Love",
+    "researchArtist": "Clean Bandit",
+    "researchAlbum": "Real Love",
+    "valence": 63,
+    "publisher": "Atlantic Records UK",
+    "isrc": "GBAHS1400368",
     "releaseDate": "2014-10-06",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-05T12:44:46.417Z",
+  "lastSavedAt": "2026-01-06T19:36:30.794Z",
   "playedHistory": [
-    "spotify:track:76ivbkzJ0fd4sJ5epj44I3",
-    "spotify:track:7isAYELhhKBIdffQS1wMbB",
-    "spotify:track:5xo1Gj4WTssjQgQ0w03cf2"
+    "spotify:track:6JL4uVaDW54846ig6sZQpd",
+    "spotify:track:6R37vdiXh79pBLMOAPDaSj",
+    "spotify:track:6QPKYGnAW9QozVz2dSWqRg",
+    "spotify:track:31g5klhCpFHJcY3j4DYSdw"
   ]
 }

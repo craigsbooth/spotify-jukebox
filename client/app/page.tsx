@@ -4,8 +4,7 @@ import { useJukeboxState } from './hooks/useJukeboxState';
 import { useJukeboxHandlers } from './hooks/useJukeboxHandlers';
 import { DashboardView } from './DashboardView'; 
 import { styles } from './dashboard_ui';
-
-const HOST_PIN = "1234";
+import { API_URL } from './config';
 
 export default function Home() {
   // 1. AUTHENTICATION STATE
@@ -64,19 +63,50 @@ export default function Home() {
   
   const jukeboxHandlers = useJukeboxHandlers(jukeboxState, setters);
 
+  // Helper: Verify PIN against Server
+  const verifyPin = async (pin: string) => {
+      try {
+          // Construct the auth URL by stripping '/api' from the standard API_URL 
+          // because auth routes are mounted at root '/'
+          const authBase = API_URL.replace(/\/api$/, '');
+          const res = await fetch(`${authBase}/verify-pin`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pin })
+          });
+          const data = await res.json();
+          return data.success;
+      } catch (e) {
+          console.error("Auth Check Failed:", e);
+          return false;
+      }
+  };
+
   // 5. LOCAL UI HANDLERS
   const localHandlers = {
     ...jukeboxHandlers,
-    handlePinSubmit: (e: any) => { 
+    handlePinSubmit: async (e: any) => { 
       e.preventDefault(); 
-      if (pinInput === HOST_PIN) { 
+      const isValid = await verifyPin(pinInput);
+      if (isValid) { 
         setIsAuthorized(true); 
         localStorage.setItem('jukebox_host_auth', 'true'); 
-      } 
+        setPinInput('');
+      } else {
+        alert("ACCESS DENIED: Incorrect PIN");
+        setPinInput('');
+      }
     },
-    handleUnlock: (e: any) => { 
+    handleUnlock: async (e: any) => { 
       e.preventDefault(); 
-      if (pinInput === HOST_PIN) { setIsLocked(false); setPinInput(''); } 
+      const isValid = await verifyPin(pinInput);
+      if (isValid) { 
+          setIsLocked(false); 
+          setPinInput(''); 
+      } else {
+          alert("Incorrect PIN");
+          setPinInput('');
+      }
     },
     setIsLocked,
     setPinInput

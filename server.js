@@ -58,20 +58,18 @@ app.post('/api/remove-karaoke', (req, res) => {
 /**
  * 7. STARTUP SEQUENCE
  */
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port}`);
 
-    // Wait 5 seconds after boot to allow spotify_instance recovery
-    setTimeout(async () => {
-        if (spotifyApi.getAccessToken()) {
-            console.log(`📦 Startup [v${APP_VERSION}]: Session found. Rebuilding Shuffle Bag...`);
-            try {
-                await spotifyCtrl.refreshShuffleBag();
-            } catch (err) {
-                console.error("❌ Startup: Failed to load initial playlist:", err.message);
-            }
-        } else {
-            console.log("ℹ️ Startup: No active session found on disk. Manual login required at /login.");
+    // Immediate Session Check (No 5s Delay)
+    if (spotifyApi.getAccessToken()) {
+        console.log(`📦 Startup [v${APP_VERSION}]: Session found. Rebuilding Shuffle Bag...`);
+        try {
+            await spotifyCtrl.refreshShuffleBag();
+        } catch (err) {
+            console.error("❌ Startup: Failed to load initial playlist:", err.message);
         }
-    }, 5000);
+    } else {
+        console.log("ℹ️ Startup: No active session found on disk. Manual login required at /login.");
+    }
 });

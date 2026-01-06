@@ -204,6 +204,10 @@ router.post('/name', (req, res) => {
 router.post('/join', (req, res) => {
     if (req.body.guestId && req.body.name) {
         sm.registerGuest(req.body.guestId, req.body.name);
+        
+        // FIX: Force save to persist name changes to disk
+        sm.saveSettings();
+        
         const tokenInfo = sm.syncGuestTokens(req.body.guestId);
         return res.json({ success: true, tokens: tokenInfo?.balance || 0 });
     }

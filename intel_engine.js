@@ -2,8 +2,6 @@
 const state = require('./state');
 const sm = require('./state_manager'); // Added for immediate saving
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 function cleanTitleForSearch(title) {
     if (!title) return "";
     return title.split(' - ')[0].split(' (')[0].split(' [')[0]
@@ -134,13 +132,12 @@ async function analyzeTrack(track) {
 
     try {
         // Run YouTube search and Technical metadata research in parallel for speed
+        // Removed artificial sleep delay for faster response
         console.log(`⏳ [INTEL] Launching Parallel Research for "${searchName}"...`);
         
         const [ytId, research] = await Promise.all([
             fetchYouTubeId(searchArtist, searchName),
-            // We still keep a small delay for Deezer/MB to respect rate limits if needed, 
-            // but YouTube starts immediately
-            (async () => { await sleep(2000); return fetchDeepMetadata(searchArtist, searchName); })()
+            fetchDeepMetadata(searchArtist, searchName)
         ]);
 
         // --- STEP 2: FINAL DATA SYNC ---

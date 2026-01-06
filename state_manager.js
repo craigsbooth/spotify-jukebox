@@ -3,9 +3,13 @@ const state = require('./state');
 const fs = require('fs');
 const path = require('path');
 const em = require('./economy_manager'); // Import dedicated credit manager
+const utils = require('./utils'); // Import shared utils
 
 // Ensure we use a consistent absolute path for settings
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+
+// Debounce timer for disk writes
+let saveTimer = null;
 
 const stateManager = {
     // 1. DJ ENGINE CONTROL
@@ -85,7 +89,7 @@ const stateManager = {
         const tokenResult = stateManager.spendToken(guestId);
         if (!tokenResult.success) return tokenResult;
 
-        const sanitized = stateManager.sanitizeTrack(trackData);
+        const sanitized = utils.sanitizeTrack(trackData);
         const { uri, name, artist, albumArt, album, displayName, displayArtist } = sanitized;
         
         const gid = guestId || 'anonymous';
@@ -154,7 +158,7 @@ const stateManager = {
         console.log(`👤 New Guest: ${name} (${guestId}) | Tokens: ${state.tokenRegistry[guestId].balance}`);
     },
 
-    // 6. PERSISTENCE & THEME
+    // 6. PERSISTENCE & THEME (FIXED: ASYNC DEBOUNCE)
     saveSettings: () => {
         const { 
             shuffleBag, 
@@ -170,11 +174,17 @@ const stateManager = {
             lastSavedAt: new Date().toISOString()
         };
 
-        try {
-            fs.writeFileSync(SETTINGS_FILE, JSON.stringify(dataToSave, null, 2));
-        } catch (e) {
-            console.error("💾 Critical Failure: Could not save settings.json:", e.message);
-        }
+        // Clear any pending write
+        if (saveTimer) clearTimeout(saveTimer);
+
+        // Schedule new write in 1 second
+        saveTimer = setTimeout(() => {
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            fs.writeFile(SETTINGS_FILE, jsonString, (err) => {
+                if (err) console.error("💾 Async Write Failed:", err.message);
+                // else console.log("💾 Settings saved."); // Optional: reduce noise
+            });
+        }, 1000);
     },
 
     setTheme: (config) => {
@@ -199,7 +209,7 @@ const stateManager = {
             if (config.tokensPerHour !== undefined) { state.tokensPerHour = parseInt(config.tokensPerHour); updated = true; }
             if (config.tokensMax !== undefined) { 
                 state.tokensMax = parseInt(config.tokensMax); 
-                em.enforceGlobalTokenCap(); // BUG 1 FIX: Instantly trim balances
+                em.enforceGlobalTokenCap();
                 updated = true; 
             }
         }
@@ -216,48 +226,17 @@ const stateManager = {
         return { success: false, message: "Invalid Config" };
     },
 
-    // 7. UTILITY & ECONOMY BRIDGE (Restored Missing Features)
-    isInHistory: (uri) => {
-        if (state.playedHistory instanceof Set) return state.playedHistory.has(uri);
-        if (Array.isArray(state.playedHistory)) return state.playedHistory.includes(uri);
-        return false;
-    },
+    // 7. UTILITY & ECONOMY BRIDGE
+    // Bridging to Utils
+    isInHistory: (uri) => utils.isInHistory(state.playedHistory, uri),
+    sanitizeTrack: (track) => utils.sanitizeTrack(track),
 
-    // Bridging to Economy Manager so other files don't break
+    // Bridging to Economy Manager
     syncGuestTokens: (guestId) => em.syncGuestTokens(guestId),
     spendToken: (guestId) => {
         const res = em.spendToken(guestId);
         if (res.success) stateManager.saveSettings();
         return res;
-    },
-
-    sanitizeTrack: (track) => {
-        if (!track || !track.name) return track;
-
-        const junkPatterns = [
-            /remaster(?:ed)?/gi, /deluxe/gi, /anniversary/gi, /edition/gi, /expanded/gi,
-            /version/gi, /mix/gi, /remix/gi, /radio edit/gi, /club/gi, /extended/gi,
-            /original/gi, /live(?: at| from)?/gi, /feat(?:\.|uring)?/gi, /ft(?:\.)?/gi,
-            /with/gi, /vip/gi, /re-recorded/gi, /mono/gi, /stereo/gi, /acoustic/gi,
-            /instrumental/gi, /bonus/gi, /single/gi, /unplugged/gi, /vault/gi
-        ];
-
-        const junkRegex = new RegExp(junkPatterns.map(p => p.source).join('|'), 'i');
-
-        let cleanName = track.name
-            .replace(/\s*\([^)]*?\)/gi, (match) => junkRegex.test(match) ? '' : match)
-            .replace(/\s*\[[^\]]*?\]/gi, (match) => junkRegex.test(match) ? '' : match)
-            .replace(/\s*[-–—].*$/gi, (match) => junkRegex.test(match) ? '' : match)
-            .trim();
-
-        if (!cleanName || cleanName.length < 2) cleanName = track.name;
-        let cleanArtist = track.artist ? track.artist.split(/[,]|feat\.|ft\.|featuring|&|and/i)[0].trim() : track.artist;
-
-        return {
-            ...track,
-            displayName: cleanName,
-            displayArtist: cleanArtist
-        };
     }
 };
 

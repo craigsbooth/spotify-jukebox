@@ -8,7 +8,7 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
     const dj = state.djStatus || {};
     const isScanning = String(dj.publisher || '').includes('Scanning') || dj.bpm === '--';
     
-    // LOGIC: A Performance is active ONLY if a YouTube ID is loaded in the state.
+    // LOGIC: A Performance is active if a YouTube ID is loaded.
     const isPerformanceActive = !!state.youtubeId;
 
     return (
@@ -22,16 +22,16 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                     padding: '20px', 
                     marginBottom: '20px', 
                     border: '1px solid #D4AF3733',
-                    // Visual feedback: Dim the player if a performance is active to show it's disabled
-                    opacity: isPerformanceActive ? 0.5 : 1, 
-                    pointerEvents: isPerformanceActive ? 'none' : 'auto'
+                    // FIX: Always keep player active and interactive
+                    opacity: 1, 
+                    pointerEvents: 'auto'
                 }}>
                     <SpotifyPlayer 
                         token={state.token} 
-                        // STRICT RULE: 
-                        // If YouTube is playing (isPerformanceActive), Spotify must be completely unloaded (uris=[]).
-                        uris={isPerformanceActive ? [] : (state.currentTrack?.uri ? [state.currentTrack.uri] : [])} 
-                        play={!isPerformanceActive} 
+                        // FIX: Always allow Spotify to load the current track, even if YouTube is active.
+                        // This gives the host full manual mixing control.
+                        uris={state.currentTrack?.uri ? [state.currentTrack.uri] : []} 
+                        play={true} 
                         callback={handlers.onPlayerCallback} 
                         styles={{ activeColor: '#D4AF37', bgColor: '#000', color: '#fff', trackNameColor: '#fff', sliderColor: '#D4AF37', height: 60 }} 
                     />
@@ -138,7 +138,7 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontSize: '0.65rem', color: '#888', fontWeight: 900 }}>RELEASE DATE</div>
-                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#eee' }}>{String(dj.releaseDate || '--')}</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#eee' }}>{String(dj.releaseDate || '--')}</div>
                                 </div>
                             </div>
                         </div>

@@ -3,15 +3,10 @@ const express = require('express');
 const router = express.Router();
 const state = require('../state');
 const intel = require('../intel_engine');
-const spotifyApi = require('../spotify_instance'); // Added: Required for the /current sync
+const spotifyApi = require('../spotify_instance'); 
 const spotifyCtrl = require('../spotify_ctrl');
 const sm = require('../state_manager');
-
-const isInHistory = (uri) => {
-    if (state.playedHistory instanceof Set) return state.playedHistory.has(uri);
-    if (Array.isArray(state.playedHistory)) return state.playedHistory.includes(uri);
-    return false;
-};
+const utils = require('../utils'); // Import Shared Utils
 
 /**
  * FIXED: Deduplicated Queue Delivery
@@ -21,14 +16,31 @@ const isInHistory = (uri) => {
 router.get('/queue', (req, res) => {
     const bag = Array.isArray(state.shuffleBag) ? state.shuffleBag : [];
     
-    // Create a Set of URIs currently in the priority queue for O(1) lookup
-    const priorityUris = new Set(state.partyQueue.map(t => t.uri));
+    // Create Set directly from the queue for O(1) lookups
+    const priorityUris = new Set();
+    state.partyQueue.forEach(t => priorityUris.add(t.uri));
+
+    // --- DYNAMIC NAME RESOLUTION ---
+    // Iterate through the Party Queue and update the "addedBy" name 
+    // based on the latest Guest ID registry.
+    const dynamicQueue = state.partyQueue.map(track => {
+        // If we have a stored Guest ID, look up the freshest name
+        if (track.addedByGuestId && state.guestNames[track.addedByGuestId]) {
+            return { ...track, addedBy: state.guestNames[track.addedByGuestId] };
+        }
+        return track;
+    });
+    // Update state to reflect fresh names (optional, but keeps state clean)
+    state.partyQueue = dynamicQueue;
 
     // Filter the buffer: 1. Not in History, 2. NOT already in the Priority Queue
     const buffer = bag
-        .filter(t => !isInHistory(t.uri) && !priorityUris.has(t.uri))
+        .filter(t => !utils.isInHistory(state.playedHistory, t.uri) && !priorityUris.has(t.uri))
         .slice(0, 10)
-        .map(t => ({ ...t, isFallback: true })); // Explicitly flag for UI differentiation
+        .map(t => ({ 
+            ...utils.sanitizeTrack(t), // <--- FIX: Clean up "Remastered/Feat" on Fallback tracks
+            isFallback: true 
+        }));
 
     res.json([...state.partyQueue, ...buffer]);
 });
@@ -43,7 +55,6 @@ router.post('/queue', (req, res) => {
     if (!guestId) return res.status(400).json({ error: "No Guest ID" });
     
     // --- TOKEN GATEKEEPER ---
-    // If tokens are enabled, this will check balance, deduct 1, or return an error with countdown.
     const tokenCheck = sm.spendToken(guestId);
     if (!tokenCheck.success) {
         return res.status(403).json(tokenCheck); 
@@ -54,7 +65,7 @@ router.post('/queue', (req, res) => {
     if (existingIndex !== -1) {
         const track = state.partyQueue[existingIndex];
         
-        // If already voted, refund the token (since we spent it at the start of the route)
+        // Refund if already voted
         if (track.votedBy?.includes(guestId)) {
             if (state.tokensEnabled && state.tokenRegistry[guestId]) {
                 state.tokenRegistry[guestId].balance += 1;
@@ -64,7 +75,7 @@ router.post('/queue', (req, res) => {
         
         track.votes += 1;
         track.votedBy.push(guestId);
-        track.isFallback = false; // Promotion: It is no longer a fallback track
+        track.isFallback = false; // Promotion
         
         state.partyQueue.sort((a, b) => b.votes - a.votes);
         sm.saveSettings();
@@ -74,13 +85,14 @@ router.post('/queue', (req, res) => {
             tokens: tokenCheck.balance 
         });
     } else {
-        // SANITIZATION UPDATE: Sanitize the track before pushing to the queue
-        const sanitized = sm.sanitizeTrack({ uri, name, artist, albumArt, album });
+        // SANITIZATION UPDATE: Use Utils
+        const sanitized = utils.sanitizeTrack({ uri, name, artist, albumArt, album });
         
         state.partyQueue.push({ 
             ...sanitized,
             votes: 1, 
             addedBy: state.guestNames[guestId] || "Guest", 
+            addedByGuestId: guestId, // <--- CRITICAL: Store the ID for future lookups
             votedBy: [guestId], 
             isFallback: false 
         });
@@ -104,7 +116,7 @@ router.post('/pop', async (req, res) => {
     // 2. Check Shuffle Bag
     else {
         const bag = Array.isArray(state.shuffleBag) ? state.shuffleBag : [];
-        nextTrack = bag.find(t => !isInHistory(t.uri));
+        nextTrack = bag.find(t => !utils.isInHistory(state.playedHistory, t.uri));
 
         if (!nextTrack && bag.length > 0) {
             console.log("♻️ Queue: Pool exhausted. Clearing history to loop fallback.");
@@ -122,19 +134,21 @@ router.post('/pop', async (req, res) => {
         }
 
         // --- EXECUTION LINK ---
-        // Added the play command to physically start the music
         await spotifyCtrl.playTrack(nextTrack.uri);
 
         // --- SANITIZATION FIX ---
-        // We sanitize the track right here so that currentPlayingTrack is always clean
-        // This handles tracks coming from the Shuffle Bag (like Old Thing Back)
-        const sanitized = sm.sanitizeTrack(nextTrack);
+        const sanitized = utils.sanitizeTrack(nextTrack);
 
-        // Analysis happens in background with sanitized data
+        // Analysis happens in background
         intel.analyzeTrack(sanitized).catch(err => console.error("Intel background error:", err));
 
-        // Anchor the start time and the clean metadata
-        state.currentPlayingTrack = { ...sanitized, startedAt: Date.now() };
+        // Transfer the Guest ID info to the current playing track so Projector can see it
+        state.currentPlayingTrack = { 
+            ...sanitized, 
+            startedAt: Date.now(),
+            addedBy: nextTrack.addedBy,
+            addedByGuestId: nextTrack.addedByGuestId // Pass it through
+        };
         res.json(state.currentPlayingTrack);
     } else {
         await spotifyCtrl.refreshShuffleBag();
@@ -148,12 +162,38 @@ router.post('/shuffle', async (req, res) => {
 });
 
 router.post('/remove', (req, res) => {
-    state.partyQueue = state.partyQueue.filter(track => track.uri !== req.body.uri);
+    const uriToRemove = req.body.uri;
+    
+    // 1. Try removing from Party Queue
+    const initialLength = state.partyQueue.length;
+    state.partyQueue = state.partyQueue.filter(track => track.uri !== uriToRemove);
+    
+    // 2. If not found/removed in Party Queue, remove from Shuffle Bag (Fallback)
+    if (state.partyQueue.length === initialLength && Array.isArray(state.shuffleBag)) {
+        state.shuffleBag = state.shuffleBag.filter(track => track.uri !== uriToRemove);
+        console.log(`🗑️ Removed ${uriToRemove} from Shuffle Bag`);
+    }
+
     res.json({ success: true });
 });
 
+// FIX: ALLOW REORDERING & SET CORRECT FALLBACK LABEL
 router.post('/reorder', (req, res) => {
-    if (Array.isArray(req.body.queue)) state.partyQueue = req.body.queue.filter(t => !t.isFallback);
+    if (Array.isArray(req.body.queue)) {
+        // We map the new queue. If a track was a "Fallback" (isFallback: true),
+        // we flip it to false because the Host has explicitly ordered it.
+        // We set addedBy to 'Fallback Track' so the UI knows to show the Radio icon.
+        state.partyQueue = req.body.queue.map(t => ({
+            ...t,
+            isFallback: false, // Lock it in
+            addedBy: t.addedBy || 'Fallback Track',
+            // If it was a fallback, it has no guest ID, so addedByGuestId remains undefined
+            votes: t.votes || 0,
+            votedBy: t.votedBy || []
+        }));
+        
+        sm.saveSettings();
+    }
     res.json({ success: true });
 });
 
@@ -166,7 +206,6 @@ router.get('/queue/current', async (req, res) => {
         if (!state.currentPlayingTrack) {
             const data = await spotifyApi.getMyCurrentPlayingTrack();
             if (data && data.body && data.body.item) {
-                // SANITIZATION UPDATE: Clean the data if we have to fetch it live
                 const rawTrack = {
                     name: data.body.item.name,
                     artist: data.body.item.artists[0].name,
@@ -174,12 +213,18 @@ router.get('/queue/current', async (req, res) => {
                     albumArt: data.body.item.album.images[0]?.url,
                     duration_ms: data.body.item.duration_ms
                 };
-                state.currentPlayingTrack = sm.sanitizeTrack(rawTrack);
+                state.currentPlayingTrack = utils.sanitizeTrack(rawTrack);
             }
         }
+        
+        // DYNAMIC RESOLUTION FOR CURRENT TRACK TOO
+        if (state.currentPlayingTrack && state.currentPlayingTrack.addedByGuestId) {
+             const freshName = state.guestNames[state.currentPlayingTrack.addedByGuestId];
+             if (freshName) state.currentPlayingTrack.addedBy = freshName;
+        }
+
         res.json(state.currentPlayingTrack);
     } catch (err) {
-        // Fallback to current state if API call fails
         res.json(state.currentPlayingTrack || null);
     }
 });

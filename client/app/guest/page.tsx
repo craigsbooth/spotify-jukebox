@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config'; 
 import { styles } from './guest_ui';
 import { GuestHeader } from './GuestHeader'; 
@@ -26,14 +26,51 @@ export default function GuestPage() {
   const [showLyrics, setShowLyrics] = useState(false);
   const [activeReactions, setActiveReactions] = useState<any[]>([]);
 
-  // 1. SYNC LOGIC
+  // Ref for SSE Connection to prevent duplicate listeners
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  // 1. SYNC LOGIC (Hybrid: SSE + Polling)
   useEffect(() => {
+    // A. Guest Initialization
     let gid = localStorage.getItem('jukebox_guest_id') || 'g-' + Math.random().toString(36).substr(2, 9);
     let gname = localStorage.getItem('jukebox_guest_name') || 'Guest';
     localStorage.setItem('jukebox_guest_id', gid);
     setGuestId(gid); 
     setGuestName(gname);
 
+    // B. SSE Connection (The "Fast Path" for Mode/Queue/Reactions)
+    const connectSSE = () => {
+        if (eventSourceRef.current) eventSourceRef.current.close();
+        const es = new EventSource(`${API_URL}/events`);
+        eventSourceRef.current = es;
+
+        es.onmessage = (e) => {
+            try {
+                const { type, payload } = JSON.parse(e.data);
+
+                // Handle Mode & Queue Swaps Instantly
+                if (type === 'INIT' || type === 'THEME_UPDATE') {
+                    if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
+                    if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
+                }
+                if (type === 'KARAOKE_MODE') setIsKaraokeMode(!!payload.isKaraokeMode);
+                if (type === 'KARAOKE_QUEUE') setKaraokeQueue(payload.karaokeQueue || []);
+                
+                // Show Global Reactions
+                if (type === 'REACTION') {
+                    const id = payload.id || Date.now();
+                    setActiveReactions(prev => [...prev, { id, emoji: payload.emoji, left: Math.random() * 80 + 10 }]);
+                    setTimeout(() => setActiveReactions(prev => prev.filter(r => r.id !== id)), 4000);
+                }
+            } catch (err) { console.error("SSE Error:", err); }
+        };
+    };
+    
+    // Attempt connection
+    try { connectSSE(); } catch (e) {}
+
+    // C. Polling (The "Slow Path" for Tokens/Standard Queue)
+    // We keep this because token math and Spotify queue shifts happen independently of our events
     const interval = setInterval(() => {
         fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
@@ -42,12 +79,12 @@ export default function GuestPage() {
             setTokenBalance(d.balance); 
             setNextInSeconds(d.nextIn);
         });
-        fetch(`${API_URL}/theme`).then(res => res.json()).then(d => {
-            setIsKaraokeMode(!!d.isKaraokeMode); 
-            setKaraokeQueue(d.karaokeQueue || []);
-        });
     }, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+        clearInterval(interval);
+        if (eventSourceRef.current) eventSourceRef.current.close();
+    };
   }, []);
 
   // 2. HANDLERS
@@ -84,16 +121,22 @@ export default function GuestPage() {
     const isKaraokeRequest = isKaraokeMode || track.isKaraoke;
     const targetEndpoint = isKaraokeRequest ? 'karaoke-queue' : 'queue';
     
-    // FIX: Explicitly map fields for the Server
-    // Server expects 'title' and 'thumb', but Track has 'name' and 'albumArt'
+    // FIX: Send comprehensive data for both engines (Spotify & Karaoke)
     const payload = {
         id: track.id,
         uri: track.uri,
-        // Map Name -> Title
-        title: track.name || track.title,
-        // Map AlbumArt -> Thumb
-        thumb: track.albumArt || track.thumb,
-        // Standard fields
+        
+        // STANDARD QUEUE DATA (Required for Spotify)
+        name: track.name || track.title, 
+        artist: track.artist || track.displayArtist || "Unknown Artist",
+        album: track.album || "Single",
+        albumArt: track.albumArt || track.thumb,
+
+        // KARAOKE DATA (Required for YouTube)
+        title: track.title || track.name,
+        thumb: track.thumb || track.albumArt,
+        
+        // Context
         guestId,
         singer: isKaraokeRequest ? guestName : undefined
     };
@@ -114,9 +157,11 @@ export default function GuestPage() {
   };
 
   const triggerReaction = (emoji: string) => {
+    // Optimistic UI update (shows immediately for sender)
     const id = Date.now();
     setActiveReactions(prev => [...prev, { id, emoji, left: Math.random() * 80 + 10 }]);
     setTimeout(() => setActiveReactions(prev => prev.filter(r => r.id !== id)), 4000);
+    
     fetch(`${API_URL}/reaction-event`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
@@ -129,6 +174,9 @@ export default function GuestPage() {
       const secs = (s % 60).toString().padStart(2, '0');
       return `${mins}:${secs}`;
   };
+
+  // Helper for Search Component to display "Wait 3m" button
+  const nextTokenMinutes = Math.ceil(nextInSeconds / 60);
 
   return (
     <div style={{...styles.masterContainer, position: 'relative', overflowX: 'hidden'}}>
@@ -163,6 +211,7 @@ export default function GuestPage() {
         votedUris={votedUris}
         tokensEnabled={tokensEnabled}
         tokenBalance={tokenBalance}
+        nextTokenMinutes={nextTokenMinutes} // Passed Down Here
         handleSearch={handleSearch}
         handleRequest={handleRequest}
       />

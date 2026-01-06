@@ -62,8 +62,8 @@ export const DashboardView: React.FC<DashboardProps> = ({ state, handlers }) => 
             {/* 3. THREE-PANEL GRID SYSTEM (CORRECTED LAYOUT) */}
             <main style={{
                 ...styles.grid,
-                // FIX: Correct 30-40-30 split (Left: 30%, Middle: 40%, Right: 30%)
-                gridTemplateColumns: '30fr 40fr 30fr', 
+                // FIX: Strict 30-40-30 split using percentages
+                gridTemplateColumns: '30% 40% 30%', 
                 padding: '20px',
                 height: 'calc(100vh - 100px)',
                 overflowY: 'auto',

@@ -14,6 +14,11 @@ interface Track {
   startedAt?: number; 
   duration?: number;
   is_playing?: boolean; 
+  addedBy?: string; 
+  singer?: string; 
+  title?: string; 
+  thumb?: string;
+  isFallback?: boolean; 
 }
 interface LyricLine { time: number; text: string; }
 interface Reaction { id: number; emoji: string; left: number; }
@@ -44,8 +49,7 @@ export default function Projector() {
 
   // BANNER ANIMATION STATE
   const [showUpNext, setShowUpNext] = useState(false);
-  const prevUpNextRef = useRef<string | null>(null);
-
+  
   const lastReactionIdRef = useRef(0); 
   const prevUriRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +67,6 @@ export default function Projector() {
             setIsKaraokeMode(!!d.isKaraokeMode);
             if (d.youtubeId !== undefined) setYoutubeId(d.youtubeId || null);
             setKaraokeQueue(d.karaokeQueue || []);
-            // Note: We ignore karaokeAnnouncement here to prevent the big popup
         });
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name || 'Pinfold'));
     };
@@ -145,32 +148,35 @@ export default function Projector() {
     if (el && scrollContainerRef.current) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [activeLineIndex]);
 
-  // --- 4. BANNER ANIMATION LOGIC ---
-  // Helper to get the next item regardless of mode
+  // --- 4. BANNER ANIMATION LOGIC (FIXED: PERSISTENT) ---
   const nextUpItem = isKaraokeMode ? karaokeQueue[0] : queue[0];
   const nextUpId = nextUpItem?.uri || nextUpItem?.id || 'empty';
 
   useEffect(() => {
-    if (nextUpId !== 'empty' && nextUpId !== prevUpNextRef.current) {
-        prevUpNextRef.current = nextUpId;
-        setShowUpNext(true);
-        const timer = setTimeout(() => setShowUpNext(false), 8000); // Hide after 8s
-        return () => clearTimeout(timer);
-    }
+    // FIX: Simply show if there is a next item, hide if empty. No timer.
+    setShowUpNext(nextUpId !== 'empty');
   }, [nextUpId]);
 
   const currentArt = nowPlaying?.albumArt || RECORD_PLACEHOLDER;
   
   // --- FINAL RULES ---
-  
-  // 1. VIDEO: Always show if ID exists.
   const showVideo = !!youtubeId;
-
-  // 2. AUDIO RULE: Unmute ONLY if Karaoke Mode is ON.
   const shouldUnmuteVideo = isKaraokeMode && !!youtubeId;
-
-  // 3. OVERLAY: Show if Karaoke Mode is OFF.
   const showTextOverlay = !isKaraokeMode;
+
+  // HELPER: Determine Next Up Label
+  const getAddedByLabel = (item: any) => {
+      if (isKaraokeMode) return null;
+      if (!item) return null;
+      
+      const isSystem = item.isFallback || item.addedBy === 'Fallback Track';
+      if (isSystem) return { icon: '📻', text: 'Fallback Track' };
+      if (item.addedBy) return { icon: '👤', text: `Added by ${item.addedBy}` };
+      return null;
+  };
+  
+  const addedByInfo = getAddedByLabel(queue[0]);
+  const nextAddedByInfo = getAddedByLabel(nextUpItem);
 
   return (
     <div style={styles.masterWrapper}>
@@ -210,8 +216,6 @@ export default function Projector() {
       <div style={styles.brandingHeader}><h1>{partyName}</h1></div>
       {joinNotification && (<div style={styles.notificationWrapper}><div className="pill" style={styles.joinPill}><h2>👋 {joinNotification} joined!</h2></div></div>)}
 
-      {/* KARAOKE ANNOUNCEMENT REMOVED */}
-
       {viewMode === 'carousel' && !isKaraokeMode && (
         <div style={styles.carouselPerspective}><div style={styles.carouselContainer}>
             {[...history.slice(-3), nowPlaying, ...queue.slice(0, 5)].map((track, index) => {
@@ -235,7 +239,7 @@ export default function Projector() {
 
       {viewMode === 'standard' && !isKaraokeMode && (
         <div style={styles.standardContainer}>
-           {/* RESTORED: Standard View Pill */}
+           {/* UP NEXT PILL (STANDARD) */}
            <div style={{
                ...styles.upNextPosition, 
                transition: 'transform 0.5s', 
@@ -245,7 +249,16 @@ export default function Projector() {
             {queue[0] && (
               <div className="pill" style={styles.upNextPill}>
                 <img src={queue[0].albumArt || RECORD_PLACEHOLDER} style={styles.upNextArt} />
-                <div><small>UP NEXT</small><div>{queue[0].displayName ?? queue[0].name}</div></div>
+                <div>
+                    <small>UP NEXT</small>
+                    <div style={{ fontWeight: 900 }}>{queue[0].displayName ?? queue[0].name}</div>
+                    {/* ADDED BY BADGE (SYSTEM AWARE) */}
+                    {addedByInfo && (
+                        <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+                           {addedByInfo.icon} {addedByInfo.text}
+                        </div>
+                    )}
+                </div>
               </div>
             )}
           </div>
@@ -276,7 +289,7 @@ export default function Projector() {
 
       {(viewMode === 'monitor' || isKaraokeMode) && (
         <div style={styles.monitorContainer}>
-          {/* RESTORED & FIXED: Monitor View Pill (Shows Singer in Karaoke Mode) */}
+          {/* UP NEXT PILL (MONITOR / KARAOKE) */}
           <div style={{ 
               position: 'absolute', 
               top: '4vh', 
@@ -287,24 +300,30 @@ export default function Projector() {
           }}>
             {nextUpItem && (
               <div className="pill" style={styles.upNextPill}>
-                {/* Fallback to Record Placeholder if no art/thumb */}
                 <img src={nextUpItem.albumArt || nextUpItem.thumb || RECORD_PLACEHOLDER} style={styles.upNextArt} />
                 <div>
                   <small style={{opacity:0.5, fontSize:'0.6rem'}}>
                       {isKaraokeMode ? 'NEXT SINGER' : 'UP NEXT'}
                   </small>
                   <div style={{fontWeight:900, fontSize:'1rem'}}>
-                      {/* In Karaoke: Show Singer Name. In Music: Show Song Name */}
                       {isKaraokeMode ? (nextUpItem.singer || 'Guest') : (nextUpItem.displayName ?? nextUpItem.name)}
                   </div>
-                  {/* In Karaoke: Show Song Title below Singer */}
-                  {isKaraokeMode && <div style={{fontSize:'0.7rem', opacity:0.8}}>{nextUpItem.title}</div>}
+                  
+                  {isKaraokeMode ? (
+                      <div style={{fontSize:'0.7rem', opacity:0.8}}>Performing: {nextUpItem.title}</div>
+                  ) : (
+                      nextAddedByInfo && (
+                          <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+                             {nextAddedByInfo.icon} {nextAddedByInfo.text}
+                          </div>
+                      )
+                  )}
                 </div>
               </div>
             )}
           </div>
           
-          {/* Metadata Overlay: ONLY show if Karaoke Mode is OFF */}
+          {/* Metadata Overlay */}
           {showTextOverlay && (
             <div style={{textAlign: 'center', position: 'absolute', bottom: '10vh', left: 0, width: '100%'}}>
                 <h1 style={styles.monitorTitle}>{nowPlaying?.displayName ?? nowPlaying?.name}</h1>

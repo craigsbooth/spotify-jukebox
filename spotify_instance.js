@@ -32,18 +32,7 @@ const spotifyApi = new SpotifyWebApi({
 console.log(`🌐 Auth System: Initialized for ${isLocal ? 'LOCAL' : 'PRODUCTION'}`);
 console.log(`🔗 Redirect Target: ${REDIRECT_URI}`);
 
-// --- 1. THE TOKEN MONITOR ---
-const originalSetAccessToken = spotifyApi.setAccessToken;
-spotifyApi.setAccessToken = function(token) {
-    if (token && token !== "null") {
-        console.log(`🔑 Token System: Access Token updated.`);
-    } else {
-        console.warn("⚠️ Token System: Received null or invalid token.");
-    }
-    return originalSetAccessToken.apply(this, arguments);
-};
-
-// --- 2. STARTUP RECOVERY LOGIC ---
+// --- STARTUP RECOVERY LOGIC ---
 console.log(`📂 Token System: Checking path: ${TOKEN_PATH}`);
 
 try {

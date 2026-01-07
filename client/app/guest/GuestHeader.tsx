@@ -12,9 +12,13 @@ interface HeaderProps {
   nextInSeconds: number;
   showMetadata: boolean;
   showLyrics: boolean;
-  // Data passed from Parent
-  syncedLyrics: any; // Can be string (raw) or array (pre-parsed)
+  syncedLyrics: any; 
   plainLyrics: string;
+  
+  // --- NEW PROP ---
+  lyricsDelayMs: number;
+  // ----------------
+  
   setShowMetadata: (val: boolean) => void;
   setShowLyrics: (val: boolean) => void;
   setIsEditingName: (val: boolean) => void;
@@ -57,16 +61,13 @@ export const GuestHeader = (props: HeaderProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  // 2. PARSING LOGIC (Restored Feature)
-  // This ensures that whether the server sends a string or an array, we handle it.
+  // 2. PARSING LOGIC
   useEffect(() => {
     const raw = props.syncedLyrics;
     
     if (Array.isArray(raw)) {
-        // Already parsed by server or parent
         setParsedLyrics(raw);
     } else if (typeof raw === 'string') {
-        // Need to parse raw LRC string: "[00:12.00] Lyrics..."
         const lines = raw.split('\n').map((l: string) => {
             const m = l.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
             return m ? { 
@@ -86,7 +87,10 @@ export const GuestHeader = (props: HeaderProps) => {
       if (!track?.startedAt || parsedLyrics.length === 0) return;
       
       const elapsed = Date.now() - track.startedAt;
-      const secondsElapsed = elapsed / 1000;
+      
+      // --- APPLY DELAY HERE ---
+      const secondsElapsed = (elapsed - props.lyricsDelayMs) / 1000;
+      // ------------------------
 
       const idx = parsedLyrics.findLastIndex((l: any) => l.time <= secondsElapsed);
       
@@ -96,7 +100,7 @@ export const GuestHeader = (props: HeaderProps) => {
     }, 50); 
 
     return () => clearInterval(progInt);
-  }, [track?.startedAt, parsedLyrics, activeLineIndex]);
+  }, [track?.startedAt, parsedLyrics, activeLineIndex, props.lyricsDelayMs]); // Added prop to dependencies
 
   // 4. WINDOW LOGIC
   const getWindowedLines = () => {

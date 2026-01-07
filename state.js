@@ -57,6 +57,11 @@ let state = {
     shuffleBag: [], 
     playedHistory: new Set() 
 };
+module.exports = {
+    // ... other state ...
+    lyricsDelayMs: 0, // <--- MAKE SURE THIS LINE EXISTS
+    // ...
+};
 
 /**
  * STARTUP HYDRATION

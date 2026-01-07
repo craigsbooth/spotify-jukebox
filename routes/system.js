@@ -253,4 +253,15 @@ router.get('/tokens', (req, res) => {
     });
 });
 
+// --- 12. LYRICS SYNC CONTROL ---
+router.post('/sync-offset', (req, res) => {
+    const { offset } = req.body;
+    if (offset !== undefined) {
+        state.lyricsDelayMs = offset;
+        // Broadcast the new offset immediately
+        sse.send('THEME_UPDATE', { lyricsDelayMs: state.lyricsDelayMs });
+    }
+    res.json({ success: true, offset: state.lyricsDelayMs });
+});
+
 module.exports = router;

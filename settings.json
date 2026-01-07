@@ -8,196 +8,20 @@
   "showLyrics": true,
   "showDebug": false,
   "crossfadeSec": 3,
-  "partyQueue": [
-    {
-      "uri": "spotify:track:4bHsxqR3GMrXTxEPLuK5ue",
-      "name": "Don't Stop Believin'",
-      "artist": "Journey",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273c5653f9038e42efad2f8a266",
-      "album": "Escape (Bonus Track Version)",
-      "displayName": "Don't Stop Believin'",
-      "displayArtist": "Journey",
-      "votes": 1,
-      "addedBy": "Craig 1",
-      "addedByGuestId": "guest_d1qjlesy6",
-      "votedBy": [
-        "guest_d1qjlesy6"
-      ],
-      "isFallback": false
-    },
-    {
-      "uri": "spotify:track:57bgtoPSgt236HzfBOd8kj",
-      "name": "Thunderstruck",
-      "artist": "AC/DC",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b2739a9b1cc067e4460da04adce2",
-      "album": "The Razors Edge",
-      "displayName": "Thunderstruck",
-      "displayArtist": "AC/DC",
-      "votes": 1,
-      "addedBy": "life 1",
-      "addedByGuestId": "g-aspmfmb9h",
-      "votedBy": [
-        "g-aspmfmb9h"
-      ],
-      "isFallback": false
-    },
-    {
-      "uri": "spotify:track:7j31rVgGX9Q2blT92VBEA0",
-      "name": "Teenagers",
-      "artist": "My Chemical Romance",
-      "album": "The Black Parade",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
-      "duration_ms": 161920,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Teenagers",
-      "displayArtist": "My Chemical Romance",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:3IUEZsFIQv3QbE5K15SbJu",
-      "name": "Coat of Armour",
-      "artist": "George Ezra",
-      "album": "Cassy O' (EP)",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273bc2236e12cde94b4724e59b7",
-      "duration_ms": 237680,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Coat of Armour",
-      "displayArtist": "George Ezra",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:26zRWISdmDh3YqgvQDIBXS",
-      "name": "So Low",
-      "artist": "Hijacked",
-      "album": "The Hijacked",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273aecefc9c9c5f361a2dd5aacb",
-      "duration_ms": 187800,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "So Low",
-      "displayArtist": "Hijacked",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:48s4feNgV243gbAGTTBIrc",
-      "name": "Don't You Remember",
-      "artist": "Adele",
-      "album": "21",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273ba764098164f221484bcc309",
-      "duration_ms": 243200,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Don't You Remember",
-      "displayArtist": "Adele",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:1C0vXECyJHUeqOo2Etvrr2",
-      "name": "My Immortal",
-      "artist": "Evanescence",
-      "album": "Fallen",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273f3302494cdc2c9f2eef99a18",
-      "duration_ms": 262533,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "My Immortal",
-      "displayArtist": "Evanescence",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:50yHVBbU6M4iIfqBI1bxWx",
-      "name": "Rumour Has It",
-      "artist": "Adele",
-      "album": "21",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b273ba764098164f221484bcc309",
-      "duration_ms": 223266,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Rumour Has It",
-      "displayArtist": "Adele",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:5MPxtkkVXI3u1W2a4UxqsI",
-      "name": "My Muse",
-      "artist": "Sarah Jarosz",
-      "album": "Follow Me Down",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b27342086f98575ce296a713cbdb",
-      "duration_ms": 275506,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "My Muse",
-      "displayArtist": "Sarah Jarosz",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:1yJZwBqTyGTB7mz8nZyiel",
-      "name": "Barcelona",
-      "artist": "George Ezra",
-      "album": "Wanted on Voyage",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b2732b01e29ac167ad5be48f03ef",
-      "duration_ms": 188960,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Barcelona",
-      "displayArtist": "George Ezra",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:2lz3zjQ5QCVXiyOzIk02vW",
-      "name": "Die For You",
-      "artist": "VALORANT",
-      "album": "Die For You",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b27308074b6de9b696b218c4b57a",
-      "duration_ms": 212926,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Die For You",
-      "displayArtist": "VALORANT",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    },
-    {
-      "uri": "spotify:track:7GtrkWkk5MxDaIlGOr7UU9",
-      "name": "Wake Me Up - Live at the Bedford",
-      "artist": "Ed Sheeran",
-      "album": "Live at the Bedford",
-      "albumArt": "https://i.scdn.co/image/ab67616d0000b2734dc715d4872af21780dc2b1e",
-      "duration_ms": 300680,
-      "isFallback": true,
-      "votes": 0,
-      "displayName": "Wake Me Up",
-      "displayArtist": "Ed Sheeran",
-      "addedBy": "Fallback Track",
-      "votedBy": []
-    }
-  ],
+  "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:10ImcQk9tihY1EKMDIbvXJ",
-    "name": "To Be Loved",
-    "artist": "Adele",
-    "album": "30",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b273c6b577e4c4a6d326354a89f7",
-    "duration_ms": 403961,
+    "uri": "spotify:track:4hZyvWzkb5oo96pzdaBkR8",
+    "name": "Lost Without You",
+    "artist": "Freya Ridings",
+    "album": "Freya Ridings",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b2737727e2d29bfe4869cccd67a6",
+    "duration_ms": 225853,
     "isFallback": true,
     "votes": 0,
-    "displayName": "To Be Loved",
-    "displayArtist": "Adele",
-    "startedAt": 1767775537973,
-    "lyrics": {
-      "synced": "[00:13.52] I built a house for love to grow\n[00:25.88] I was so young that it was hard to know\n[00:36.74] I'm as lost now as I was back then\n[00:44.76] Always make a mess of everything\n[00:52.43] It's about time that I face myself\n[01:02.11] All I do is bleed into someone else\n[01:12.57] Painting walls with all my secret tears\n[01:19.62] Filling rooms with all my hopes and fears\n[01:25.89] But oh my, oh my\n[01:35.84] I'll never learn if I never leap\n[01:41.76] I'll always yearn if I never speak\n[01:50.70] To be loved and love at the highest count\n[02:00.75] Means to lose all the things I can't live without\n[02:10.57] Let it be known that I will choose to lose\n[02:19.83] It's a sacrifice but I can't live a lie\n[02:28.11] Let it be known, let it be known that I tried\n[02:45.06] I'm so afraid but I'm open wide\n[02:54.57] I'll be the one to catch myself this time\n[03:04.18] Trying to learn to lean in to it all\n[03:10.36] Ain't it funny how the mighty fall?\n[03:16.30] Looking back I don't regret a thing\n[03:24.15] Yeah, I took some bad turns that I am owning\n[03:33.86] I'll stand still and let the storm pass by\n[03:40.35] Keep my heart safe 'til the time feels right\n[03:45.85] But oh my, oh my\n[03:55.23] I'll never learn if I never leap\n[04:01.45] I'll always yearn if I never speak\n[04:09.40] To be loved and love at the highest count\n[04:19.21] Means to lose all the things I can't live without\n[04:28.89] Let it be known that I will choose to lose\n[04:37.76] It's a sacrifice but I can't live a lie\n[04:46.03] Let it be known\n[04:49.38] Let it be known that I cried for you\n[04:56.44] Even started lying to you\n[05:02.13] What a thing to do\n[05:07.48] All because I wanted\n[05:13.75] To be loved and love at the highest count\n[05:23.51] Means to lose all the things I can't live without\n[05:32.39] Let it be known, known, known\n[05:35.42] That I will choose, I will lose\n[05:41.94] It's a sacrifice but I can't live a lie\n[05:49.39] Let it be known\n[05:52.77] Let it be known that I tried, that I tried\n[06:13.01] Let it be known that I tried",
-      "plain": "I built a house for love to grow\nI was so young that it was hard to know\nI'm as lost now as I was back then\nAlways make a mess of everything\nIt's about time that I face myself\nAll I do is bleed into someone else\nPainting walls with all my secret tears\nFilling rooms with all my hopes and fears\nBut oh my, oh my\nI'll never learn if I never leap\nI'll always yearn if I never speak\nTo be loved and love at the highest count\nMeans to lose all the things I can't live without\nLet it be known that I will choose to lose\nIt's a sacrifice but I can't live a lie\nLet it be known, let it be known that I tried\nI'm so afraid but I'm open wide\nI'll be the one to catch myself this time\nTrying to learn to lean in to it all\nAin't it funny how the mighty fall?\nLooking back I don't regret a thing\nYeah, I took some bad turns that I am owning\nI'll stand still and let the storm pass by\nKeep my heart safe 'til the time feels right\nBut oh my, oh my\nI'll never learn if I never leap\nI'll always yearn if I never speak\nTo be loved and love at the highest count\nMeans to lose all the things I can't live without\nLet it be known that I will choose to lose\nIt's a sacrifice but I can't live a lie\nLet it be known\nLet it be known that I cried for you\nEven started lying to you\nWhat a thing to do\nAll because I wanted\nTo be loved and love at the highest count\nMeans to lose all the things I can't live without\nLet it be known, known, known\nThat I will choose, I will lose\nIt's a sacrifice but I can't live a lie\nLet it be known\nLet it be known that I tried, that I tried\nLet it be known that I tried"
-    }
+    "displayName": "Lost Without You",
+    "displayArtist": "Freya Ridings",
+    "startedAt": 1767778811380,
+    "lyrics": null
   },
   "guestNames": {
     "guest_d1qjlesy6": "Craig 1",
@@ -206,8 +30,8 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "startedAt": 1767775537970,
-  "youtubeId": "gpzmn4ZoB5k",
+  "startedAt": 1767778811374,
+  "youtubeId": "tDPpex1wvOc",
   "isKaraokeMode": false,
   "karaokeQueue": [],
   "karaokeAnnouncement": null,
@@ -221,36 +45,39 @@
       "lastAccrual": 1767380948854
     },
     "guest_d1qjlesy6": {
-      "balance": 0,
-      "lastAccrual": 1767775269700
+      "balance": 3,
+      "lastAccrual": 1767777429700
     },
     "g-aspmfmb9h": {
-      "balance": 0,
-      "lastAccrual": 1767774918248
+      "balance": 3,
+      "lastAccrual": 1767777078248
     }
   },
   "djStatus": {
-    "message": "Playing: To Be Loved",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273c6b577e4c4a6d326354a89f7",
-    "bpm": 129,
-    "key": "G# major",
+    "message": "Playing: Lost Without You",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2737727e2d29bfe4869cccd67a6",
+    "bpm": 97,
+    "key": "B major",
     "genres": [
-      "Pop",
-      "International Pop",
-      "Rock"
+      "Rock",
+      "Singer & Songwriter"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "To Be Loved",
-    "researchArtist": "Adele",
-    "researchAlbum": "30",
-    "valence": 65,
-    "publisher": "Columbia",
-    "isrc": "USSM12105979",
-    "releaseDate": "2021-11-19",
+    "researchTitle": "Lost Without You",
+    "researchArtist": "Freya Ridings",
+    "researchAlbum": "You Mean The World To Me",
+    "valence": 100,
+    "publisher": "Good Soldier Records",
+    "isrc": "UK8E21701401",
+    "releaseDate": "2019-03-01",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-07T08:46:39.714Z",
+  "lastSavedAt": "2026-01-07T09:40:12.020Z",
   "isPopping": false,
-  "playedHistory": []
+  "playedHistory": [
+    "spotify:track:5x748P8u1DkAIbquBuYOjm",
+    "spotify:track:5sLE3Id4vEfZC3qlM6V0xJ",
+    "spotify:track:4hZyvWzkb5oo96pzdaBkR8"
+  ]
 }

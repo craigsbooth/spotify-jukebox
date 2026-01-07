@@ -13,6 +13,9 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
 
     // RESTORED: Identity State
     const [identityName, setIdentityName] = React.useState(state.partyName || 'The Pinfold');
+    
+    // NEW: Sync Offset State
+    const [syncOffset, setSyncOffset] = React.useState(state.lyricsDelayMs || 0);
 
     React.useEffect(() => {
         setLocalTokens({
@@ -21,9 +24,25 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
             tokensPerHour: state.tokensPerHour,
             tokensMax: state.tokensMax
         });
-        // Sync local identity state if server updates it
         if (state.partyName) setIdentityName(state.partyName);
-    }, [state.tokensEnabled, state.tokensInitial, state.tokensPerHour, state.tokensMax, state.partyName]);
+        if (state.lyricsDelayMs !== undefined) setSyncOffset(state.lyricsDelayMs);
+    }, [state]);
+
+    // HANDLER: Adjust Sync
+    const adjustSync = async (delta: number, absolute: boolean = false) => {
+        const newOffset = absolute ? 0 : (syncOffset + delta);
+        setSyncOffset(newOffset); // Optimistic UI update
+        
+        try {
+            await fetch('/api/sync-offset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ offset: newOffset })
+            });
+        } catch (e) {
+            console.error("Failed to update sync", e);
+        }
+    };
 
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
@@ -68,14 +87,37 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                         ))}
                     </div>
                     <button style={{ ...styles.outlineBtn, width: '100%', height: '40px', fontSize: '0.8rem' }} onClick={() => window.open('/projector', '_blank')}>LAUNCH PROJECTOR 📺</button>
-                    <div>
+                    
+                    {/* LYRICS & SYNC CONTROL */}
+                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                             <label style={{ fontSize: '0.7rem', color: '#888', fontWeight: 900 }}>LYRICS</label>
                             <span style={{ fontSize: '0.7rem', color: state.showLyrics ? '#2ecc71' : '#666', fontWeight: 900 }}>{state.showLyrics ? 'ON' : 'OFF'}</span>
                         </div>
-                        <button style={{ ...styles.btn(state.showLyrics), width: '100%', height: '40px', fontSize: '0.8rem' }} onClick={() => handlers.toggleLyrics()}>
+                        <button style={{ ...styles.btn(state.showLyrics), width: '100%', height: '40px', fontSize: '0.8rem', marginBottom: '15px' }} onClick={() => handlers.toggleLyrics()}>
                             {state.showLyrics ? 'DISABLE' : 'ENABLE'}
                         </button>
+
+                        {/* --- NEW: SYNC NUDGE CONTROLS --- */}
+                        {state.showLyrics && (
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                                    <label style={{ fontSize: '0.65rem', color: '#666', fontWeight: 900 }}>BLUETOOTH DELAY CORRECTION</label>
+                                    <span style={{ fontSize: '0.65rem', color: '#D4AF37', fontWeight: 900 }}>{syncOffset}ms</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                    <button style={{ ...styles.btn(false), flex: 1, height: '30px', fontSize: '0.65rem', background: '#222' }} onClick={() => adjustSync(-500)}>
+                                        ◀ EARLY (-0.5s)
+                                    </button>
+                                    <button style={{ ...styles.btn(false), width: '50px', height: '30px', fontSize: '0.65rem', background: '#222' }} onClick={() => adjustSync(0, true)}>
+                                        0ms
+                                    </button>
+                                    <button style={{ ...styles.btn(false), flex: 1, height: '30px', fontSize: '0.65rem', background: '#222' }} onClick={() => adjustSync(500)}>
+                                        LATE (+0.5s) ▶
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -107,7 +149,6 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
 
             {/* 3E. FALLBACK POOL */}
             <div style={styles.card}>
-                {/* RESTORED: Header with Refresh Button */}
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <span style={styles.label}>FALLBACK POOL</span>
                     <button onClick={handlers.refreshFallback} style={{background:'transparent', border:'none', color:'#f39c12', fontSize:'0.7rem', fontWeight:900, cursor:'pointer'}}>

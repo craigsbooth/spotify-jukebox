@@ -24,9 +24,13 @@ export default function GuestPage() {
   // LYRICS & PREFERENCES
   const [showMetadata, setShowMetadata] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
-  const [syncedLyrics, setSyncedLyrics] = useState<any[]>([]); // New State
-  const [plainLyrics, setPlainLyrics] = useState("");          // New State
+  const [syncedLyrics, setSyncedLyrics] = useState<any[]>([]); 
+  const [plainLyrics, setPlainLyrics] = useState(""); 
   const [activeReactions, setActiveReactions] = useState<any[]>([]);
+
+  // --- NEW: SYNC STATE ---
+  const [lyricsDelayMs, setLyricsDelayMs] = useState(0);
+  // -----------------------
 
   // Ref for SSE Connection to prevent duplicate listeners
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -55,6 +59,9 @@ export default function GuestPage() {
                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
                     
+                    // --- CATCH DELAY UPDATES ---
+                    if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
+
                     // Instant Lyrics Load
                     if (payload.currentLyrics) {
                         const l = payload.currentLyrics;
@@ -64,8 +71,10 @@ export default function GuestPage() {
                 }
 
                 if (type === 'THEME_UPDATE') {
-                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
-                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
+                      if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
+                      if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
+                      // --- CATCH DELAY UPDATES ---
+                      if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
                 }
                 if (type === 'KARAOKE_MODE') setIsKaraokeMode(!!payload.isKaraokeMode);
                 if (type === 'KARAOKE_QUEUE') setKaraokeQueue(payload.karaokeQueue || []);
@@ -209,8 +218,13 @@ export default function GuestPage() {
         nextInSeconds={nextInSeconds}
         showMetadata={showMetadata}
         showLyrics={showLyrics}
-        syncedLyrics={syncedLyrics} // Pass new props
-        plainLyrics={plainLyrics}   // Pass new props
+        syncedLyrics={syncedLyrics} 
+        plainLyrics={plainLyrics}
+        
+        // --- PASS NEW PROP ---
+        lyricsDelayMs={lyricsDelayMs}
+        // ---------------------
+        
         setIsEditingName={setIsEditingName}
         setGuestName={setGuestName}
         setShowMetadata={setShowMetadata}

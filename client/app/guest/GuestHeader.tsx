@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { styles } from './guest_ui';
 import { API_URL } from '../config';
 
@@ -12,6 +12,9 @@ interface HeaderProps {
   nextInSeconds: number;
   showMetadata: boolean;
   showLyrics: boolean;
+  // Data passed from Parent
+  syncedLyrics: any; // Can be string (raw) or array (pre-parsed)
+  plainLyrics: string;
   setShowMetadata: (val: boolean) => void;
   setShowLyrics: (val: boolean) => void;
   setIsEditingName: (val: boolean) => void;
@@ -24,12 +27,11 @@ export const GuestHeader = (props: HeaderProps) => {
   const [track, setTrack] = useState<any>(null);
   const [djMode, setDjMode] = useState<any>({});
   
-  // LYRICS STATE
-  const [rawLyrics, setRawLyrics] = useState<any>(null);
-  const [syncedLyrics, setSyncedLyrics] = useState<any[]>([]); 
-  const [activeLineIndex, setActiveLineIndex] = useState(-1); // Tracks which line is active
+  // Local state for parsed lyrics ready to render
+  const [parsedLyrics, setParsedLyrics] = useState<any[]>([]);
+  const [activeLineIndex, setActiveLineIndex] = useState(-1); 
   
-  // 1. DATA SYNC: Poll Server for Track & DJ Data
+  // 1. DATA SYNC: Poll Server for Track Metadata & DJ Data
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
@@ -40,10 +42,8 @@ export const GuestHeader = (props: HeaderProps) => {
         const trackData = await resTrack.json();
         const djData = await resDj.json();
         
-        // Reset lyrics if track changes
         setTrack((prev: any) => {
             if (prev?.uri !== trackData?.uri) {
-                setSyncedLyrics([]);
                 setActiveLineIndex(-1);
             }
             return trackData;
@@ -53,79 +53,64 @@ export const GuestHeader = (props: HeaderProps) => {
     };
 
     fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 2000); // Matched Projector poll rate
+    const interval = setInterval(fetchNowPlaying, 2000); 
     return () => clearInterval(interval);
   }, []);
 
-  // 2. LYRICS FETCH & PARSE (Exact Projector Logic)
+  // 2. PARSING LOGIC (Restored Feature)
+  // This ensures that whether the server sends a string or an array, we handle it.
   useEffect(() => {
-    if (props.showLyrics && track?.name) {
-        const artistName = track.artists?.[0]?.name || track.artist;
-        if (artistName) {
-            fetch(`${API_URL}/lyrics?track=${encodeURIComponent(track.name)}&artist=${encodeURIComponent(artistName)}`)
-                .then(res => res.json())
-                .then(data => {
-                    setRawLyrics(data);
-                    
-                    if (data.syncedLyrics && typeof data.syncedLyrics === 'string') {
-                        // PROJECTOR PARSING LOGIC
-                        const lines = data.syncedLyrics.split('\n').map((l: string) => {
-                            const m = l.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
-                            return m ? { 
-                                time: parseInt(m[1]) * 60 + parseInt(m[2]) + parseInt(m[3].padEnd(3, '0')) / 1000, 
-                                text: l.replace(/\[.*\]/, '').trim() 
-                            } : null;
-                        }).filter((x: any) => x && x.text !== "");
-                        
-                        setSyncedLyrics(lines);
-                    } else {
-                         setSyncedLyrics([]); 
-                    }
-                })
-                .catch(() => {
-                    setRawLyrics(null);
-                    setSyncedLyrics([]);
-                });
-        }
+    const raw = props.syncedLyrics;
+    
+    if (Array.isArray(raw)) {
+        // Already parsed by server or parent
+        setParsedLyrics(raw);
+    } else if (typeof raw === 'string') {
+        // Need to parse raw LRC string: "[00:12.00] Lyrics..."
+        const lines = raw.split('\n').map((l: string) => {
+            const m = l.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+            return m ? { 
+                time: parseInt(m[1]) * 60 + parseInt(m[2]) + parseInt(m[3].padEnd(3, '0')) / 1000, 
+                text: l.replace(/\[.*\]/, '').trim() 
+            } : null;
+        }).filter((x: any) => x && x.text !== "");
+        setParsedLyrics(lines);
+    } else {
+        setParsedLyrics([]);
     }
-  }, [props.showLyrics, track?.uri, track?.name]);
+  }, [props.syncedLyrics]);
 
-  // 3. HIGH-FREQUENCY SYNC TIMER (Exact Projector Logic)
+  // 3. HIGH-FREQUENCY SYNC TIMER
   useEffect(() => {
     const progInt = setInterval(() => {
-      if (!track?.startedAt || syncedLyrics.length === 0) return;
+      if (!track?.startedAt || parsedLyrics.length === 0) return;
       
-      // Calculate exact seconds elapsed since the song started (Server Time)
       const elapsed = Date.now() - track.startedAt;
       const secondsElapsed = elapsed / 1000;
 
-      // Find the last line that has passed
-      const idx = syncedLyrics.findLastIndex((l: any) => l.time <= secondsElapsed);
+      const idx = parsedLyrics.findLastIndex((l: any) => l.time <= secondsElapsed);
       
       if (idx !== -1 && idx !== activeLineIndex) {
         setActiveLineIndex(idx);
       }
-    }, 50); // Updates 20 times a second for smooth sync
+    }, 50); 
 
     return () => clearInterval(progInt);
-  }, [track?.startedAt, syncedLyrics, activeLineIndex]);
+  }, [track?.startedAt, parsedLyrics, activeLineIndex]);
 
-  // 4. WINDOW LOGIC: Show Previous 1, Current, Next 2
+  // 4. WINDOW LOGIC
   const getWindowedLines = () => {
-      if (syncedLyrics.length === 0) return null;
+      if (parsedLyrics.length === 0) return null;
 
       const activeIdx = activeLineIndex;
-      
-      // Handle edge cases (Intro/Outro)
       const displayIdx = activeIdx === -1 ? 0 : activeIdx;
 
-      // Define Window
       const start = Math.max(0, displayIdx - 1);
-      const end = Math.min(syncedLyrics.length, displayIdx + 3);
+      const end = Math.min(parsedLyrics.length, displayIdx + 3);
       
       return {
-          lines: syncedLyrics.slice(start, end),
-          activeId: activeIdx >= 0 ? syncedLyrics[activeIdx]?.time : -999
+          lines: parsedLyrics.slice(start, end),
+          activeId: activeIdx >= 0 ? parsedLyrics[activeIdx]?.time : -999
       };
   };
 
@@ -211,7 +196,7 @@ export const GuestHeader = (props: HeaderProps) => {
                                         fontWeight: isActive ? 900 : 400,
                                         transform: isActive ? 'scale(1.05)' : 'scale(1)',
                                         opacity: isActive ? 1 : 0.6,
-                                        transition: 'all 0.2s ease', // Faster transition for snappier feel
+                                        transition: 'all 0.2s ease', 
                                         minHeight: '20px'
                                     }}>
                                         {line.text}
@@ -222,10 +207,10 @@ export const GuestHeader = (props: HeaderProps) => {
                      ) : (
                         <div style={{ width: '100%' }}>
                              <div style={{ fontSize: '0.65rem', color: '#555', textAlign: 'center', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                 Sync Unavailable
+                                 {props.plainLyrics ? "Sync Unavailable" : "Searching..."}
                              </div>
                              <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4', maxHeight: '180px', overflowY: 'auto' }} className="no-scrollbar">
-                                {rawLyrics?.plainLyrics || "No lyrics available."}
+                                {props.plainLyrics || "No lyrics available."}
                              </div>
                         </div>
                      )}

@@ -21,9 +21,11 @@ export default function GuestPage() {
   const [tokenBalance, setTokenBalance] = useState(0);
   const [nextInSeconds, setNextInSeconds] = useState(0);
   
-  // PREFERENCES & REACTION STATE
+  // LYRICS & PREFERENCES
   const [showMetadata, setShowMetadata] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
+  const [syncedLyrics, setSyncedLyrics] = useState<any[]>([]); // New State
+  const [plainLyrics, setPlainLyrics] = useState("");          // New State
   const [activeReactions, setActiveReactions] = useState<any[]>([]);
 
   // Ref for SSE Connection to prevent duplicate listeners
@@ -38,7 +40,7 @@ export default function GuestPage() {
     setGuestId(gid); 
     setGuestName(gname);
 
-    // B. SSE Connection (The "Fast Path" for Mode/Queue/Reactions)
+    // B. SSE Connection (The "Fast Path" for Mode/Queue/Reactions/Lyrics)
     const connectSSE = () => {
         if (eventSourceRef.current) eventSourceRef.current.close();
         const es = new EventSource(`${API_URL}/events`);
@@ -48,10 +50,22 @@ export default function GuestPage() {
             try {
                 const { type, payload } = JSON.parse(e.data);
 
-                // Handle Mode & Queue Swaps Instantly
-                if (type === 'INIT' || type === 'THEME_UPDATE') {
+                // INIT: Load everything
+                if (type === 'INIT') {
                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
+                    
+                    // Instant Lyrics Load
+                    if (payload.currentLyrics) {
+                        const l = payload.currentLyrics;
+                        if (l.synced) setSyncedLyrics(l.synced);
+                        else { setSyncedLyrics([]); setPlainLyrics(l.plain || ""); }
+                    }
+                }
+
+                if (type === 'THEME_UPDATE') {
+                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
+                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
                 }
                 if (type === 'KARAOKE_MODE') setIsKaraokeMode(!!payload.isKaraokeMode);
                 if (type === 'KARAOKE_QUEUE') setKaraokeQueue(payload.karaokeQueue || []);
@@ -62,6 +76,21 @@ export default function GuestPage() {
                     setActiveReactions(prev => [...prev, { id, emoji: payload.emoji, left: Math.random() * 80 + 10 }]);
                     setTimeout(() => setActiveReactions(prev => prev.filter(r => r.id !== id)), 4000);
                 }
+
+                // --- NEW: LISTEN FOR LYRICS ---
+                if (type === 'LYRICS_UPDATE') {
+                    const l = payload.lyrics;
+                    if (l && l.synced) {
+                        setSyncedLyrics(l.synced);
+                        setPlainLyrics("");
+                    } else if (l && l.plain) {
+                        setSyncedLyrics([]);
+                        setPlainLyrics(l.plain);
+                    } else {
+                        setSyncedLyrics([]);
+                        setPlainLyrics("No lyrics found.");
+                    }
+                }
             } catch (err) { console.error("SSE Error:", err); }
         };
     };
@@ -70,7 +99,6 @@ export default function GuestPage() {
     try { connectSSE(); } catch (e) {}
 
     // C. Polling (The "Slow Path" for Tokens/Standard Queue)
-    // We keep this because token math and Spotify queue shifts happen independently of our events
     const interval = setInterval(() => {
         fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
@@ -104,14 +132,12 @@ export default function GuestPage() {
         setResults([]);
         return;
     }
-    // Context-aware search: Spotify vs YouTube based on mode
     const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     setResults(data);
   };
 
   const handleRequest = async (track: any) => {
-    // Force name entry if in Karaoke Mode
     if (isKaraokeMode && (guestName === "Guest" || !guestName)) {
         alert("Please enter your name to sign up for Karaoke!");
         setIsEditingName(true);
@@ -121,22 +147,15 @@ export default function GuestPage() {
     const isKaraokeRequest = isKaraokeMode || track.isKaraoke;
     const targetEndpoint = isKaraokeRequest ? 'karaoke-queue' : 'queue';
     
-    // FIX: Send comprehensive data for both engines (Spotify & Karaoke)
     const payload = {
         id: track.id,
         uri: track.uri,
-        
-        // STANDARD QUEUE DATA (Required for Spotify)
         name: track.name || track.title, 
         artist: track.artist || track.displayArtist || "Unknown Artist",
         album: track.album || "Single",
         albumArt: track.albumArt || track.thumb,
-
-        // KARAOKE DATA (Required for YouTube)
         title: track.title || track.name,
         thumb: track.thumb || track.albumArt,
-        
-        // Context
         guestId,
         singer: isKaraokeRequest ? guestName : undefined
     };
@@ -157,7 +176,6 @@ export default function GuestPage() {
   };
 
   const triggerReaction = (emoji: string) => {
-    // Optimistic UI update (shows immediately for sender)
     const id = Date.now();
     setActiveReactions(prev => [...prev, { id, emoji, left: Math.random() * 80 + 10 }]);
     setTimeout(() => setActiveReactions(prev => prev.filter(r => r.id !== id)), 4000);
@@ -175,7 +193,6 @@ export default function GuestPage() {
       return `${mins}:${secs}`;
   };
 
-  // Helper for Search Component to display "Wait 3m" button
   const nextTokenMinutes = Math.ceil(nextInSeconds / 60);
 
   return (
@@ -192,6 +209,8 @@ export default function GuestPage() {
         nextInSeconds={nextInSeconds}
         showMetadata={showMetadata}
         showLyrics={showLyrics}
+        syncedLyrics={syncedLyrics} // Pass new props
+        plainLyrics={plainLyrics}   // Pass new props
         setIsEditingName={setIsEditingName}
         setGuestName={setGuestName}
         setShowMetadata={setShowMetadata}
@@ -211,7 +230,7 @@ export default function GuestPage() {
         votedUris={votedUris}
         tokensEnabled={tokensEnabled}
         tokenBalance={tokenBalance}
-        nextTokenMinutes={nextTokenMinutes} // Passed Down Here
+        nextTokenMinutes={nextTokenMinutes}
         handleSearch={handleSearch}
         handleRequest={handleRequest}
       />

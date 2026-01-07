@@ -4,52 +4,15 @@ const router = express.Router();
 const state = require('../state');
 const sm = require('../state_manager');
 const spotifyApi = require('../spotify_instance');
-
-// --- FIX: PATH CORRECTION ---
-// We go UP one level (../) to find these controllers in the root folder
+const sse = require('../sse'); // <--- NEW SHARED BROADCASTER
 const spotifyCtrl = require('../spotify_ctrl'); 
 const karaokeEngine = require('../karaoke_engine'); 
 const karaokeManager = require('../karaoke_manager'); 
-// ----------------------------
 
 // --- REAL-TIME EVENT STREAM (SSE) ---
-let clients = [];
-
-// Helper: Send data to all connected clients (Projectors) immediately
-const broadcastUpdate = (type, payload) => {
-    clients.forEach(client => {
-        client.res.write(`data: ${JSON.stringify({ type, payload })}\n\n`);
-    });
-};
-
-// Frontend calls: Listen to /api/events
+// Now handled by the shared sse.js module
 router.get('/events', (req, res) => {
-    // Set headers for SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
-
-    // Send initial state immediately on connection
-    const initialState = {
-        theme: state.currentTheme,
-        youtubeId: state.youtubeId,
-        isKaraokeMode: state.isKaraokeMode,
-        karaokeQueue: state.karaokeQueue,
-        // We include is_playing from current track to help sync audio rules
-        isSpotifyPlaying: state.currentPlayingTrack?.is_playing || false
-    };
-    res.write(`data: ${JSON.stringify({ type: 'INIT', payload: initialState })}\n\n`);
-
-    // Add this client to the pool
-    const clientId = Date.now();
-    const newClient = { id: clientId, res };
-    clients.push(newClient);
-
-    // Remove client when they disconnect
-    req.on('close', () => {
-        clients = clients.filter(c => c.id !== clientId);
-    });
+    sse.addClient(req, res);
 });
 // ------------------------------------
 
@@ -62,7 +25,7 @@ router.get('/token', (req, res) => {
 // --- 2. DJ ENGINE CONTROL ---
 router.post('/dj-mode', (req, res) => {
     const result = sm.setDjMode(req.body.enabled);
-    broadcastUpdate('DJ_MODE', { isDjMode: state.isDjMode }); // Notify clients
+    sse.send('DJ_MODE', { isDjMode: state.isDjMode });
     res.json(result);
 });
 
@@ -93,27 +56,21 @@ router.get('/theme', (req, res) => {
 
 router.post('/theme', (req, res) => {
     const result = sm.setTheme(req.body);
-    
-    // CRITICAL: Broadcast the change immediately so Projector reacts instantly
-    // This handles "Pop Singer" (youtubeId set) and "Stop Performance" (youtubeId null)
-    broadcastUpdate('THEME_UPDATE', { 
+    // Broadcast all theme changes instantly
+    sse.send('THEME_UPDATE', { 
         theme: state.currentTheme,
         youtubeId: state.youtubeId,
         showLyrics: state.showLyrics,
         karaokeAnnouncement: state.karaokeAnnouncement,
-        isKaraokeMode: state.isKaraokeMode // Ensure this syncs too
+        isKaraokeMode: state.isKaraokeMode 
     });
-    
     res.json(result);
 });
 
 // --- 4. KARAOKE MODE CONTROL ---
 router.post('/karaoke-mode', (req, res) => {
     const result = sm.setKaraokeMode(req.body.enabled);
-    
-    // Broadcast Mode Change
-    broadcastUpdate('KARAOKE_MODE', { isKaraokeMode: state.isKaraokeMode });
-    
+    sse.send('KARAOKE_MODE', { isKaraokeMode: state.isKaraokeMode });
     res.json(result);
 });
 
@@ -130,10 +87,7 @@ router.get('/karaoke-suggestions', async (req, res) => {
 router.post('/karaoke-queue', (req, res) => {
     const { id, title, thumb, guestId, singer } = req.body;
     const result = sm.processKaraokeRequest({ id, title, thumb, singer }, guestId);
-    
-    // Broadcast Queue Update
-    broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
-    
+    sse.send('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
     res.json(result);
 });
 
@@ -144,22 +98,19 @@ router.post('/pop-karaoke', (req, res) => {
     if (nextSinger) {
         console.log(`🎤 Server: Popping singer ${nextSinger.singer} (ID: ${nextSinger.id})`);
         
-        // 1. Set the Performance ID (Server Truth)
+        // 1. Set the Performance ID
         state.youtubeId = nextSinger.id;
         
         // 2. Remove from Queue
         state.karaokeQueue.shift();
         sm.saveSettings();
 
-        // 3. Broadcast BOTH updates immediately
-        // This ensures Projector gets the ID and the Queue update in one sync frame
-        broadcastUpdate('THEME_UPDATE', { youtubeId: state.youtubeId }); 
-        broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
+        // 3. Broadcast updates
+        sse.send('THEME_UPDATE', { youtubeId: state.youtubeId }); 
+        sse.send('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
 
         res.json({ success: true, youtubeId: state.youtubeId });
     } else {
-        console.log("⚠️ Server: Cannot pop, queue empty.");
-        // Even if empty, we might want to ensure youtubeId is cleared or handled
         res.json({ success: false, message: "Queue empty" });
     }
 });
@@ -171,7 +122,7 @@ router.post('/remove-karaoke', (req, res) => {
         state.karaokeQueue.splice(index, 1);
         sm.saveSettings();
     }
-    broadcastUpdate('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
+    sse.send('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
     res.json({ success: true });
 });
 
@@ -204,10 +155,7 @@ router.post('/name', (req, res) => {
 router.post('/join', (req, res) => {
     if (req.body.guestId && req.body.name) {
         sm.registerGuest(req.body.guestId, req.body.name);
-        
-        // FIX: Force save to persist name changes to disk
         sm.saveSettings();
-        
         const tokenInfo = sm.syncGuestTokens(req.body.guestId);
         return res.json({ success: true, tokens: tokenInfo?.balance || 0 });
     }
@@ -219,8 +167,7 @@ router.get('/join-event', (req, res) => res.json({ name: state.latestJoiner }));
 // --- 8. REACTIONS ---
 router.post('/reaction-event', (req, res) => {
     if (req.body.emoji) state.reactionEvent = { id: Date.now(), emoji: req.body.emoji };
-    // Broadcast Reaction instantly to Projector
-    broadcastUpdate('REACTION', state.reactionEvent);
+    sse.send('REACTION', state.reactionEvent);
     res.json(state.reactionEvent);
 });
 
@@ -232,24 +179,18 @@ router.get('/search', async (req, res) => {
         const query = req.query.q;
         if (!query) return res.json([]);
 
-        // FIX: Context-Aware Search
         if (state.isKaraokeMode) {
-            console.log(`🔍 YouTube Karaoke Search: ${query}`);
-            // Force "karaoke" suffix to find best backing tracks
             const results = await karaokeEngine.search(`${query} karaoke`);
-            
-            // Map to standard format so Guest UI understands it
             const mapped = results.map(v => ({
                 id: v.id,
                 name: v.title,
                 artist: 'YouTube Video',
                 albumArt: v.thumb,
-                isKaraoke: true, // Special flag for client logic
+                isKaraoke: true,
                 uri: `youtube:${v.id}`
             }));
             res.json(mapped);
         } else {
-            // Standard Spotify Search
             const rawResults = await spotifyCtrl.searchTracks(query); 
             const sanitizedResults = rawResults.map(t => sm.sanitizeTrack(t));
             res.json(sanitizedResults);
@@ -282,9 +223,7 @@ router.get('/fallback', (req, res) => res.json(state.fallbackPlaylist));
 
 router.post('/fallback', async (req, res) => {
     try {
-        if (req.body.id === 'refresh') {
-            console.log(`♻️ System: Manual Refresh triggered for ${state.fallbackPlaylist.name}`);
-        } else {
+        if (req.body.id !== 'refresh') {
             state.fallbackPlaylist = { id: req.body.id, name: req.body.name };
             sm.saveSettings();
         }

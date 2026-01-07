@@ -16,15 +16,14 @@ const path = require('path');
 // 4. Import Local Modular Logic
 const spotifyApi = require('./spotify_instance');
 const spotifyCtrl = require('./spotify_ctrl');
-const karaokeManager = require('./karaoke_manager'); // NEW: Stage management logic
-const pkg = require('./package.json'); // SINGLE SOURCE OF TRUTH
+const automation = require('./automation'); // <--- THE NEW WATCHDOG
+const pkg = require('./package.json'); 
 
 const app = express();
 const port = process.env.PORT || 8888;
 
 /**
  * 5. VERSION DISCOVERY
- * Pulling directly from package.json to ensure 3.0.229 sync.
  */
 const APP_VERSION = pkg.version || "3.0.229";
 
@@ -37,22 +36,11 @@ app.use(cors({ origin: true }));
  */
 app.use('/', require('./routes/auth')); 
 app.use('/api', require('./routes/queue'));
-app.use('/api', require('./routes/system'));
+app.use('/api', require('./routes/system')); // Karaoke routes are handled here now!
 
 // Endpoint for Dashboard Sync
 app.get('/api/version', (req, res) => {
     res.json({ version: APP_VERSION });
-});
-
-// --- NEW: KARAOKE PERFORMANCE ENDPOINTS ---
-app.post('/api/pop-karaoke', async (req, res) => {
-    const result = await karaokeManager.popNext();
-    res.json(result);
-});
-
-app.post('/api/remove-karaoke', (req, res) => {
-    const success = karaokeManager.removePerformance(req.body.index);
-    res.json({ success });
 });
 
 /**
@@ -61,6 +49,10 @@ app.post('/api/remove-karaoke', (req, res) => {
 app.listen(port, async () => {
     console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port}`);
 
+    // --- A. START THE AUTOMATION WATCHDOG ---
+    automation.startWatchdog(); 
+
+    // --- B. CHECK SPOTIFY SESSION ---
     // Immediate Session Check (No 5s Delay)
     if (spotifyApi.getAccessToken()) {
         console.log(`📦 Startup [v${APP_VERSION}]: Session found. Rebuilding Shuffle Bag...`);

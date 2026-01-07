@@ -10,17 +10,17 @@
   "crossfadeSec": 3,
   "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:4hZyvWzkb5oo96pzdaBkR8",
-    "name": "Lost Without You",
-    "artist": "Freya Ridings",
-    "album": "Freya Ridings",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b2737727e2d29bfe4869cccd67a6",
-    "duration_ms": 225853,
+    "uri": "spotify:track:1SlLP2AI4L2oh3VRJfHBpf",
+    "name": "Hurricane (feat. SHIBUI)",
+    "artist": "Blasterjaxx",
+    "album": "Hurricane (feat. SHIBUI)",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b273ebce475b612148db6fac08b7",
+    "duration_ms": 153222,
     "isFallback": true,
     "votes": 0,
-    "displayName": "Lost Without You",
-    "displayArtist": "Freya Ridings",
-    "startedAt": 1767778811380,
+    "displayName": "Hurricane",
+    "displayArtist": "Blasterjaxx",
+    "startedAt": 1767786912689,
     "lyrics": null
   },
   "guestNames": {
@@ -30,8 +30,8 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "startedAt": 1767778811374,
-  "youtubeId": "tDPpex1wvOc",
+  "startedAt": 1767786912667,
+  "youtubeId": "hxx9UJGnqAg",
   "isKaraokeMode": false,
   "karaokeQueue": [],
   "karaokeAnnouncement": null,
@@ -46,38 +46,40 @@
     },
     "guest_d1qjlesy6": {
       "balance": 3,
-      "lastAccrual": 1767777429700
+      "lastAccrual": 1767786789700
     },
     "g-aspmfmb9h": {
       "balance": 3,
       "lastAccrual": 1767777078248
     }
   },
+  "lyricsDelayMs": 0,
   "djStatus": {
-    "message": "Playing: Lost Without You",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2737727e2d29bfe4869cccd67a6",
-    "bpm": 97,
-    "key": "B major",
+    "message": "Playing: Hurricane",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273ebce475b612148db6fac08b7",
+    "bpm": 0,
+    "key": "N/A",
     "genres": [
-      "Rock",
-      "Singer & Songwriter"
+      "Dance"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Lost Without You",
-    "researchArtist": "Freya Ridings",
-    "researchAlbum": "You Mean The World To Me",
-    "valence": 100,
-    "publisher": "Good Soldier Records",
-    "isrc": "UK8E21701401",
-    "releaseDate": "2019-03-01",
+    "researchTitle": "Hurricane (feat. SHIBUI)",
+    "researchArtist": "Blasterjaxx",
+    "researchAlbum": "Hurricane (feat. SHIBUI)",
+    "valence": 0,
+    "publisher": "Spinnin' Records",
+    "isrc": "NLZ542200098",
+    "releaseDate": "2022-04-01",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-07T09:40:12.020Z",
+  "lastSavedAt": "2026-01-07T11:55:29.461Z",
   "isPopping": false,
   "playedHistory": [
-    "spotify:track:5x748P8u1DkAIbquBuYOjm",
-    "spotify:track:5sLE3Id4vEfZC3qlM6V0xJ",
-    "spotify:track:4hZyvWzkb5oo96pzdaBkR8"
+    "spotify:track:6lcS22BolMMPnFKhgOLoVj",
+    "spotify:track:4llK75pXNWZz6KAho2Gp16",
+    "spotify:track:14CsUVcoKztExH6aSgfrfb",
+    "spotify:track:1bA2ZK7CFxEMnyn1dWP2jp",
+    "spotify:track:1SlLP2AI4L2oh3VRJfHBpf"
   ]
 }

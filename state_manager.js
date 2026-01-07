@@ -2,10 +2,9 @@
 const state = require('./state');
 const fs = require('fs');
 const path = require('path');
-const em = require('./economy_manager'); // Import dedicated credit manager
-const utils = require('./utils'); // Import shared utils
+const em = require('./economy_manager'); 
+const utils = require('./utils'); 
 
-// Ensure we use a consistent absolute path for settings
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
 // Debounce timer for disk writes
@@ -131,12 +130,20 @@ const stateManager = {
         }
     },
 
-    // 5. HISTORY & GUEST MANAGEMENT
+    // 5. HISTORY & GUEST MANAGEMENT (UPDATED: Memory Cap)
     addToHistory: (uri) => {
         if (!(state.playedHistory instanceof Set)) {
             state.playedHistory = new Set();
         }
         state.playedHistory.add(uri);
+
+        // --- FIX: Prevent Memory Bloat ---
+        // If history exceeds 500 items, trim the oldest entries
+        if (state.playedHistory.size > 500) {
+            const arr = Array.from(state.playedHistory);
+            state.playedHistory = new Set(arr.slice(-500)); 
+        }
+        
         stateManager.saveSettings(); 
     },
 
@@ -181,7 +188,7 @@ const stateManager = {
         saveTimer = setTimeout(() => {
             const jsonString = JSON.stringify(dataToSave, null, 2);
             fs.writeFile(SETTINGS_FILE, jsonString, (err) => {
-                if (err) console.error("💾 Async Write Failed:", err.message);
+                if (err) console.error("❌ Async Write Failed:", err.message);
                 // else console.log("💾 Settings saved."); // Optional: reduce noise
             });
         }, 1000);

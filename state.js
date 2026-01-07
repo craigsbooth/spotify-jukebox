@@ -28,17 +28,20 @@ let state = {
 
     // NEW FEATURE: KARAOKE ENGINE
     isKaraokeMode: false,
-    karaokeQueue: [], // Dedicated queue for { id, title, thumb, singer, artist }
-    karaokeAnnouncement: null, // { message: string, expiresAt: number }
+    karaokeQueue: [], 
+    karaokeAnnouncement: null, 
 
     // FEATURE: GUEST TOKEN ECONOMY
     tokensEnabled: false,
     tokensInitial: 5,
     tokensPerHour: 6,
     tokensMax: 10,
-    tokenRegistry: {}, // guestId -> { balance: number, lastAccrual: timestamp }
+    tokenRegistry: {}, 
 
-    // INITIALIZED FOR RESEARCH ENGINE (Default Template)
+    // FEATURE: LYRICS SYNC (Moved inside the state object)
+    lyricsDelayMs: 0, 
+
+    // INITIALIZED FOR RESEARCH ENGINE
     djStatus: { 
         message: "Digital DJ Idle", 
         researchTitle: "", 
@@ -56,11 +59,6 @@ let state = {
     
     shuffleBag: [], 
     playedHistory: new Set() 
-};
-module.exports = {
-    // ... other state ...
-    lyricsDelayMs: 0, // <--- MAKE SURE THIS LINE EXISTS
-    // ...
 };
 
 /**
@@ -83,10 +81,10 @@ if (fs.existsSync(SETTINGS_FILE)) {
                 state.playedHistory = new Set();
             }
 
-            // 3. Deep Merge djStatus: Ensures UI doesn't crash if keys were missing in saved state
+            // 3. Deep Merge djStatus
             state.djStatus = { ...state.djStatus, ...(saved.djStatus || {}) };
 
-            // 4. Queue Cleanup: Ensure we don't restore temporary fallback items as permanent requests
+            // 4. Queue Cleanup
             if (Array.isArray(state.partyQueue)) {
                 state.partyQueue = state.partyQueue.filter(t => !t.isFallback);
             }
@@ -95,7 +93,6 @@ if (fs.existsSync(SETTINGS_FILE)) {
         }
     } catch (e) { 
         console.error("❌ State: Error loading settings.json, falling back to defaults.", e.message); 
-        // Ensure state remains functional even on crash
         state.playedHistory = new Set();
     }
 } else {

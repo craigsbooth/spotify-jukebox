@@ -68,6 +68,7 @@ export const useJukeboxState = (isAuthorized: boolean) => {
   useEffect(() => {
     if (!isAuthorized) return;
     fetchMetadata();
+    // REDUCED FREQUENCY: 10s is plenty since SSE handles high-priority updates
     const interval = setInterval(() => {
       if (Date.now() - lastActionRef.current > 3000) {
         fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
@@ -78,7 +79,7 @@ export const useJukeboxState = (isAuthorized: boolean) => {
         });
       }
       fetch(`${API_URL}/dj-status`).then(res => res.json()).then(setDjStatus);
-    }, 2000);
+    }, 10000); // Updated to 10 seconds
     return () => clearInterval(interval);
   }, [isAuthorized]);
 

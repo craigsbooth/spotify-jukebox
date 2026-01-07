@@ -108,6 +108,7 @@ export default function GuestPage() {
     try { connectSSE(); } catch (e) {}
 
     // C. Polling (The "Slow Path" for Tokens/Standard Queue)
+    // REDUCED FREQUENCY: 10s is plenty since SSE handles the fast stuff
     const interval = setInterval(() => {
         fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
@@ -116,7 +117,7 @@ export default function GuestPage() {
             setTokenBalance(d.balance); 
             setNextInSeconds(d.nextIn);
         });
-    }, 3000);
+    }, 10000); // Updated from 3000 to 10000
 
     return () => {
         clearInterval(interval);

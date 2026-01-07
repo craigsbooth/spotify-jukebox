@@ -11,20 +11,20 @@
   "crossfadeSec": 3,
   "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:3YiUcL1SQzCweJj8XfxOur",
-    "name": "Still Take You Home",
-    "artist": "Arctic Monkeys",
-    "album": "Whatever People Say I Am, That's What I'm Not",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b273327309f3128fb39add2fe286",
-    "duration_ms": 173666,
+    "uri": "spotify:track:0ia0JAsndEIZ268L3phuUa",
+    "name": "People Help the People",
+    "artist": "Birdy",
+    "album": "Birdy",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
+    "duration_ms": 256236,
     "isFallback": true,
     "votes": 0,
-    "displayName": "Still Take You Home",
-    "displayArtist": "Arctic Monkeys",
-    "startedAt": 1767802053855,
+    "displayName": "People Help the People",
+    "displayArtist": "Birdy",
+    "startedAt": 1767802229355,
     "lyrics": null
   },
-  "startedAt": 1767802053848,
+  "startedAt": 1767802229347,
   "guestNames": {
     "guest_d1qjlesy6": "Craig 1",
     "g-yzr4butkt": "craig",
@@ -33,7 +33,7 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "youtubeId": "OfG4UfH38Cs",
+  "youtubeId": "OmLNs6zQIHo",
   "isKaraokeMode": false,
   "karaokeQueue": [],
   "karaokeAnnouncement": null,
@@ -61,25 +61,25 @@
   },
   "lyricsDelayMs": 0,
   "djStatus": {
-    "message": "Playing: Still Take You Home",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273327309f3128fb39add2fe286",
-    "bpm": 108.8,
-    "key": "N/A",
+    "message": "Playing: People Help the People",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
+    "bpm": 148,
+    "key": "F# major",
     "genres": [
-      "Alternative"
+      "Pop"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Still Take You Home",
-    "researchArtist": "Arctic Monkeys",
-    "researchAlbum": "Whatever People Say I Am, That's What I'm Not",
-    "valence": 0,
-    "publisher": "Domino Recording Co",
-    "isrc": "GBCEL0501185",
-    "releaseDate": "2006-01-29",
+    "researchTitle": "People Help the People",
+    "researchArtist": "Birdy",
+    "researchAlbum": "Birdy (Deluxe Version)",
+    "valence": 65,
+    "publisher": "Atlantic Records UK",
+    "isrc": "GBAHS1100351",
+    "releaseDate": "2011-11-04",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-07T16:07:34.568Z",
+  "lastSavedAt": "2026-01-07T16:10:30.259Z",
   "isPopping": false,
   "playedHistory": [
     "spotify:track:08mG3Y1vljYA6bvDt4Wqkj",
@@ -98,6 +98,7 @@
     "spotify:track:5xN48kwYZWTUDXbPxVeszJ",
     "spotify:track:47UFoOuvrkt4khE7c5aap6",
     "spotify:track:3lWzVNe1yFZlkeBBzUuZYu",
-    "spotify:track:3YiUcL1SQzCweJj8XfxOur"
+    "spotify:track:3YiUcL1SQzCweJj8XfxOur",
+    "spotify:track:0ia0JAsndEIZ268L3phuUa"
   ]
 }

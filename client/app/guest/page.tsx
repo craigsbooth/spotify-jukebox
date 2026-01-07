@@ -8,7 +8,7 @@ import { ReactionLayer } from './ReactionLayer';
 
 export default function GuestPage() {
   const [guestId, setGuestId] = useState('');
-  const [guestName, setGuestName] = useState('Guest');
+  const [guestName, setGuestName] = useState(''); // Default empty to trigger modal
   const [isEditingName, setIsEditingName] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
@@ -30,7 +30,9 @@ export default function GuestPage() {
 
   // --- NEW: SYNC STATE ---
   const [lyricsDelayMs, setLyricsDelayMs] = useState(0);
-  // -----------------------
+  
+  // --- NEW: WELCOME MODAL STATE ---
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
 
   // Ref for SSE Connection to prevent duplicate listeners
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -39,10 +41,19 @@ export default function GuestPage() {
   useEffect(() => {
     // A. Guest Initialization
     let gid = localStorage.getItem('jukebox_guest_id') || 'g-' + Math.random().toString(36).substr(2, 9);
-    let gname = localStorage.getItem('jukebox_guest_name') || 'Guest';
+    let gname = localStorage.getItem('jukebox_guest_name');
+    
+    // Logic: If no name is saved, or it's just "Guest", show the modal
+    if (gname && gname !== 'Guest') {
+        setGuestName(gname);
+        setShowWelcomeModal(false);
+    } else {
+        setGuestName('');
+        setShowWelcomeModal(true);
+    }
+
     localStorage.setItem('jukebox_guest_id', gid);
     setGuestId(gid); 
-    setGuestName(gname);
 
     // B. SSE Connection (The "Fast Path" for Mode/Queue/Reactions/Lyrics)
     const connectSSE = () => {
@@ -108,7 +119,6 @@ export default function GuestPage() {
     try { connectSSE(); } catch (e) {}
 
     // C. Polling (The "Slow Path" for Tokens/Standard Queue)
-    // REDUCED FREQUENCY: 10s is plenty since SSE handles the fast stuff
     const interval = setInterval(() => {
         fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
@@ -117,7 +127,7 @@ export default function GuestPage() {
             setTokenBalance(d.balance); 
             setNextInSeconds(d.nextIn);
         });
-    }, 10000); // Updated from 3000 to 10000
+    }, 10000); 
 
     return () => {
         clearInterval(interval);
@@ -126,6 +136,22 @@ export default function GuestPage() {
   }, []);
 
   // 2. HANDLERS
+  const handleJoinParty = () => {
+      const nameToSave = guestName.trim() || "Guest";
+      setGuestName(nameToSave);
+      setShowWelcomeModal(false);
+      
+      // Persist
+      localStorage.setItem('jukebox_guest_name', nameToSave);
+      
+      // Register with Server
+      fetch(`${API_URL}/join`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ guestId, name: nameToSave }) 
+      });
+  };
+
   const handleNameUpdate = () => {
     setIsEditingName(false);
     localStorage.setItem('jukebox_guest_name', guestName);
@@ -148,8 +174,9 @@ export default function GuestPage() {
   };
 
   const handleRequest = async (track: any) => {
-    if (isKaraokeMode && (guestName === "Guest" || !guestName)) {
-        alert("Please enter your name to sign up for Karaoke!");
+    // Safety check just in case
+    if (isKaraokeMode && (!guestName || guestName === "Guest")) {
+        alert("Please set your name first!");
         setIsEditingName(true);
         return;
     }
@@ -205,9 +232,52 @@ export default function GuestPage() {
 
   const nextTokenMinutes = Math.ceil(nextInSeconds / 60);
 
+  // --- RENDER ---
   return (
     <div style={{...styles.masterContainer, position: 'relative', overflowX: 'hidden'}}>
       <style dangerouslySetInnerHTML={{__html: styles.globalStyles}} />
+      
+      {/* 3. WELCOME MODAL OVERLAY */}
+      {showWelcomeModal && (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.95)', zIndex: 9999,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '20px'
+        }}>
+            <h1 style={{ color: '#1DB954', fontSize: '2rem', marginBottom: '20px' }}>Join the Party</h1>
+            <p style={{ color: '#aaa', marginBottom: '30px', textAlign: 'center' }}>
+                Enter your name to start voting and requesting songs.
+            </p>
+            <input 
+                type="text" 
+                placeholder="Your Name (e.g. Craig)" 
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                autoFocus
+                style={{
+                    padding: '15px', borderRadius: '30px', border: '2px solid #333',
+                    background: '#222', color: 'white', fontSize: '1.2rem', 
+                    textAlign: 'center', width: '100%', maxWidth: '300px',
+                    marginBottom: '20px', outline: 'none'
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleJoinParty()}
+            />
+            <button 
+                onClick={handleJoinParty}
+                disabled={!guestName.trim()}
+                style={{
+                    padding: '15px 40px', borderRadius: '30px', border: 'none',
+                    background: guestName.trim() ? '#1DB954' : '#444',
+                    color: guestName.trim() ? 'white' : '#888',
+                    fontSize: '1rem', fontWeight: 'bold', cursor: guestName.trim() ? 'pointer' : 'not-allowed'
+                }}
+            >
+                LET'S GO
+            </button>
+        </div>
+      )}
+
       <ReactionLayer activeReactions={activeReactions} />
       
       <GuestHeader 
@@ -221,10 +291,7 @@ export default function GuestPage() {
         showLyrics={showLyrics}
         syncedLyrics={syncedLyrics} 
         plainLyrics={plainLyrics}
-        
-        // --- PASS NEW PROP ---
         lyricsDelayMs={lyricsDelayMs}
-        // ---------------------
         
         setIsEditingName={setIsEditingName}
         setGuestName={setGuestName}

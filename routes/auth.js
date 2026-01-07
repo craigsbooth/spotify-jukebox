@@ -57,13 +57,30 @@ const handleCallback = async (req, res) => {
             console.log(`✅ Auth System: Handshake successful. Party '${newParty.partyName}' created.`);
             sm.saveSettings();
 
+            // UX IMPROVEMENT: Button to return to app
+            // Defaults to production URL if ENV is missing, but respects localhost for dev
+            const frontendUrl = process.env.FRONTEND_URL || 'https://jukebox.boldron.info';
+
             res.send(`
                 <html>
-                    <body style="background: #121212; color: #1DB954; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-                        <div style="text-align: center; border: 2px solid #1DB954; padding: 3rem; border-radius: 15px;">
-                            <h1>Authentication Success!</h1>
-                            <p style="color: white;">Welcome, ${newParty.partyName}.</p>
-                            <p style="color: #888;">The Jukebox is now linked to your account. You can close this window.</p>
+                    <head>
+                        <title>Jukebox Connected</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <style>
+                            body { background: #121212; color: white; font-family: 'Helvetica Neue', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                            .card { background: #181818; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; }
+                            h1 { color: #1DB954; margin-bottom: 10px; }
+                            p { color: #b3b3b3; margin-bottom: 30px; line-height: 1.5; }
+                            .btn { background: #1DB954; color: white; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: bold; letter-spacing: 1px; transition: transform 0.2s; display: inline-block; }
+                            .btn:hover { background: #1ed760; transform: scale(1.05); }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <h1>Success!</h1>
+                            <p><strong>${newParty.partyName}</strong> is now live.</p>
+                            <p>The Jukebox is linked. You may now return to the dashboard.</p>
+                            <a href="${frontendUrl}" class="btn">ENTER JUKEBOX</a>
                         </div>
                     </body>
                 </html>

@@ -5,98 +5,120 @@ const path = require('path');
 // Use absolute path for consistency across modular imports
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-let state = {
-    // Corrected ID for Viva Latino based on Spotify standards
-    fallbackPlaylist: { id: '37i9dQZF1DX10zKzsJ2j87', name: 'Viva Latino' },
-    currentTheme: 'standard',
-    partyName: "The Pinfold", 
-    showLyrics: false, 
-    showDebug: false,
-    crossfadeSec: 8, 
-    partyQueue: [], 
-    currentPlayingTrack: null, 
-    guestNames: {}, 
-    latestJoiner: null,
-    reactionEvent: { id: 0, emoji: null }, 
-    isDjMode: false,
-    
-    // playback timing tracking
-    startedAt: null,
+/**
+ * THE PARTY MODEL
+ * Defines the state for a single Jukebox session.
+ * Now refactored into a Class to support Multi-Host architecture.
+ */
+class Party {
+    constructor(id = 'default', hostName = "The Pinfold") {
+        this.id = id;
+        
+        // --- CORE SETTINGS ---
+        this.fallbackPlaylist = { id: '37i9dQZF1DX10zKzsJ2j87', name: 'Viva Latino' };
+        this.currentTheme = 'standard';
+        this.partyName = hostName;
+        this.showLyrics = false;
+        this.showDebug = false;
+        this.crossfadeSec = 8;
+        
+        // --- PLAYBACK STATE ---
+        this.partyQueue = [];
+        this.currentPlayingTrack = null;
+        this.startedAt = null;
+        this.playedHistory = new Set();
+        this.shuffleBag = [];
+        
+        // --- INTERACTIVE FEATURES ---
+        this.guestNames = {};
+        this.latestJoiner = null;
+        this.reactionEvent = { id: 0, emoji: null };
+        this.isDjMode = false;
+        this.youtubeId = null; // Monitor View Integration
 
-    // FEATURE: YouTube Integration for Monitor View
-    youtubeId: null,
+        // --- KARAOKE ENGINE ---
+        this.isKaraokeMode = false;
+        this.karaokeQueue = [];
+        this.karaokeAnnouncement = null;
 
-    // NEW FEATURE: KARAOKE ENGINE
-    isKaraokeMode: false,
-    karaokeQueue: [], 
-    karaokeAnnouncement: null, 
+        // --- TOKEN ECONOMY ---
+        this.tokensEnabled = false;
+        this.tokensInitial = 5;
+        this.tokensPerHour = 6;
+        this.tokensMax = 10;
+        this.tokenRegistry = {};
 
-    // FEATURE: GUEST TOKEN ECONOMY
-    tokensEnabled: false,
-    tokensInitial: 5,
-    tokensPerHour: 6,
-    tokensMax: 10,
-    tokenRegistry: {}, 
+        // --- LYRICS SYNC ---
+        this.lyricsDelayMs = 0;
 
-    // FEATURE: LYRICS SYNC (Moved inside the state object)
-    lyricsDelayMs: 0, 
+        // --- RESEARCH ENGINE ---
+        this.djStatus = {
+            message: "Digital DJ Idle",
+            researchTitle: "",
+            researchArtist: "",
+            researchAlbum: "",
+            bpm: "--",
+            key: "N/A",
+            publisher: "Scanning...",
+            isrc: "--",
+            releaseDate: "--",
+            genres: [],
+            valence: 0,
+            albumArtwork: "/placeholder.png"
+        };
+    }
 
-    // INITIALIZED FOR RESEARCH ENGINE
-    djStatus: { 
-        message: "Digital DJ Idle", 
-        researchTitle: "", 
-        researchArtist: "", 
-        researchAlbum: "", 
-        bpm: "--", 
-        key: "N/A", 
-        publisher: "Scanning...",
-        isrc: "--",
-        releaseDate: "--",
-        genres: [],
-        valence: 0,
-        albumArtwork: "/placeholder.png"
-    }, 
-    
-    shuffleBag: [], 
-    playedHistory: new Set() 
-};
+    /**
+     * Hydrate this party instance from a JSON object (e.g., settings.json)
+     */
+    loadSettings(saved) {
+        // 1. Safety Merge: Spread defaults first, then overwrite with saved values
+        Object.assign(this, saved);
+
+        // 2. CRITICAL FIX: JSON cannot store Sets. Convert Array back to Set.
+        if (saved.playedHistory && Array.isArray(saved.playedHistory)) {
+            this.playedHistory = new Set(saved.playedHistory);
+        } else {
+            this.playedHistory = new Set();
+        }
+
+        // 3. Deep Merge djStatus to prevent overwriting sub-fields
+        this.djStatus = { ...this.djStatus, ...(saved.djStatus || {}) };
+
+        // 4. Queue Cleanup: Remove fallbacks on restore
+        if (Array.isArray(this.partyQueue)) {
+            this.partyQueue = this.partyQueue.filter(t => !t.isFallback);
+        }
+        
+        console.log(`💾 Party State: Restored session for '${this.partyName}'`);
+    }
+}
+
+// --- SINGLETON INSTANTIATION (Legacy Support) ---
+// We create a default instance so existing code (require('./state')) continues to work.
+const defaultParty = new Party('singleton');
 
 /**
  * STARTUP HYDRATION
- * Attempts to load settings from settings.json and properly re-type complex objects.
+ * Attempts to load settings from settings.json into the default party.
  */
 if (fs.existsSync(SETTINGS_FILE)) {
     try {
         const fileContent = fs.readFileSync(SETTINGS_FILE, 'utf8');
         if (fileContent) {
             const saved = JSON.parse(fileContent);
-            
-            // 1. Safety Merge: Spread defaults first, then overwrite with saved values
-            state = { ...state, ...saved };
-            
-            // 2. CRITICAL FIX: JSON cannot store Sets. We must convert the Array back to a Set.
-            if (saved.playedHistory && Array.isArray(saved.playedHistory)) {
-                state.playedHistory = new Set(saved.playedHistory);
-            } else {
-                state.playedHistory = new Set();
-            }
-
-            // 3. Deep Merge djStatus
-            state.djStatus = { ...state.djStatus, ...(saved.djStatus || {}) };
-
-            // 4. Queue Cleanup
-            if (Array.isArray(state.partyQueue)) {
-                state.partyQueue = state.partyQueue.filter(t => !t.isFallback);
-            }
-
-            console.log(`💾 State: Successfully restored session from ${SETTINGS_FILE}`);
+            defaultParty.loadSettings(saved);
         }
-    } catch (e) { 
-        console.error("❌ State: Error loading settings.json, falling back to defaults.", e.message); 
-        state.playedHistory = new Set();
+    } catch (e) {
+        console.error("❌ State: Error loading settings.json, falling back to defaults.", e.message);
+        defaultParty.playedHistory = new Set();
     }
 } else {
     console.log("ℹ️ State: No settings.json found, starting with clean defaults.");
 }
 
-module.exports = state;
+// EXPORT THE INSTANCE (Compatible with existing code)
+module.exports = defaultParty;
+
+// EXPORT THE CLASS (For future Session Manager usage)
+module.exports.Party = Party;

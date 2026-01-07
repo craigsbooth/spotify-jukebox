@@ -48,16 +48,13 @@ if (Test-Path $DeployTemp) { Remove-Item -Recurse -Force $DeployTemp }
 New-Item -ItemType Directory -Path "$DeployTemp\client" | Out-Null
 New-Item -ItemType Directory -Path "$DeployTemp\routes" | Out-Null
 
-# A. Create .env (Injected with the NEW version)
-$DotEnvLines = @(
-    "SPOTIFY_CLIENT_ID=3c5e00fa03dc46109048d2905f87332e",
-    "SPOTIFY_CLIENT_SECRET=720873f295de4759a1dce9d85ef9bc64",
-    "REDIRECT_URI=https://$Domain/api/callback",
-    "PORT=8888",
-    "FRONTEND_URL=https://$Domain",
+# A. SECURITY FIX: NO MORE HARDCODED SECRETS
+# We no longer generate a full .env file locally.
+# We only create a temporary version file for the build.
+$VersionEnv = @(
     "APP_VERSION=$NewVersion"
 )
-[System.IO.File]::WriteAllLines("$DeployTemp\.env", $DotEnvLines)
+[System.IO.File]::WriteAllLines("$DeployTemp\.version_env", $VersionEnv)
 
 # B. Copy Backend files
 Copy-Item "$LocalProject\*.js" -Destination "$DeployTemp\"
@@ -87,12 +84,21 @@ Compress-Archive -Path "$DeployTemp\*" -DestinationPath $ZipFile -Force
 Write-Host "--- Uploading to AWS ---" -ForegroundColor Cyan
 scp -i "$KeyPath" "$ZipFile" "${ServerUser}@${ServerIP}:${RemotePath}/"
 
-# --- 4. REMOTE EXECUTION ---
+# --- 4. REMOTE EXECUTION (CLEAN VERSIONING) ---
 Write-Host "--- Server Restart Sequence ---" -ForegroundColor Cyan
+# LOGIC: 
+# 1. Unzip everything EXCEPT .env.
+# 2. Use grep/sed to update APP_VERSION in .env if it exists, otherwise append it.
+# 3. This prevents duplicate entries and keeps HOST_PIN safe.
 $RemoteCmd = "cd ${RemotePath}; " +
              "pm2 stop all || true; " +
-             "unzip -o jukebox_deploy.zip; " +
-             "rm jukebox_deploy.zip; " +
+             "unzip -o jukebox_deploy.zip -x .env; " +
+             "if grep -q 'APP_VERSION=' .env; then " +
+             "  sed -i 's/^APP_VERSION=.*/APP_VERSION=$NewVersion/' .env; " +
+             "else " +
+             "  echo 'APP_VERSION=$NewVersion' >> .env; " +
+             "fi; " +
+             "rm jukebox_deploy.zip .version_env; " +
              "npm install --omit=dev --no-save --legacy-peer-deps; " +
              "pm2 delete backend || true; pm2 start server.js --name 'backend'; " +
              "cd client; " +

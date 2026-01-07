@@ -66,10 +66,9 @@ export default function Home() {
   // Helper: Verify PIN against Server
   const verifyPin = async (pin: string) => {
       try {
-          // Construct the auth URL by stripping '/api' from the standard API_URL 
-          // because auth routes are mounted at root '/'
-          const authBase = API_URL.replace(/\/api$/, '');
-          const res = await fetch(`${authBase}/verify-pin`, {
+          // FIX: Do NOT strip '/api'. We want the request to go to /api/verify-pin
+          // so Nginx routes it correctly to the backend.
+          const res = await fetch(`${API_URL}/verify-pin`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ pin })
@@ -113,6 +112,8 @@ export default function Home() {
   };
 
   // 6. RENDER LOGIC
+  
+  // A. PIN Protection
   if (!isAuthorized) return (
     <div style={{ ...styles.master, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <form onSubmit={localHandlers.handlePinSubmit} style={{ textAlign: 'center' }}>
@@ -130,6 +131,29 @@ export default function Home() {
     </div>
   );
 
+  // B. Spotify Connection Check (The Professional Handshake)
+  // If the server reports no token, we show the landing page
+  if (!jukeboxState.token) {
+    return (
+      <div style={{ ...styles.master, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '40px', background: '#111', borderRadius: '30px', border: '1px solid #D4AF37', maxWidth: '500px' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📻</div>
+          <h1 style={{ color: '#D4AF37', fontWeight: 950, marginBottom: '10px' }}>JUKEBOX DISCONNECTED</h1>
+          <p style={{ opacity: 0.7, marginBottom: '30px', lineHeight: 1.5 }}>
+            The system is active but not linked to a Spotify Host. Please sign in with a <strong>Spotify Premium</strong> account to start the party.
+          </p>
+          <button 
+            style={{ ...styles.btn(true), height: '60px', fontSize: '1.1rem' }} 
+            onClick={() => window.location.href = API_URL.replace('/api', '/login')}
+          >
+            LINK SPOTIFY ACCOUNT 🟢
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // C. Full Dashboard
   return (
     <DashboardView 
       state={{ 

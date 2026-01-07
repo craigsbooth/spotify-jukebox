@@ -18,10 +18,10 @@ const isLocal = os.hostname().includes('craig') ||
                 process.env.NODE_ENV === 'development' || 
                 !process.env.APP_VERSION;
 
-// FIX: Using 127.0.0.1 to match your Spotify Dashboard settings exactly
-const REDIRECT_URI = isLocal 
+// FIX: Prioritize explicit Environment Variable first, then fallback to auto-detection
+const REDIRECT_URI = process.env.REDIRECT_URI || (isLocal 
     ? 'http://127.0.0.1:8888/callback' 
-    : (process.env.REDIRECT_URI || 'https://jukebox.boldron.info/api/callback');
+    : 'https://jukebox.boldron.info/api/callback');
 
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -32,36 +32,31 @@ const spotifyApi = new SpotifyWebApi({
 console.log(`🌐 Auth System: Initialized for ${isLocal ? 'LOCAL' : 'PRODUCTION'}`);
 console.log(`🔗 Redirect Target: ${REDIRECT_URI}`);
 
-// --- STARTUP RECOVERY LOGIC ---
-console.log(`📂 Token System: Checking path: ${TOKEN_PATH}`);
-
+/**
+ * MULTI-HOST DYNAMIC SESSION RECOVERY
+ * We still check for tokens.json on disk to maintain a session after a server restart,
+ * but we no longer rely on hardcoded defaults.
+ */
 try {
     if (fs.existsSync(TOKEN_PATH)) {
         const rawData = fs.readFileSync(TOKEN_PATH, 'utf8');
-        console.log(`📄 Token System: File found. Content length: ${rawData.length} bytes`);
-        
         const tokens = JSON.parse(rawData);
         
-        // Use all possible naming variations to ensure it catches the data
         const access = tokens.access_token || tokens.accessToken || tokens.access;
         const refresh = tokens.refresh_token || tokens.refreshToken || tokens.refresh;
 
-        // CRITICAL CHECK: Only restore if access is a valid string
         if (access && access !== "null") {
             spotifyApi.setAccessToken(access);
             if (refresh) spotifyApi.setRefreshToken(refresh);
-            console.log("✅ Station Session: RESTORED successfully from disk.");
-        } else if (refresh && refresh !== "null") {
-            spotifyApi.setRefreshToken(refresh);
-            console.warn("🔄 Station Session: Refresh token found, but Access token is missing. Background recovery pending...");
+            console.log("✅ Auth System: Existing host session restored from disk.");
         } else {
-            console.warn("⚠️ Token System: File exists but no usable tokens found.");
+            console.log("ℹ️ Auth System: No active session. Waiting for host login.");
         }
     } else {
-        console.warn(`ℹ️ No tokens.json found. Waiting for first login.`);
+        console.log("ℹ️ Auth System: Fresh start. Host login required at /login.");
     }
 } catch (err) {
-    console.error("❌ Token System: Recovery Crash during boot:", err.message);
+    console.error("❌ Auth System: Session recovery error:", err.message);
 }
 
 module.exports = spotifyApi;

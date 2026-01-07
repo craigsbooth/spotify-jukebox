@@ -4,8 +4,9 @@ import { styles } from '../dashboard_ui';
 interface PanelProps { state: any; handlers: any; }
 
 export const LogisticsPanel = ({ state, handlers }: PanelProps) => {
-    const karaokeItems = state.karaokeQueue || [];
-    const spotifyItems = state.queue || [];
+    // FIX: Type Guard to prevent crash if backend returns an error object instead of an array
+    const karaokeItems = Array.isArray(state.karaokeQueue) ? state.karaokeQueue : [];
+    const spotifyItems = Array.isArray(state.queue) ? state.queue : [];
 
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>

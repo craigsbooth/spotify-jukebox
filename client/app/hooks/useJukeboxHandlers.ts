@@ -290,8 +290,9 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
 
       if (s.type === 'initialization_error') fetchMetadata();
       
-      // 2. Normal Auto-DJ
-      if (!s.isPlaying && s.progressMs === 0) handleSkip();
+      // 2. DISABLE CLIENT-SIDE AUTO-DJ (CRITICAL FIX)
+      // This line MUST remain commented out to fix mid-song skipping
+      // if (!s.isPlaying && s.progressMs === 0) handleSkip();
     }
   };
 };

@@ -7,6 +7,12 @@ const sse = require('./sse');
 const utils = require('./utils');
 const sm = require('./state_manager');
 
+// --- SAFETY LOCK: Prevent double-skipping ---
+// This ignores any skip requests that happen within 10 seconds of the last one.
+// It solves the race condition between Client Auto-Play and Server Watchdog.
+let lastSkipTime = 0;
+const SKIP_COOLDOWN_MS = 10000; 
+
 // Helper: Fetch Lyrics
 const fetchLyrics = async (track) => {
     if (!track || !track.name || !track.artist) return null;
@@ -45,23 +51,30 @@ const syncState = (party, track) => {
 };
 
 const popNextTrack = async () => {
-    // 1. Resolve Target State (Party vs Global)
+    // 1. SAFETY CHECK: Enforce Cooldown
+    const now = Date.now();
+    if (now - lastSkipTime < SKIP_COOLDOWN_MS) {
+        console.warn("🛡️ Engine: Skip request ignored (Cooldown Active)");
+        return { success: false, message: "Skipping too fast! Cooldown active." };
+    }
+
+    // 2. Resolve Target State (Party vs Global)
     const party = sessions.getActiveParty();
     const targetState = party || state; // Fallback to global if no party
 
-    // Prevent double-popping
+    // Prevent double-popping (Concurrency Lock)
     if (targetState.isPopping) return { success: false, message: "Already popping" };
     targetState.isPopping = true;
 
     try {
         let nextTrack = null;
 
-        // 2. Check Guest Queue
+        // 3. Check Guest Queue
         if (targetState.partyQueue.length > 0) {
             nextTrack = targetState.partyQueue.shift();
             console.log(`🎯 Engine: Popped Guest Track - ${nextTrack.name}`);
         } 
-        // 3. Check Shuffle Bag
+        // 4. Check Shuffle Bag
         else {
             const bag = Array.isArray(targetState.shuffleBag) ? targetState.shuffleBag : [];
             
@@ -83,6 +96,9 @@ const popNextTrack = async () => {
             // PLAY IT
             const success = await spotifyCtrl.playTrack(nextTrack.uri);
             if (!success) console.warn("⚠️ Engine: Spotify Play Request returned false, but updating state anyway.");
+
+            // UPDATE COOLDOWN TIMESTAMP
+            lastSkipTime = Date.now();
 
             const sanitized = utils.sanitizeTrack(nextTrack);
             intel.analyzeTrack(sanitized).catch(err => console.error(err));

@@ -38,9 +38,8 @@ export default function Projector() {
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
   const [showLyrics, setShowLyrics] = useState(false);
   
-  // --- SYNC STATE (This is the missing link) ---
+  // --- SYNC STATE ---
   const [lyricsDelayMs, setLyricsDelayMs] = useState(0); 
-  // ---------------------------------------------
 
   const [showDebug, setShowDebug] = useState(false);
   const [joinNotification, setJoinNotification] = useState<string | null>(null);
@@ -90,7 +89,6 @@ export default function Projector() {
                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
                     if (payload.showLyrics !== undefined) setShowLyrics(payload.showLyrics);
                     
-                    // UPDATE DELAY FROM SERVER EVENT
                     if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
                     
                     if (type === 'INIT' && payload.currentLyrics) {
@@ -145,7 +143,7 @@ export default function Projector() {
     return () => clearInterval(interval);
   }, [nowPlaying]);
 
-  // --- 3. ANIMATION & SYNC ENGINE (UPDATED) ---
+  // --- 3. ANIMATION & SYNC ENGINE ---
   useEffect(() => {
     const int = setInterval(() => {
       if (!nowPlaying?.startedAt) { setProgress(0); return; }
@@ -154,12 +152,7 @@ export default function Projector() {
       setProgress(Math.min((elapsed / (nowPlaying.duration || 1)) * 100, 100));
       
       if (syncedLyrics.length > 0) {
-        // --- THIS IS THE DRIFT CORRECTOR ---
-        // We take the elapsed time and subtract the delay.
-        // If Delay is +500ms (Late), we subtract 0.5s from the time, 
-        // effectively "holding back" the lyrics to match the audio.
         const sec = (elapsed - lyricsDelayMs) / 1000;
-        
         const idx = syncedLyrics.findLastIndex(l => l.time <= sec);
         if (idx !== -1 && idx !== activeLineIndex) {
             setActiveLineIndex(idx);
@@ -167,7 +160,7 @@ export default function Projector() {
       }
     }, 50);
     return () => clearInterval(int);
-  }, [nowPlaying?.startedAt, syncedLyrics, activeLineIndex, lyricsDelayMs]); // <--- Dependency Added
+  }, [nowPlaying?.startedAt, syncedLyrics, activeLineIndex, lyricsDelayMs]);
 
   // --- 4. VIEW LOGIC ---
   const nextUpItem = isKaraokeMode ? karaokeQueue[0] : queue[0];
@@ -175,6 +168,10 @@ export default function Projector() {
   useEffect(() => { setShowUpNext(nextUpId !== 'empty'); }, [nextUpId]);
   
   const currentArt = nowPlaying?.albumArt || RECORD_PLACEHOLDER;
+
+  // FIX: Fallback to Track YouTube ID if Global ID is missing
+  // This enables background videos for standard tracks
+  const activeVideoId = youtubeId || (nowPlaying as any)?.youtubeId || null;
 
   return (
     <div style={styles.masterWrapper}>
@@ -184,7 +181,7 @@ export default function Projector() {
       <Background 
         viewMode={viewMode} 
         isKaraokeMode={isKaraokeMode} 
-        youtubeId={youtubeId} 
+        youtubeId={activeVideoId} 
         currentArt={currentArt} 
       />
 

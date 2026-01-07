@@ -62,25 +62,25 @@ const handleCallback = async (req, res) => {
             const frontendUrl = process.env.FRONTEND_URL || 'https://jukebox.boldron.info';
 
             res.send(`
+                <!DOCTYPE html>
                 <html>
                     <head>
                         <title>Jukebox Connected</title>
                         <meta name="viewport" content="width=device-width, initial-scale=1">
                         <style>
                             body { background: #121212; color: white; font-family: 'Helvetica Neue', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                            .card { background: #181818; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; }
-                            h1 { color: #1DB954; margin-bottom: 10px; }
-                            p { color: #b3b3b3; margin-bottom: 30px; line-height: 1.5; }
-                            .btn { background: #1DB954; color: white; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: bold; letter-spacing: 1px; transition: transform 0.2s; display: inline-block; }
+                            .card { background: #181818; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; border: 1px solid #333; }
+                            h1 { color: #1DB954; margin-bottom: 15px; font-size: 2rem; }
+                            p { color: #b3b3b3; margin-bottom: 35px; line-height: 1.6; font-size: 1.1rem; }
+                            .btn { background: #1DB954; color: #000; text-decoration: none; padding: 16px 36px; border-radius: 50px; font-weight: 800; letter-spacing: 0.5px; transition: transform 0.2s, background 0.2s; display: inline-block; font-size: 1rem; text-transform: uppercase; }
                             .btn:hover { background: #1ed760; transform: scale(1.05); }
                         </style>
                     </head>
                     <body>
                         <div class="card">
                             <h1>Success!</h1>
-                            <p><strong>${newParty.partyName}</strong> is now live.</p>
-                            <p>The Jukebox is linked. You may now return to the dashboard.</p>
-                            <a href="${frontendUrl}" class="btn">ENTER JUKEBOX</a>
+                            <p><strong>${newParty.partyName}</strong> is online.</p>
+                            <a href="${frontendUrl}" class="btn">Return to Jukebox</a>
                         </div>
                     </body>
                 </html>

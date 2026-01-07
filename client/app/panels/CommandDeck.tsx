@@ -89,24 +89,24 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                     </div>
                 </div>
 
-                {state.isDjMode && (
-                    <div style={{ marginTop: '20px', borderTop: '1px solid #D4AF3722', paddingTop: '20px' }}>
-                        
-                        {/* RESTORED: CROSSFADER CONTROL */}
-                        <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <label style={{ fontSize: '0.7rem', color: '#D4AF37', fontWeight: 900 }}>SMART CROSSFADE</label>
-                                <span style={{ fontSize: '0.7rem', color: '#fff', fontWeight: 900 }}>{state.crossfadeSec || 0} SEC</span>
-                            </div>
-                            <input 
-                                type="range" min="0" max="12" step="1" 
-                                value={state.crossfadeSec || 0}
-                                onChange={(e) => handlers.setCrossfade(parseInt(e.target.value))}
-                                style={{ width: '100%', accentColor: '#D4AF37' }}
-                            />
+                {/* --- ALWAYS VISIBLE CROSSFADER --- */}
+                <div style={{ marginTop: '20px', borderTop: '1px solid #D4AF3722', paddingTop: '20px' }}>
+                    <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <label style={{ fontSize: '0.7rem', color: '#D4AF37', fontWeight: 900 }}>SMART CROSSFADE</label>
+                            <span style={{ fontSize: '0.7rem', color: '#fff', fontWeight: 900 }}>{state.crossfadeSec || 0} SEC</span>
                         </div>
-                        {/* --------------------------- */}
+                        <input 
+                            type="range" min="0" max="12" step="1" 
+                            value={state.crossfadeSec || 0}
+                            onChange={(e) => handlers.setCrossfade(parseInt(e.target.value))}
+                            style={{ width: '100%', accentColor: '#D4AF37' }}
+                        />
+                    </div>
+                </div>
 
+                {state.isDjMode && (
+                    <div>
                         <div style={styles.intelHeader}>
                             <div style={{ fontSize: '0.7rem', color: '#D4AF37', fontWeight: 900, marginBottom: '4px', letterSpacing: '2px' }}>DATA VERIFICATION</div>
                             <div style={{ fontWeight: 950, fontSize: '1.2rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

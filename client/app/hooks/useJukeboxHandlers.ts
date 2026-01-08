@@ -290,9 +290,16 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
 
       if (s.type === 'initialization_error') fetchMetadata();
       
-      // 2. DISABLE CLIENT-SIDE AUTO-DJ (CRITICAL FIX)
-      // This line MUST remain commented out to fix mid-song skipping
-      // if (!s.isPlaying && s.progressMs === 0) handleSkip();
+      // 2. CLIENT-SIDE AUTO-DJ (RE-ENABLED)
+      // Logic: If player stops (isPlaying: false) AND track finished (progressMs: 0)
+      // AND it's a real 'player_update' event... then request next track.
+      if (!s.isPlaying && s.progressMs === 0 && s.type === 'player_update') {
+          // Double check we actually have a duration, effectively debouncing initial load
+          if (state.currentTrack && state.currentTrack.duration_ms > 0) {
+             console.log("⏭️ Client: Track finished. Requesting next...");
+             handleSkip();
+          }
+      }
     }
   };
 };

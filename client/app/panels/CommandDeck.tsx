@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // <--- IMPORT useMemo
 import SpotifyPlayer from 'react-spotify-web-playback';
 import { styles } from '../dashboard_ui'; 
 
@@ -7,9 +7,15 @@ interface PanelProps { state: any; handlers: any; }
 export const CommandDeck = ({ state, handlers }: PanelProps) => {
     const dj = state.djStatus || {};
     const isScanning = String(dj.publisher || '').includes('Scanning') || dj.bpm === '--';
-    
-    // LOGIC: A Performance is active if a YouTube ID is loaded.
     const isPerformanceActive = !!state.youtubeId;
+
+    // --- FIX: MEMOIZE URIS TO PREVENT RESTARTS ---
+    // This ensures the player only reloads if the song ID actually changes.
+    // Without this, every UI refresh triggers a reload, confusing the auto-skip logic.
+    const playerUris = useMemo(() => {
+        return state.currentTrack?.uri ? [state.currentTrack.uri] : [];
+    }, [state.currentTrack?.uri]);
+    // ---------------------------------------------
 
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -22,46 +28,32 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                     padding: '20px', 
                     marginBottom: '20px', 
                     border: '1px solid #D4AF3733',
-                    // FIX: Always keep player active and interactive
                     opacity: 1, 
                     pointerEvents: 'auto'
                 }}>
                     <SpotifyPlayer 
                         token={state.token} 
-                        // FIX: Always allow Spotify to load the current track, even if YouTube is active.
-                        // This gives the host full manual mixing control.
-                        uris={state.currentTrack?.uri ? [state.currentTrack.uri] : []} 
+                        uris={playerUris} // <--- Use the memoized variable
                         play={true} 
                         callback={handlers.onPlayerCallback} 
                         styles={{ activeColor: '#D4AF37', bgColor: '#000', color: '#fff', trackNameColor: '#fff', sliderColor: '#D4AF37', height: 60 }} 
                     />
                 </div>
-
+                
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    {/* FIX: Conditional Grid - 2 Cols if Karaoke, 1 Col if Music */}
                     <div style={{ display: 'grid', gridTemplateColumns: state.isKaraokeMode ? '1fr 1fr' : '1fr', gap: '15px' }}>
                         <button style={{ ...styles.btn(true), height: '70px', fontSize: '1.1rem' }} onClick={handlers.skipTrack}>
                             SKIP MUSIC ⏩
                         </button>
-                        
-                        {/* Only show Pop Singer button in Karaoke Mode */}
                         {state.isKaraokeMode && (
                             <button 
-                                style={{ 
-                                    ...styles.btn(true), 
-                                    height: '70px', 
-                                    fontSize: '1.1rem', 
-                                    background: '#D4AF37', 
-                                    color: '#000' 
-                                }} 
+                                style={{ ...styles.btn(true), height: '70px', fontSize: '1.1rem', background: '#D4AF37', color: '#000' }} 
                                 onClick={handlers.popKaraoke}
                             >
                                 POP SINGER 🎤
                             </button>
                         )}
                     </div>
-                    
-                    {/* UPDATED: Only show "Finish" if Karaoke Mode is active AND a performance is running */}
                     {state.isKaraokeMode && isPerformanceActive && (
                         <button 
                             style={{ ...styles.outlineBtn, height: '45px', border: '1px solid #f39c12', color: '#f39c12', fontWeight: 900, fontSize: '0.8rem' }}
@@ -73,7 +65,7 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                 </div>
             </div>
 
-            {/* 2B. DIGITAL DJ ENGINE CARD */}
+            {/* DIGITAL DJ ENGINE CARD */}
             <div style={styles.djCard(state.isDjMode)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <span style={styles.label}>Digital DJ Engine</span>
@@ -89,7 +81,7 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
                     </div>
                 </div>
 
-                {/* --- ALWAYS VISIBLE CROSSFADER --- */}
+                {/* ALWAYS VISIBLE CROSSFADER */}
                 <div style={{ marginTop: '20px', borderTop: '1px solid #D4AF3722', paddingTop: '20px' }}>
                     <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>

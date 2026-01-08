@@ -1,9 +1,9 @@
-// automation.js - Server-Side Autopilot
+// automation.js - Server-Side Autopilot (DISABLED)
 const state = require('./state');
 const playbackEngine = require('./playback_engine');
 
 const startWatchdog = () => {
-    console.log("🤖 Auto-DJ Watchdog Active");
+    console.log("🤖 Auto-DJ Watchdog: STANDBY MODE (Client-Driven)");
 
     setInterval(() => {
         // 1. SAFETY: Do not auto-skip if Karaoke is active
@@ -17,23 +17,22 @@ const startWatchdog = () => {
         const elapsed = now - startedAt;
         const limit = (duration_ms || 180000) + 2500; // Duration + 2.5s buffer
         
-        // 3. LOGGING (Debug "Mid-Skip" issues)
-        // Only log if we are getting close (within 10 seconds of skip) to reduce noise
+        // 3. LOGGING ONLY (Debug "Mid-Skip" issues)
+        // We log if we are close to the limit, but we DO NOT trigger a skip.
         if (elapsed > limit - 10000 && elapsed < limit) {
-             console.log(`⏳ Watchdog: ${name} | Elapsed: ${(elapsed/1000).toFixed(1)}s / ${(limit/1000).toFixed(1)}s`);
+             // console.log(`⏳ Watchdog: ${name} | Elapsed: ${(elapsed/1000).toFixed(1)}s / ${(limit/1000).toFixed(1)}s`);
         }
 
-        // 4. TRIGGER
+        // 4. TRIGGER REMOVED
+        // The server no longer forces playback. It waits for the client.
+        /*
         if (elapsed > limit) {
             if (!state.isPopping) {
-                console.log(`🤖 Watchdog: Track Time Limit Reached (${(elapsed/1000).toFixed(1)}s). Skipping...`);
-                console.log(`   -> Track: ${name} | Duration: ${duration_ms}ms`);
-                
-                playbackEngine.popNextTrack().then(res => {
-                    if (!res.success) console.log("🤖 Watchdog Warning:", res.error);
-                });
+                console.log(`🤖 Watchdog: Track Time Limit Reached. Waiting for Client...`);
+                // playbackEngine.popNextTrack(); <--- DISABLED
             }
         }
+        */
     }, 1000); // Check every second
 };
 

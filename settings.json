@@ -11,20 +11,20 @@
   "crossfadeSec": 3,
   "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:3ZOEytgrvLwQaqXreDs2Jx",
-    "name": "Can't Stop",
-    "artist": "Red Hot Chili Peppers",
-    "album": "By the Way (Deluxe Edition)",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b273de1af2785a83cc660155a0c4",
-    "duration_ms": 269000,
+    "uri": "spotify:track:6B0m2TPxnSMEeVBwkhf3kL",
+    "name": "Tonight - Original Mix",
+    "artist": "Delcroix",
+    "album": "Tonight (Original Mix)",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b273dfb593450533382a1460d3fe",
+    "duration_ms": 323056,
     "isFallback": true,
     "votes": 0,
-    "displayName": "Can't Stop",
-    "displayArtist": "Red Hot Chili Peppers",
-    "startedAt": 1767811302469,
+    "displayName": "Tonight",
+    "displayArtist": "Delcroix",
+    "startedAt": 1767816796294,
     "lyrics": null
   },
-  "startedAt": 1767811302462,
+  "startedAt": 1767816758813,
   "guestNames": {
     "guest_d1qjlesy6": "Craig 1",
     "g-yzr4butkt": "craig",
@@ -35,7 +35,7 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "youtubeId": "8DyziWtkfBw",
+  "youtubeId": "hauUk4_89XY",
   "isKaraokeMode": false,
   "karaokeQueue": [],
   "karaokeAnnouncement": null,
@@ -71,28 +71,28 @@
   },
   "lyricsDelayMs": 1000,
   "djStatus": {
-    "message": "Playing: Can't Stop",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273de1af2785a83cc660155a0c4",
-    "bpm": 92,
-    "key": "A minor",
+    "message": "Playing: Tonight",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273dfb593450533382a1460d3fe",
+    "bpm": 0,
+    "key": "N/A",
     "genres": [
-      "Alternative"
+      "Jazz",
+      "Vocal jazz"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Can't Stop",
-    "researchArtist": "Red Hot Chili Peppers",
-    "researchAlbum": "By the Way (Deluxe Edition)",
-    "valence": 68,
-    "publisher": "Warner Records",
-    "isrc": "USWB10201694",
-    "releaseDate": "2002-06-25",
+    "researchTitle": "The way you look tonight",
+    "researchArtist": "Tommy Delcorio Jr",
+    "researchAlbum": "Smooth Sounds of Tommy Delcorio Jr (Live from the studio)",
+    "valence": 0,
+    "publisher": "Tommy Delcorio Jr",
+    "isrc": "QMAAK2558714",
+    "releaseDate": "2025-12-15",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-07T18:41:43.254Z",
+  "lastSavedAt": "2026-01-07T20:13:16.898Z",
   "isPopping": false,
   "playedHistory": [
-    "spotify:track:37RD1pmOOGWpuaSsx1Ix1v",
-    "spotify:track:3ZOEytgrvLwQaqXreDs2Jx"
+    "spotify:track:6B0m2TPxnSMEeVBwkhf3kL"
   ]
 }

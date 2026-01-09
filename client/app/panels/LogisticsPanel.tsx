@@ -44,7 +44,7 @@ export const LogisticsPanel = ({ state, handlers }: PanelProps) => {
                         </div>
                     ) : (
                         spotifyItems.map((t: any, i: number) => {
-                            // LOGIC: Is this a "System" track (Fallback or Promoted Fallback) or a "Human" track?
+                            // LOGIC: Check if this is a "System" track (Fallback) or a "Human" track
                             const isSystem = t.isFallback || t.addedBy === 'Fallback Track';
 
                             return (
@@ -57,7 +57,7 @@ export const LogisticsPanel = ({ state, handlers }: PanelProps) => {
                                             {String(t.displayArtist ?? t.artist ?? 'Unknown Artist')}
                                         </div>
                                         
-                                        {/* BADGE LOGIC */}
+                                        {/* BADGE LOGIC - Updated to match Guest page fallback label */}
                                         <div style={{ 
                                             marginTop: '6px', 
                                             display: 'inline-flex', 

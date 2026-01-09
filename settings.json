@@ -11,20 +11,24 @@
   "crossfadeSec": 3,
   "partyQueue": [],
   "currentPlayingTrack": {
-    "uri": "spotify:track:1KtVVUM6OkpyOsbVfbMybX",
-    "name": "Don't Be so Hard on Yourself",
-    "artist": "Jess Glynne",
-    "album": "I Cry When I Laugh",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b273b905ed1edb5a88c573c023b0",
-    "duration_ms": 211460,
+    "uri": "spotify:track:0ia0JAsndEIZ268L3phuUa",
+    "name": "People Help the People",
+    "artist": "Birdy",
+    "album": "Birdy",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
+    "duration_ms": 256236,
     "isFallback": true,
     "votes": 0,
-    "displayName": "Don't Be so Hard on Yourself",
-    "displayArtist": "Jess Glynne",
-    "startedAt": 1767881022518,
-    "lyrics": null
+    "displayName": "People Help the People",
+    "displayArtist": "Birdy",
+    "startedAt": 1767967590375,
+    "addedBy": "Station Alpha",
+    "lyrics": {
+      "synced": "[00:21.70] God knows what is hiding in those weak and drunken hearts\n[00:28.05] I guess you kissed the girls and made them cry\n[00:31.95] Those Hardfaced Queens of misadventure\n[00:36.95] God knows what is hiding in those weak and sunken eyes\n[00:42.55] A Fiery throng of muted angels\n[00:45.98] Giving love but getting nothing back\n[00:50.82] People help the people\n[00:56.72] And if your homesick, give me your hand and I'll hold it\n[01:03.93] People help the people\n[01:10.08] And nothing will drag you down\n[01:13.53] Oh and if I had a brain, Oh and if I had a brain\n[01:21.30] I'd be cold as a stone and rich as the fool\n[01:25.82] That turned all those good hearts away\n[01:32.02] \n[01:37.03] God knows what is hiding in this world of little consequence\n[01:43.78] Behind the tears, inside the lies\n[01:47.07] A thousand slowly dying sunsets\n[01:50.55] God knows what is hiding in those weak and drunken hearts\n[01:56.09] I guess the loneliness came knocking\n[01:59.53] No one needs to be alone, oh save me\n[02:03.87] People help the people\n[02:09.17] And if your homesick, give me your hand and I'll hold it\n[02:16.45] People help the people\n[02:22.24] Nothing will drag you down\n[02:25.76] Oh and if I had a brain, Oh and if I had a brain\n[02:32.84] I'd be cold as a stone and rich as the fool\n[02:37.20] That turned, all those good hearts away\n[02:42.99] \n[03:26.86] People help the people\n[03:32.27] And if your homesick, give me your hand and I'll hold it\n[03:39.11] People help the people\n[03:45.18] Nothing will drag you down\n[03:48.35] Oh and if I had a brain, Oh and if I had a brain\n[03:55.31] I'd be cold as a stone and rich as the fool\n[03:59.73] That turned all those good hearts away\n[04:03.88] ",
+      "plain": "God knows what is hiding in those weak and drunken hearts\nI guess you kissed the girls and made them cry\nThose Hardfaced Queens of misadventure\nGod knows what is hiding in those weak and sunken eyes\nA Fiery throng of muted angels\nGiving love but getting nothing back\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nAnd nothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned all those good hearts away\nGod knows what is hiding in this world of little consequence\nBehind the tears, inside the lies\nA thousand slowly dying sunsets\nGod knows what is hiding in those weak and drunken hearts\nI guess the loneliness came knocking\nNo one needs to be alone, oh save me\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nNothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned, all those good hearts away\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nNothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned all those good hearts away"
+    }
   },
-  "startedAt": 1767881022513,
+  "startedAt": 1767967590369,
   "guestNames": {
     "guest_d1qjlesy6": "Craig 1",
     "g-yzr4butkt": "craig",
@@ -35,10 +39,13 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "youtubeId": "THeLVhU53ow",
-  "isKaraokeMode": true,
+  "youtubeId": "OmLNs6zQIHo",
+  "isKaraokeMode": false,
   "karaokeQueue": [],
-  "karaokeAnnouncement": null,
+  "karaokeAnnouncement": {
+    "message": "Coming up next: Craig with Nothin' On You - B.o.B ft Bruno Mars (Karaoke Songs With Lyrics - Original Key)",
+    "expiresAt": 1767967618636
+  },
   "tokensEnabled": false,
   "tokensInitial": 1,
   "tokensPerHour": 5,
@@ -58,7 +65,7 @@
     },
     "g-w241lhept": {
       "balance": 3,
-      "lastAccrual": 1767803247269
+      "lastAccrual": 1767967407269
     },
     "g-pggp62p06": {
       "balance": 1,
@@ -71,32 +78,33 @@
   },
   "lyricsDelayMs": 1000,
   "djStatus": {
-    "message": "Playing: Don't Be so Hard on Yourself",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b273b905ed1edb5a88c573c023b0",
-    "bpm": 120,
-    "key": "C# major",
+    "message": "Playing: People Help the People",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
+    "bpm": 148,
+    "key": "F# major",
     "genres": [
       "Pop"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "Don't Be so Hard on Yourself",
-    "researchArtist": "Jess Glynne",
-    "researchAlbum": "I Cry When I Laugh",
-    "valence": 58,
+    "researchTitle": "People Help the People",
+    "researchArtist": "Birdy",
+    "researchAlbum": "Birdy (Deluxe Version)",
+    "valence": 65,
     "publisher": "Atlantic Records UK",
-    "isrc": "GBAHS1500227",
-    "releaseDate": "2015-07-31",
+    "isrc": "GBAHS1100351",
+    "releaseDate": "2011-11-04",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-08T14:03:43.457Z",
+  "lastSavedAt": "2026-01-09T14:06:36.530Z",
   "isPopping": false,
   "playedHistory": [
-    "spotify:track:1kVWn6BRzI9CwGz2vwmXlH",
-    "spotify:track:0QjhfF1zVLwiJxCoXwu6pC",
-    "spotify:track:24Sp6sg6uo9oD7Z05AEzhX",
-    "spotify:track:3J4ChcG1OAMo8MV8Zs7Vg7",
-    "spotify:track:49gkxU2Vpse5FLfJ9sSJxf",
-    "spotify:track:1KtVVUM6OkpyOsbVfbMybX"
+    "spotify:track:7j31rVgGX9Q2blT92VBEA0",
+    "spotify:track:1bA2ZK7CFxEMnyn1dWP2jp",
+    "spotify:track:3pBnRFCyLUm3ErAfZMagQi",
+    "spotify:track:2ti6vKzYNKvZVIpbPNtTcq",
+    "spotify:track:57bgtoPSgt236HzfBOd8kj",
+    "spotify:track:7vggqxNKwd6xdRoYS0pQtM",
+    "spotify:track:0ia0JAsndEIZ268L3phuUa"
   ]
 }

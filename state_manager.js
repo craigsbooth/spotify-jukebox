@@ -83,62 +83,67 @@ const stateManager = {
         stateManager.saveSettings();
     },
 
-    // 4. QUEUE LOGIC
+    // 4. QUEUE LOGIC - Simplified Priority-First Approach
     processQueueRequest: (trackData, guestId) => {
-        const tokenResult = stateManager.spendToken(guestId);
-        if (!tokenResult.success) return tokenResult;
-
-        const sanitized = utils.sanitizeTrack(trackData);
-        const { uri, name, artist, albumArt, album, displayName, displayArtist } = sanitized;
-        
         const gid = guestId || 'anonymous';
         const guestName = state.guestNames[gid] || "Guest";
 
-        const existing = state.partyQueue.find(t => t.uri === uri);
+        // Check if track exists in Priority Queue
+        const existing = state.partyQueue.find(t => t.uri === trackData.uri);
         
         if (existing) {
-            if (!existing.votedBy.includes(gid)) {
-                existing.votes += 1;
-                existing.votedBy.push(gid);
-                state.partyQueue.sort((a, b) => b.votes - a.votes);
-                return { 
-                    success: true, 
-                    message: `Vote recorded! (${tokenResult.balance} tokens left)`, 
-                    votes: existing.votes,
-                    tokens: tokenResult.balance 
-                };
-            } else {
-                state.tokenRegistry[gid].balance += 1; 
+            if (existing.votedBy.includes(gid)) {
                 return { success: false, message: "You've already voted for this!" };
             }
+
+            // Spend token for upvote
+            const tokenResult = stateManager.spendToken(gid);
+            if (!tokenResult.success) return tokenResult;
+
+            existing.votes += 1;
+            existing.votedBy.push(gid);
+            state.partyQueue.sort((a, b) => b.votes - a.votes);
+            stateManager.saveSettings();
+            
+            return { 
+                success: true, 
+                message: `Vote recorded!`, 
+                votes: existing.votes,
+                tokens: tokenResult.balance 
+            };
         } else {
+            // Spend token for new add
+            const tokenResult = stateManager.spendToken(gid);
+            if (!tokenResult.success) return tokenResult;
+
+            const sanitized = utils.sanitizeTrack(trackData);
             state.partyQueue.push({ 
-                uri, name, artist, albumArt, album,
-                displayName, displayArtist,
+                ...sanitized,
                 votes: 1, 
                 addedBy: guestName, 
+                addedByGuestId: gid,
                 votedBy: [gid], 
                 isFallback: false 
             });
+            
             state.partyQueue.sort((a, b) => b.votes - a.votes);
             stateManager.saveSettings();
+            
             return { 
                 success: true, 
-                message: `Added to queue! (${tokenResult.balance} tokens left)`,
+                message: `Added to queue!`,
                 tokens: tokenResult.balance
             };
         }
     },
 
-    // 5. HISTORY & GUEST MANAGEMENT (UPDATED: Memory Cap)
+    // 5. HISTORY & GUEST MANAGEMENT
     addToHistory: (uri) => {
         if (!(state.playedHistory instanceof Set)) {
             state.playedHistory = new Set();
         }
         state.playedHistory.add(uri);
 
-        // --- FIX: Prevent Memory Bloat ---
-        // If history exceeds 500 items, trim the oldest entries
         if (state.playedHistory.size > 500) {
             const arr = Array.from(state.playedHistory);
             state.playedHistory = new Set(arr.slice(-500)); 
@@ -162,10 +167,10 @@ const stateManager = {
         setTimeout(() => { 
             if (state.latestJoiner === name) state.latestJoiner = null; 
         }, 5000);
-        console.log(`👤 New Guest: ${name} (${guestId}) | Tokens: ${state.tokenRegistry[guestId].balance}`);
+        console.log(`👤 New Guest: ${name} (${guestId})`);
     },
 
-    // 6. PERSISTENCE & THEME (FIXED: ASYNC DEBOUNCE)
+    // 6. PERSISTENCE & THEME
     saveSettings: () => {
         const { 
             shuffleBag, 
@@ -181,15 +186,12 @@ const stateManager = {
             lastSavedAt: new Date().toISOString()
         };
 
-        // Clear any pending write
         if (saveTimer) clearTimeout(saveTimer);
 
-        // Schedule new write in 1 second
         saveTimer = setTimeout(() => {
             const jsonString = JSON.stringify(dataToSave, null, 2);
             fs.writeFile(SETTINGS_FILE, jsonString, (err) => {
                 if (err) console.error("❌ Async Write Failed:", err.message);
-                // else console.log("💾 Settings saved."); // Optional: reduce noise
             });
         }, 1000);
     },
@@ -234,11 +236,8 @@ const stateManager = {
     },
 
     // 7. UTILITY & ECONOMY BRIDGE
-    // Bridging to Utils
     isInHistory: (uri) => utils.isInHistory(state.playedHistory, uri),
     sanitizeTrack: (track) => utils.sanitizeTrack(track),
-
-    // Bridging to Economy Manager
     syncGuestTokens: (guestId) => em.syncGuestTokens(guestId),
     spendToken: (guestId) => {
         const res = em.spendToken(guestId);

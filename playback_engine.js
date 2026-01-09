@@ -1,6 +1,6 @@
-// playback_engine.js - The Central DJ Brain (Multi-Host Ready)
-const state = require('./state'); // Legacy Global State (Sync Target)
-const sessions = require('./session_manager'); // NEW: Source of Truth
+// playback_engine.js - Simplified Priority-First Brain
+const state = require('./state');
+const sessions = require('./session_manager');
 const spotifyCtrl = require('./spotify_ctrl');
 const intel = require('./intel_engine');
 const sse = require('./sse');
@@ -8,8 +8,6 @@ const utils = require('./utils');
 const sm = require('./state_manager');
 
 // --- SAFETY LOCK: Prevent double-skipping ---
-// This ignores any skip requests that happen within 10 seconds of the last one.
-// It solves the race condition between Client Auto-Play and Server Watchdog.
 let lastSkipTime = 0;
 const SKIP_COOLDOWN_MS = 10000; 
 
@@ -31,54 +29,47 @@ const fetchLyrics = async (track) => {
 };
 
 // Helper: Sync Bridge
-// Ensures that when the engine picks a track, both the Party Instance and Global State match.
 const syncState = (party, track) => {
-    // Update Party
     if (party) {
         party.currentPlayingTrack = track;
-        party.partyQueue = party.partyQueue; // Queue was shifted in logic below
         party.playedHistory.add(track.uri);
     }
 
-    // Update Global (Legacy UI Support)
     state.currentPlayingTrack = track;
-    state.partyQueue = party ? party.partyQueue : state.partyQueue;
-    
     if (state.playedHistory instanceof Set) state.playedHistory.add(track.uri);
     else state.playedHistory = new Set([track.uri]);
     
-    sm.saveSettings(); // Persist to disk
+    sm.saveSettings();
 };
 
+/**
+ * POP NEXT TRACK
+ * Original logic: Priority Queue -> Shuffle Bag fallback
+ */
 const popNextTrack = async () => {
-    // 1. SAFETY CHECK: Enforce Cooldown
     const now = Date.now();
     if (now - lastSkipTime < SKIP_COOLDOWN_MS) {
         console.warn("🛡️ Engine: Skip request ignored (Cooldown Active)");
-        return { success: false, message: "Skipping too fast! Cooldown active." };
+        return { success: false, message: "Skipping too fast!" };
     }
 
-    // 2. Resolve Target State (Party vs Global)
     const party = sessions.getActiveParty();
-    const targetState = party || state; // Fallback to global if no party
+    const targetState = party || state;
 
-    // Prevent double-popping (Concurrency Lock)
     if (targetState.isPopping) return { success: false, message: "Already popping" };
     targetState.isPopping = true;
 
     try {
         let nextTrack = null;
 
-        // 3. Check Guest Queue
-        if (targetState.partyQueue.length > 0) {
+        // 1. ORIGINAL PRIORITY: Check Guest Queue First
+        if (targetState.partyQueue && targetState.partyQueue.length > 0) {
             nextTrack = targetState.partyQueue.shift();
             console.log(`🎯 Engine: Popped Guest Track - ${nextTrack.name}`);
         } 
-        // 4. Check Shuffle Bag
+        // 2. FALLBACK: Check Shuffle Bag
         else {
             const bag = Array.isArray(targetState.shuffleBag) ? targetState.shuffleBag : [];
-            
-            // Check History (Support both Set and Array just in case)
             const historySet = targetState.playedHistory instanceof Set 
                 ? targetState.playedHistory 
                 : new Set(targetState.playedHistory || []);
@@ -93,38 +84,28 @@ const popNextTrack = async () => {
         }
         
         if (nextTrack) {
-            // PLAY IT
             const success = await spotifyCtrl.playTrack(nextTrack.uri);
-            if (!success) console.warn("⚠️ Engine: Spotify Play Request returned false, but updating state anyway.");
-
-            // UPDATE COOLDOWN TIMESTAMP
             lastSkipTime = Date.now();
 
             const sanitized = utils.sanitizeTrack(nextTrack);
             intel.analyzeTrack(sanitized).catch(err => console.error(err));
 
-            // Create Final Track Object
             const finalTrackObj = { 
                 ...sanitized, 
                 startedAt: Date.now(),
                 duration_ms: sanitized.duration_ms || nextTrack.duration_ms || 180000, 
-                addedBy: nextTrack.addedBy,
+                addedBy: nextTrack.addedBy || 'Station Alpha',
                 addedByGuestId: nextTrack.addedByGuestId,
                 lyrics: null 
             };
 
-            // SYNC UPDATES
             syncState(party, finalTrackObj);
-
-            // Broadcast Updates
             sse.send('THEME_UPDATE', { isSpotifyPlaying: true });
 
-            // Fetch Lyrics
             fetchLyrics(sanitized).then(lyrics => {
-                // Check against Global State as it is the "Rendered" truth
                 if (state.currentPlayingTrack && state.currentPlayingTrack.uri === sanitized.uri) {
                     state.currentPlayingTrack.lyrics = lyrics;
-                    if (party) party.currentPlayingTrack.lyrics = lyrics; // Keep party in sync
+                    if (party) party.currentPlayingTrack.lyrics = lyrics;
                     sse.send('LYRICS_UPDATE', { lyrics, trackUri: sanitized.uri });
                 }
             });
@@ -132,7 +113,6 @@ const popNextTrack = async () => {
             targetState.isPopping = false;
             return { success: true, track: finalTrackObj };
         } else {
-            // Empty? Try to refresh.
             await spotifyCtrl.refreshShuffleBag();
             targetState.isPopping = false;
             return { success: false, error: "Station Empty" };

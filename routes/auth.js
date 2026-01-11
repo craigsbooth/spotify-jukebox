@@ -1,11 +1,14 @@
 // routes/auth.js - Flexible Auth Handshake
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const spotifyApi = require('../spotify_instance');
 const spotifyCtrl = require('../spotify_ctrl');
 const state = require('../state');
 const sm = require('../state_manager');
-const sessions = require('../session_manager'); // NEW: Import the Traffic Controller
+
+const TOKEN_PATH = path.join(__dirname, '../tokens.json');
 
 // 1. THE LOGIN REDIRECT
 router.get('/login', (req, res) => {
@@ -42,19 +45,23 @@ const handleCallback = async (req, res) => {
             spotifyApi.setAccessToken(accessToken);
             const me = await spotifyApi.getMe();
             
-            // C. SESSION MANAGER: Create the Official Party Instance
-            // This instantiates the new Class-based party logic defined in session_manager
-            const tokens = { access_token: accessToken, refresh_token: refreshToken };
-            const newParty = sessions.createParty(me.body, tokens);
-            
-            // D. BRIDGE: Sync to Legacy State
-            // Until all files are updated to use sessionManager, we must update the global 'state' singleton
-            // so the Dashboard and other routes see the change immediately.
-            state.partyName = newParty.partyName;
-            state.startedAt = newParty.startedAt;
-            // Future: state.hostId = newParty.id;
+            // C. SET GLOBAL STATE (No Session Manager)
+            state.partyName = `${me.body.display_name}'s Jukebox`;
+            state.startedAt = Date.now();
+            // Future: state.hostId = me.body.id;
 
-            console.log(`✅ Auth System: Handshake successful. Party '${newParty.partyName}' created.`);
+            console.log(`✅ Auth System: Handshake successful. Party '${state.partyName}' online.`);
+
+            // D. CRITICAL FIX: Populate the Queue IMMEDIATELY
+            // This ensures the dashboard is not empty when you land
+            try {
+                console.log("⏳ Auth System: Initializing Shuffle Bag...");
+                const count = await spotifyCtrl.refreshShuffleBag();
+                console.log(`🎉 Auth System: Bag populated with ${count} tracks.`);
+            } catch (bagErr) {
+                console.error("⚠️ Auth System: Failed to populate initial bag:", bagErr.message);
+            }
+
             sm.saveSettings();
 
             // UX IMPROVEMENT: Button to return to app
@@ -79,7 +86,7 @@ const handleCallback = async (req, res) => {
                     <body>
                         <div class="card">
                             <h1>Success!</h1>
-                            <p><strong>${newParty.partyName}</strong> is online.</p>
+                            <p><strong>${state.partyName}</strong> is online.</p>
                             <a href="${frontendUrl}" class="btn">Return to Jukebox</a>
                         </div>
                     </body>
@@ -124,5 +131,37 @@ const verifyPin = (req, res) => {
 // Register the handler for both the direct path and the API-prefixed path
 router.post('/verify-pin', verifyPin);
 router.post('/api/verify-pin', verifyPin);
+
+/**
+ * 6. LOGOUT / SESSION CLEAR
+ * Wipes memory and disk credentials for a full reset.
+ */
+const logout = (req, res) => {
+    console.log("🛑 Auth System: Logout requested. Clearing all session data.");
+    
+    // Clear Memory Tokens
+    spotifyApi.setAccessToken(null);
+    spotifyApi.setRefreshToken(null);
+    
+    // Clear Global State (Replacing session logic)
+    state.shuffleBag = [];
+    state.partyQueue = [];
+    if (state.playedHistory instanceof Set) state.playedHistory.clear();
+    
+    // Delete tokens.json from disk
+    if (fs.existsSync(TOKEN_PATH)) {
+        try {
+            fs.unlinkSync(TOKEN_PATH);
+            console.log("💾 Auth System: tokens.json deleted.");
+        } catch (e) {
+            console.error("❌ Auth System: Failed to delete tokens.json", e.message);
+        }
+    }
+
+    res.json({ success: true, message: "Logged out successfully" });
+};
+
+router.post('/logout', logout);
+router.post('/api/logout', logout);
 
 module.exports = router;

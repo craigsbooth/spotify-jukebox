@@ -1,207 +1,171 @@
-// routes/queue.js - Simplified Priority-First Queue logic
+// routes/queue.js - Intelligent Jukebox Queue Engine
 const express = require('express');
 const router = express.Router();
 const state = require('../state'); 
 const sm = require('../state_manager');
 const utils = require('../utils'); 
-const sse = require('../sse');
 const playbackEngine = require('../playback_engine'); 
-const sessions = require('../session_manager');
 
-// HELPER: Get Active Party or Fail
-const getParty = (res) => {
-    const party = sessions.getActiveParty();
-    if (!party) {
-        res.status(503).json({ error: "No active party session. Host must log in." });
-        return null;
-    }
-    return party;
-};
-
-// HELPER: Sync Bridge (Temporary)
-const syncToGlobalState = (party) => {
-    state.partyQueue = party.partyQueue;
-    state.shuffleBag = party.shuffleBag;
-    state.playedHistory = party.playedHistory;
-    state.tokensEnabled = party.tokensEnabled;
-    state.tokenRegistry = party.tokenRegistry;
-    sm.saveSettings();
-};
-
-// GET Queue (View Only)
-// REVERTED: Now strictly returns priority queue + suggestions without modifying state.
+/**
+ * 1. GET QUEUE
+ * Merges the persistent Priority Queue with the volatile Suggestion Buffer.
+ */
 router.get('/queue', (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
+    const queue = state.partyQueue || [];
+    const bag = state.shuffleBag || [];
+    const priorityUris = new Set(queue.map(t => t.uri));
 
-    const bag = Array.isArray(party.shuffleBag) ? party.shuffleBag : [];
-    const priorityUris = new Set();
-    party.partyQueue.forEach(t => priorityUris.add(t.uri));
-
-    // Map Dynamic Names (using party-specific guest names)
-    const displayQueue = party.partyQueue.map(track => {
-        if (track.addedByGuestId && party.guestNames[track.addedByGuestId]) {
-            return { ...track, addedBy: party.guestNames[track.addedByGuestId] };
+    // Map names from the global guest registry
+    const displayQueue = queue.map(track => {
+        let displayName = track.addedBy || "Guest";
+        if (track.addedByGuestId && state.guestNames?.[track.addedByGuestId]) {
+            displayName = state.guestNames[track.addedByGuestId];
         }
-        return track;
+        return { ...track, addedBy: displayName, isFallback: false };
     });
 
-    // Build Buffer (The Suggestion List - not saved to partyQueue)
+    // Take top 10 from shuffle bag that aren't already in the priority queue
     const buffer = bag
-        .filter(t => !utils.isInHistory(party.playedHistory, t.uri) && !priorityUris.has(t.uri))
+        .filter(t => !priorityUris.has(t.uri))
         .slice(0, 10)
         .map(t => ({ ...utils.sanitizeTrack(t), isFallback: true }));
 
     res.json([...displayQueue, ...buffer]);
 });
 
-// ADD / VOTE
+/**
+ * 2. ADD / VOTE
+ * Handles token economy and prevents auto-sort conflicts with manual reordering.
+ */
 router.post('/queue', (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
-
     const { uri, name, artist, albumArt, album, guestId } = req.body;
     if (!guestId) return res.status(400).json({ error: "No Guest ID" });
     
     const tokenCheck = sm.spendToken(guestId); 
-    if (!tokenCheck.success) return res.status(403).json(tokenCheck); 
+    if (!tokenCheck.success) {
+        return res.status(403).json({ success: false, message: "Not enough tokens!", balance: tokenCheck.balance });
+    }
 
-    const existingIndex = party.partyQueue.findIndex(t => t.uri === uri);
-    
+    const existingIndex = state.partyQueue.findIndex(t => t.uri === uri);
+    const currentGuestName = state.guestNames?.[guestId] || "Guest";
+
     if (existingIndex !== -1) {
-        const track = party.partyQueue[existingIndex];
-        if (track.votedBy?.includes(guestId)) {
-            // Refund tokens if already voted
-            if (party.tokensEnabled && party.tokenRegistry[guestId]) {
-                party.tokenRegistry[guestId].balance += 1;
-            }
-            return res.json({ success: false, message: "Already voted!" });
-        }
-        track.votes += 1;
+        // Increment votes but DO NOT re-sort (preserves manual DJ order)
+        const track = state.partyQueue[existingIndex];
+        track.votes = (track.votes || 0) + 1;
+        if (!track.votedBy) track.votedBy = [];
         track.votedBy.push(guestId);
-        track.isFallback = false; 
-        party.partyQueue.sort((a, b) => b.votes - a.votes);
-        
-        syncToGlobalState(party);
+
+        sm.saveSettings();
         return res.json({ success: true, message: "Upvoted!", tokens: tokenCheck.balance });
     } else {
+        // Add new track to the bottom of the priority queue
         const sanitized = utils.sanitizeTrack({ uri, name, artist, albumArt, album });
-        party.partyQueue.push({ 
+        state.partyQueue.push({ 
             ...sanitized,
             votes: 1, 
-            addedBy: party.guestNames[guestId] || "Guest", 
-            addedByGuestId: guestId, 
-            votedBy: [guestId], 
+            addedBy: currentGuestName,
+            addedByGuestId: guestId,
+            votedBy: [guestId],
             isFallback: false 
         });
-        party.partyQueue.sort((a, b) => b.votes - a.votes);
         
-        syncToGlobalState(party);
-        return res.json({ success: true, message: "Added to Queue!", tokens: tokenCheck.balance });
+        sm.saveSettings();
+        return res.json({ success: true, message: "Added!", tokens: tokenCheck.balance });
     }
 });
 
-// POP (Manual Next Button)
-router.post('/pop', async (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
+/**
+ * 3. REORDER & INTELLIGENT PROMOTION
+ * Saves manual order. Only 'promotes' suggestions if dragged into the top zone.
+ */
+router.post('/reorder', (req, res) => {
+    const incomingData = Array.isArray(req.body) ? req.body : req.body.queue;
 
+    if (incomingData && Array.isArray(incomingData)) {
+        // Logic: Only save tracks that were already real OR dragged into the priority area.
+        const currentQueueSize = state.partyQueue.length;
+        const newPriorityQueue = [];
+        
+        incomingData.forEach((track, index) => {
+            const isAlreadyPriority = track.isFallback === false || track.isFallback === undefined;
+            // If it's a fallback but moved into the "Real" list space, it's a promotion.
+            const isDraggedToTop = track.isFallback === true && index < currentQueueSize + 1;
+
+            if (isAlreadyPriority) {
+                newPriorityQueue.push({
+                    ...track,
+                    isFallback: false,
+                    votes: track.votes || 1
+                });
+            } 
+            else if (isDraggedToTop) {
+                // User intentionally dragged a suggestion up
+                newPriorityQueue.push({
+                    ...track,
+                    isFallback: false, // Promotion!
+                    votes: 1,
+                    addedBy: "DJ Selection" 
+                });
+            }
+        });
+
+        state.partyQueue = newPriorityQueue;
+        sm.saveSettings();
+        res.json({ success: true, count: state.partyQueue.length });
+    } else {
+        res.status(400).json({ success: false, error: "Invalid queue format" });
+    }
+});
+
+/**
+ * 4. POP (UPDATED FIX)
+ * Handles removal from BOTH the Priority Queue AND the Shuffle Bag.
+ */
+router.post('/pop', async (req, res) => {
+    const topTrack = state.partyQueue[0]; // Check top of priority queue
+
+    // Run the engine (this plays the song)
     const result = await playbackEngine.popNextTrack();
-    
-    // Refresh party instance from synced global state
-    party.partyQueue = state.partyQueue;
-    party.currentPlayingTrack = state.currentPlayingTrack;
 
     if (result.success) {
+        const playedUri = result.track.uri;
+
+        // SCENARIO A: It was a Priority Track
+        if (topTrack && topTrack.uri === playedUri) {
+            console.log(`📉 Removing Priority Track: ${topTrack.name}`);
+            state.partyQueue.shift();
+            sm.saveSettings();
+        } 
+        // SCENARIO B: It was a Fallback Track (Priority was empty)
+        else {
+            console.log(`📉 Removing Fallback Track from Bag: ${result.track.name}`);
+            // Find and remove this song from the shuffleBag so it doesn't stay in suggestions
+            if (state.shuffleBag && state.shuffleBag.length > 0) {
+                const initialLength = state.shuffleBag.length;
+                state.shuffleBag = state.shuffleBag.filter(t => t.uri !== playedUri);
+                
+                // Only save if we actually removed something
+                if (state.shuffleBag.length < initialLength) {
+                    sm.saveSettings();
+                }
+            }
+        }
+        
         res.json(result.track);
     } else {
         res.status(500).json({ error: result.error || "Failed to pop" });
     }
 });
 
-// UTILS
-router.post('/shuffle', async (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
-
-    const spotifyCtrl = require('../spotify_ctrl'); 
-    
-    if (!party.shuffleBag || party.shuffleBag.length === 0) {
-        const count = await spotifyCtrl.refreshShuffleBag();
-        party.shuffleBag = state.shuffleBag;
-        return res.json({ success: true, count, method: 'downloaded' });
-    }
-    
-    const count = spotifyCtrl.randomizeBag();
-    party.shuffleBag = state.shuffleBag; 
-    res.json({ success: true, count, method: 'randomized' });
-});
-
+/**
+ * 5. REMOVE
+ */
 router.post('/remove', (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
-
-    const uriToRemove = req.body.uri;
-    party.partyQueue = party.partyQueue.filter(track => track.uri !== uriToRemove);
-    
-    if (Array.isArray(party.shuffleBag)) {
-        party.shuffleBag = party.shuffleBag.filter(track => track.uri !== uriToRemove);
-    }
-    
-    syncToGlobalState(party);
+    const { uri } = req.body;
+    state.partyQueue = state.partyQueue.filter(track => track.uri !== uri);
+    sm.saveSettings();
     res.json({ success: true });
-});
-
-router.post('/reorder', (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
-
-    if (Array.isArray(req.body.queue)) {
-        party.partyQueue = req.body.queue
-            .filter(t => !t.isFallback) // Strictly maintain priority items only
-            .map(t => ({
-                ...t,
-                isFallback: false,
-                votes: t.votes || 0,
-                votedBy: t.votedBy || []
-            }));
-        syncToGlobalState(party);
-    }
-    res.json({ success: true });
-});
-
-router.get('/queue/current', async (req, res) => {
-    const party = getParty(res);
-    if (!party) return;
-
-    try {
-        const spotifyApi = require('../spotify_instance');
-        let current = party.currentPlayingTrack || state.currentPlayingTrack;
-
-        if (!current) {
-            const data = await spotifyApi.getMyCurrentPlayingTrack();
-            if (data?.body?.item) {
-                const rawTrack = {
-                    name: data.body.item.name,
-                    artist: data.body.item.artists[0].name,
-                    uri: data.body.item.uri,
-                    albumArt: data.body.item.album.images[0]?.url,
-                    duration_ms: data.body.item.duration_ms
-                };
-                current = utils.sanitizeTrack(rawTrack);
-                party.currentPlayingTrack = current;
-            }
-        }
-        
-        if (current?.addedByGuestId) {
-             const freshName = party.guestNames[current.addedByGuestId];
-             if (freshName) current.addedBy = freshName;
-        }
-        
-        res.json(current);
-    } catch (err) {
-        res.json(party.currentPlayingTrack || null);
-    }
 });
 
 module.exports = router;

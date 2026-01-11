@@ -1,53 +1,39 @@
-// spotify_ctrl.js - Multi-Host Aware Playback & Shuffle
+// spotify_ctrl.js - RESTORED SIMPLE ENGINE
 const state = require('./state');
 const spotifyApi = require('./spotify_instance'); 
 const sm = require('./state_manager'); 
 const tokenManager = require('./token_manager'); 
-const sessions = require('./session_manager'); // NEW: Source of Truth
-
-// HELPER: Sync Bridge
-// Ensures changes to the Party instance are reflected in the legacy global state
-const syncToGlobal = (party) => {
-    state.shuffleBag = party.shuffleBag;
-    state.partyQueue = party.partyQueue;
-    state.playedHistory = party.playedHistory;
-    state.currentPlayingTrack = party.currentPlayingTrack;
-};
 
 const spotifyCtrl = {
     saveTokens: tokenManager.saveTokens,
     handleExpiredToken: tokenManager.handleExpiredToken,
 
+    // 1. SIMPLE REFRESH: Fetch playlist -> Fill state.shuffleBag
     refreshShuffleBag: async () => {
-        // 1. Resolve Target State (Party vs Global)
-        const party = sessions.getActiveParty();
-        const targetState = party || state; // Fallback to global if no party (legacy mode)
-
-        if (!spotifyApi.getAccessToken()) {
-            console.warn("⚠️ Cannot refresh bag: No token found.");
+        const token = spotifyApi.getAccessToken();
+        if (!token) {
+            console.warn("⚠️ Controller: Cannot refresh bag - No Access Token.");
             return 0;
         }
-        
-        // Use Party's specific fallback playlist or the default
-        const playlistId = targetState.fallbackPlaylist?.id || state.fallbackPlaylist.id;
-        const playlistName = targetState.fallbackPlaylist?.name || "Fallback";
 
+        // Always use the global fallback settings
+        const playlistId = state.fallbackPlaylist?.id;
         if (!playlistId) {
-            console.warn("⚠️ No fallback playlist set.");
+            console.warn("⚠️ Controller: No fallback playlist ID set in global state.");
             return 0;
         }
 
-        console.log(`♻️ Controller: Rebuilding Shuffle Bag for: ${playlistName}`);
+        console.log(`♻️ Controller: Fetching tracks for global fallback (ID: ${playlistId})`);
+        
         try {
             let allTracks = [];
             let offset = 0;
             let limit = 50; 
             let hasNext = true;
 
-            // FIX: Robust Pagination Loop
+            // Robust Pagination Loop
             while (hasNext) {
                 const data = await spotifyApi.getPlaylistTracks(playlistId, { offset, limit });
-                
                 const batch = data.body.items
                     .filter(i => i && i.track && i.track.uri) 
                     .map(i => ({
@@ -62,12 +48,14 @@ const spotifyCtrl = {
                     }));
                 
                 allTracks.push(...batch); 
-                
                 offset += limit;
                 hasNext = !!data.body.next; 
                 
+                // Safety break to prevent infinite loops on massive playlists
                 if (offset > 2000) break; 
             }
+
+            if (allTracks.length === 0) return 0;
 
             // Fisher-Yates Shuffle
             for (let i = allTracks.length - 1; i > 0; i--) {
@@ -75,18 +63,13 @@ const spotifyCtrl = {
                 [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
             }
 
-            // UPDATE THE PARTY INSTANCE
-            targetState.shuffleBag = allTracks;
+            // DIRECT UPDATE TO GLOBAL STATE
+            state.shuffleBag = allTracks;
+            if (state.playedHistory instanceof Set) state.playedHistory.clear();
+            else state.playedHistory = new Set();
             
-            // Clear history for a fresh start
-            if (targetState.playedHistory instanceof Set) targetState.playedHistory.clear();
-            else targetState.playedHistory = new Set();
-            
-            // BRIDGE: Sync back to global if we are in party mode
-            if (party) syncToGlobal(party);
-            
-            console.log(`✅ Controller: ${targetState.shuffleBag.length} tracks loaded & shuffled for ${targetState.partyName}.`);
-            return targetState.shuffleBag.length;
+            console.log(`✅ Controller: Queue populated with ${state.shuffleBag.length} tracks.`);
+            return state.shuffleBag.length;
 
         } catch (err) {
             if (err.statusCode === 401) {
@@ -98,45 +81,37 @@ const spotifyCtrl = {
         }
     },
 
+    // 2. SIMPLE GET NEXT: Check Queue -> Check Bag
     getNextTrack: async () => {
-        // 1. Resolve Target State
-        const party = sessions.getActiveParty();
-        const targetState = party || state;
-
         let nextTrack = null;
 
-        // 2. Check Guest Queue First
-        if (targetState.partyQueue.length > 0) {
-            nextTrack = targetState.partyQueue.shift();
-            console.log(`🎯 Dispatcher: Playing Guest Request - ${nextTrack.name}`);
+        // A. Priority: The Manual Queue
+        if (state.partyQueue.length > 0) {
+            nextTrack = state.partyQueue.shift();
+            console.log(`🎯 Dispatcher: Playing from Queue - ${nextTrack.name}`);
         } 
-        // 3. Fallback Logic
-        else if (targetState.shuffleBag && targetState.shuffleBag.length > 0) {
-            // Find tracks not in history
-            const freshTracks = targetState.shuffleBag.filter(t => !sm.isInHistory(targetState.playedHistory, t.uri));
+        // B. Fallback: The Shuffle Bag
+        else if (state.shuffleBag && state.shuffleBag.length > 0) {
+            // Filter out played tracks
+            const freshTracks = state.shuffleBag.filter(t => !sm.isInHistory(state.playedHistory, t.uri));
             
             if (freshTracks.length === 0) {
-                console.log("♻️ Dispatcher: History full. Re-shuffling fallback pool...");
-                
-                // Reset History
-                if (targetState.playedHistory instanceof Set) targetState.playedHistory.clear();
-                
-                // Reshuffle Bag
-                for (let i = targetState.shuffleBag.length - 1; i > 0; i--) {
+                console.log("♻️ Dispatcher: Re-shuffling fallback pool...");
+                state.playedHistory.clear();
+                // Simple re-shuffle
+                for (let i = state.shuffleBag.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [targetState.shuffleBag[i], targetState.shuffleBag[j]] = [targetState.shuffleBag[j], targetState.shuffleBag[i]];
+                    [state.shuffleBag[i], state.shuffleBag[j]] = [state.shuffleBag[j], state.shuffleBag[i]];
                 }
-                
-                nextTrack = targetState.shuffleBag[0];
+                nextTrack = state.shuffleBag[0];
             } else {
                 nextTrack = freshTracks[0];
             }
-            console.log(`📻 Dispatcher: Playing Fallback - ${nextTrack.name}`);
+            console.log(`📻 Dispatcher: Playing from Bag - ${nextTrack.name}`);
         }
 
         if (nextTrack) {
-            sm.addToHistory(targetState.playedHistory, nextTrack.uri);
-            if (party) syncToGlobal(party); // Sync change back to global
+            sm.addToHistory(state.playedHistory, nextTrack.uri);
         }
         
         return nextTrack;
@@ -146,12 +121,7 @@ const spotifyCtrl = {
         if (!uri) return;
         try {
             await spotifyApi.play({ uris: [uri] });
-            
-            // Update timestamp on both
             state.startedAt = Date.now();
-            const party = sessions.getActiveParty();
-            if (party) party.startedAt = Date.now();
-
             console.log(`🎵 Spotify: Now Playing URI: ${uri}`);
             return true;
         } catch (err) {
@@ -159,25 +129,9 @@ const spotifyCtrl = {
                 try {
                     await tokenManager.handleExpiredToken();
                     return await spotifyCtrl.playTrack(uri);
-                } catch (re) { /* Fail */ }
+                } catch (re) {}
             }
             console.error("⚠️ Spotify Playback Error:", err.message);
-            
-            // Auto-transfer logic if no device active
-            if (err.message.includes("NO_ACTIVE_DEVICE")) {
-                const devices = await spotifyApi.getMyDevices();
-                const target = devices.body.devices.find(d => d.type === "Computer") || devices.body.devices[0];
-                if (target) {
-                    console.log(`📡 Controller: Forcing playback to: ${target.name}`);
-                    await spotifyApi.play({ uris: [uri], device_id: target.id });
-                    
-                    state.startedAt = Date.now();
-                    const party = sessions.getActiveParty();
-                    if (party) party.startedAt = Date.now();
-                    
-                    return true;
-                }
-            }
             return false;
         }
     },
@@ -185,7 +139,6 @@ const spotifyCtrl = {
     transferPlayback: async (deviceId) => {
         try {
             await spotifyApi.transferMyPlayback([deviceId], { play: true });
-            console.log(`📱 Controller: Playback transferred to device: ${deviceId}`);
             return { success: true };
         } catch (err) {
             if (err.statusCode === 401) {

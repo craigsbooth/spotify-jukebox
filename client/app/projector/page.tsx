@@ -57,6 +57,39 @@ export default function Projector() {
 
   useEffect(() => { document.title = `${partyName} Display`; }, [partyName]);
 
+  // --- HELPER: ADVANCE QUEUE ---
+  const handleSkip = async () => {
+    console.log("⏭️ Projector: Performance ended. Requesting next track...");
+    const endpoint = isKaraokeMode ? 'pop-karaoke' : 'pop';
+    try {
+        await fetch(`${API_URL}/${endpoint}`, { method: 'POST' });
+    } catch (e) {
+        console.error("Failed to auto-advance queue", e);
+    }
+  };
+
+  // --- YOUTUBE END DETECTOR ---
+  useEffect(() => {
+    const handleYoutubeMessage = (event: MessageEvent) => {
+        // Detect if the message is from the YouTube iframe
+        if (event.origin !== "https://www.youtube.com") return;
+        
+        try {
+            const data = JSON.parse(event.data);
+            // infoDelivery is the event type for state changes
+            // state 0 = Ended
+            if (data.event === "infoDelivery" && data.info?.playerState === 0) {
+                handleSkip();
+            }
+        } catch (e) {
+            // Ignore non-JSON messages
+        }
+    };
+
+    window.addEventListener("message", handleYoutubeMessage);
+    return () => window.removeEventListener("message", handleYoutubeMessage);
+  }, [isKaraokeMode]);
+
   // --- 1. HYBRID SYNC (SSE + POLLING) ---
   useEffect(() => {
     const fetchInitial = () => {
@@ -67,7 +100,6 @@ export default function Projector() {
             setIsKaraokeMode(!!d.isKaraokeMode);
             if (d.youtubeId !== undefined) setYoutubeId(d.youtubeId || null);
             setKaraokeQueue(d.karaokeQueue || []);
-            // LOAD INITIAL DELAY
             if (d.lyricsDelayMs !== undefined) setLyricsDelayMs(d.lyricsDelayMs);
         });
         fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name || 'Pinfold'));
@@ -88,7 +120,6 @@ export default function Projector() {
                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(payload.isKaraokeMode);
                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
                     if (payload.showLyrics !== undefined) setShowLyrics(payload.showLyrics);
-                    
                     if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
                     
                     if (type === 'INIT' && payload.currentLyrics) {
@@ -168,9 +199,6 @@ export default function Projector() {
   useEffect(() => { setShowUpNext(nextUpId !== 'empty'); }, [nextUpId]);
   
   const currentArt = nowPlaying?.albumArt || RECORD_PLACEHOLDER;
-
-  // FIX: Fallback to Track YouTube ID if Global ID is missing
-  // This enables background videos for standard tracks
   const activeVideoId = youtubeId || (nowPlaying as any)?.youtubeId || null;
 
   return (

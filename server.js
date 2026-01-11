@@ -17,7 +17,7 @@ const path = require('path');
 const spotifyApi = require('./spotify_instance');
 const spotifyCtrl = require('./spotify_ctrl');
 const automation = require('./automation'); // <--- THE NEW WATCHDOG
-const pkg = require('./package.json'); 
+const pkg = require('./package.json');
 
 const app = express();
 const port = process.env.PORT || 8888;
@@ -34,7 +34,7 @@ app.use(cors({ origin: true }));
 /**
  * 6. ATTACH ROUTES
  */
-app.use('/', require('./routes/auth')); 
+app.use('/', require('./routes/auth'));
 app.use('/api', require('./routes/queue'));
 app.use('/api', require('./routes/system')); // Karaoke routes are handled here now!
 
@@ -50,7 +50,12 @@ app.listen(port, async () => {
     console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port}`);
 
     // --- A. START THE AUTOMATION WATCHDOG ---
-    automation.startWatchdog(); 
+    try {
+        automation.startWatchdog();
+        console.log("✅ Automation Watchdog started.");
+    } catch (err) {
+        console.error("⚠️ Warning: Automation Watchdog failed to start:", err.message);
+    }
 
     // --- B. CHECK SPOTIFY SESSION ---
     // Immediate Session Check (No 5s Delay)
@@ -58,6 +63,7 @@ app.listen(port, async () => {
         console.log(`📦 Startup [v${APP_VERSION}]: Session found. Rebuilding Shuffle Bag...`);
         try {
             await spotifyCtrl.refreshShuffleBag();
+            console.log("✅ Shuffle Bag rebuilt successfully.");
         } catch (err) {
             console.error("❌ Startup: Failed to load initial playlist:", err.message);
         }

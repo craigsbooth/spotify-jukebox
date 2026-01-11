@@ -284,6 +284,21 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
       }
     },
 
+    handleLogout: async () => {
+        try {
+            // 1. Tell backend to clear session & delete tokens.json
+            await fetch(`${API_URL}/logout`, { method: 'POST' });
+            
+            // 2. Clear local host authorization
+            localStorage.removeItem('jukebox_host_auth');
+            
+            // 3. Hard reload to trigger PIN entry and new login flow
+            window.location.reload();
+        } catch (e) {
+            console.error("Logout failed:", e);
+        }
+    },
+
     onPlayerCallback: (s: any) => {
       // 1. BLOCK AUTO-DJ IN KARAOKE MODE
       if (state.isKaraokeMode) return; 

@@ -54,6 +54,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ state, handlers }) => 
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '15px' }}>
+                    <button style={{ ...styles.outlineBtn, height: '40px', padding: '0 20px', borderColor: '#e74c3c', color: '#e74c3c' }} onClick={handlers.handleLogout}>LOGOUT</button>
                     <button style={{ ...styles.outlineBtn, height: '40px', padding: '0 20px' }} onClick={() => handlers.setIsLocked(true)}>LOCK</button>
                     <button style={{ ...styles.btn(true), width: '120px', height: '40px' }} onClick={() => window.location.reload()}>RE-SYNC</button>
                 </div>

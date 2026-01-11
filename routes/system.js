@@ -4,17 +4,15 @@ const router = express.Router();
 const state = require('../state');
 const sm = require('../state_manager');
 const spotifyApi = require('../spotify_instance');
-const sse = require('../sse'); // <--- NEW SHARED BROADCASTER
+const sse = require('../sse'); 
 const spotifyCtrl = require('../spotify_ctrl'); 
 const karaokeEngine = require('../karaoke_engine'); 
 const karaokeManager = require('../karaoke_manager'); 
 
 // --- REAL-TIME EVENT STREAM (SSE) ---
-// Now handled by the shared sse.js module
 router.get('/events', (req, res) => {
     sse.addClient(req, res);
 });
-// ------------------------------------
 
 // --- 1. AUTH & TOKEN ACCESS ---
 router.get('/token', (req, res) => {
@@ -56,7 +54,6 @@ router.get('/theme', (req, res) => {
 
 router.post('/theme', (req, res) => {
     const result = sm.setTheme(req.body);
-    // Broadcast all theme changes instantly
     sse.send('THEME_UPDATE', { 
         theme: state.currentTheme,
         youtubeId: state.youtubeId,
@@ -91,30 +88,22 @@ router.post('/karaoke-queue', (req, res) => {
     res.json(result);
 });
 
-// --- 5. ATOMIC POP LOGIC (UPDATED) ---
+// --- 5. ATOMIC POP LOGIC ---
 router.post('/pop-karaoke', (req, res) => {
     const nextSinger = state.karaokeQueue[0];
 
     if (nextSinger) {
         console.log(`🎤 Server: Popping singer ${nextSinger.singer} (ID: ${nextSinger.id})`);
-        
-        // 1. Set the Performance ID
         state.youtubeId = nextSinger.id;
-        
-        // 2. Remove from Queue
         state.karaokeQueue.shift();
         sm.saveSettings();
-
-        // 3. Broadcast updates
         sse.send('THEME_UPDATE', { youtubeId: state.youtubeId }); 
         sse.send('KARAOKE_QUEUE', { karaokeQueue: state.karaokeQueue });
-
         res.json({ success: true, youtubeId: state.youtubeId });
     } else {
         res.json({ success: false, message: "Queue empty" });
     }
 });
-// -------------------------------------
 
 router.post('/remove-karaoke', (req, res) => {
     const { index } = req.body;
@@ -234,12 +223,12 @@ router.post('/fallback', async (req, res) => {
     }
 });
 
-// --- 10. CURRENT TRACK ALIAS ---
+// --- 10. CURRENT TRACK ---
 router.get('/current', (req, res) => {
     res.json(state.currentPlayingTrack || null);
 });
 
-// --- 11. TOKEN ECONOMY ENDPOINT ---
+// --- 11. TOKEN ECONOMY ---
 router.get('/tokens', (req, res) => {
     const { guestId } = req.query;
     if (!guestId) return res.status(400).json({ error: "Missing guestId" });
@@ -253,12 +242,11 @@ router.get('/tokens', (req, res) => {
     });
 });
 
-// --- 12. LYRICS SYNC CONTROL ---
+// --- 12. LYRICS SYNC ---
 router.post('/sync-offset', (req, res) => {
     const { offset } = req.body;
     if (offset !== undefined) {
         state.lyricsDelayMs = offset;
-        // Broadcast the new offset immediately
         sse.send('THEME_UPDATE', { lyricsDelayMs: state.lyricsDelayMs });
     }
     res.json({ success: true, offset: state.lyricsDelayMs });

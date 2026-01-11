@@ -64,7 +64,8 @@ const popNextTrack = async () => {
 
         // 1. ORIGINAL PRIORITY: Check Guest Queue First
         if (targetState.partyQueue && targetState.partyQueue.length > 0) {
-            nextTrack = targetState.partyQueue.shift();
+            // FIXED: Removed .shift(). We only peek. Routes/queue.js handles removal.
+            nextTrack = targetState.partyQueue[0];
             console.log(`🎯 Engine: Popped Guest Track - ${nextTrack.name}`);
         } 
         // 2. FALLBACK: Check Shuffle Bag

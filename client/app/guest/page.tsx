@@ -37,6 +37,49 @@ export default function GuestPage() {
   // Ref for SSE Connection to prevent duplicate listeners
   const eventSourceRef = useRef<EventSource | null>(null);
 
+  // --- HELPER: FETCH QUEUE DATA ---
+  const refreshData = () => {
+    fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
+    fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
+    
+    // Refresh Tokens if we have an ID
+    const gid = localStorage.getItem('jukebox_guest_id');
+    if (gid) {
+        fetch(`${API_URL}/tokens?guestId=${gid}`).then(res => res.json()).then(d => {
+            setTokensEnabled(d.enabled); 
+            setTokenBalance(d.balance); 
+            setNextInSeconds(d.nextIn);
+        });
+    }
+  };
+
+  // --- NEW: AUTO-PRUNE VOTED URIS ---
+  // If a song leaves the queue (played), we remove it from 'votedUris' so you can add it again.
+  useEffect(() => {
+    setVotedUris(prev => {
+        const nextSet = new Set(prev);
+        const currentQueueUris = new Set(queue.map(t => t.uri || t.id));
+        const currentKaraokeIds = new Set(karaokeQueue.map(t => t.id));
+
+        // 1. Remove votes for songs that are no longer in either queue
+        prev.forEach(uri => {
+            // We only keep it if it's currently in the queue OR we *just* added it (optimistic handling could be added here, but relying on queue is safer)
+            const stillExists = currentQueueUris.has(uri) || currentKaraokeIds.has(uri);
+            if (!stillExists) {
+                nextSet.delete(uri);
+            }
+        });
+
+        // 2. Add votes if the server explicitly says we voted (e.g. after refresh)
+        queue.forEach(t => {
+            if (t.votedBy?.includes(guestId)) nextSet.add(t.uri);
+        });
+
+        return Array.from(nextSet);
+    });
+  }, [queue, karaokeQueue, guestId]);
+
+
   // 1. SYNC LOGIC (Hybrid: SSE + Polling)
   useEffect(() => {
     // A. Guest Initialization
@@ -119,15 +162,7 @@ export default function GuestPage() {
     try { connectSSE(); } catch (e) {}
 
     // C. Polling (The "Slow Path" for Tokens/Standard Queue)
-    const interval = setInterval(() => {
-        fetch(`${API_URL}/queue`).then(res => res.json()).then(setQueue);
-        fetch(`${API_URL}/name`).then(res => res.json()).then(d => setPartyName(d.name));
-        fetch(`${API_URL}/tokens?guestId=${gid}`).then(res => res.json()).then(d => {
-            setTokensEnabled(d.enabled); 
-            setTokenBalance(d.balance); 
-            setNextInSeconds(d.nextIn);
-        });
-    }, 10000); 
+    const interval = setInterval(refreshData, 10000); 
 
     return () => {
         clearInterval(interval);
@@ -205,10 +240,14 @@ export default function GuestPage() {
 
     const data = await res.json();
     if (data.success) {
+        // Optimistic add (will be reconciled by the useEffect above)
         setVotedUris(prev => [...prev, track.uri || track.id]);
         setResults([]); 
         setSearchQuery(''); 
         if (data.tokens !== undefined) setTokenBalance(data.tokens);
+        
+        // Immediate refresh to confirm queue status
+        setTimeout(refreshData, 200); 
     }
   };
 

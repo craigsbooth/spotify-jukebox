@@ -5,30 +5,51 @@
     "name": "Craigs"
   },
   "currentTheme": "monitor",
-  "partyName": "Craig Booth's Jukebox",
+  "partyName": "Craig's Jukebox",
   "showLyrics": true,
   "showDebug": false,
   "crossfadeSec": 3,
-  "partyQueue": [],
+  "partyQueue": [
+    {
+      "uri": "spotify:track:57bgtoPSgt236HzfBOd8kj",
+      "name": "Thunderstruck",
+      "artist": "AC/DC",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2739a9b1cc067e4460da04adce2",
+      "album": "The Razors Edge",
+      "displayName": "Thunderstruck",
+      "displayArtist": "AC/DC",
+      "votes": 1,
+      "addedBy": "Craig",
+      "addedByGuestId": "g-w241lhept",
+      "votedBy": [
+        "g-w241lhept"
+      ],
+      "isFallback": false
+    }
+  ],
   "currentPlayingTrack": {
-    "uri": "spotify:track:0ia0JAsndEIZ268L3phuUa",
-    "name": "People Help the People",
-    "artist": "Birdy",
-    "album": "Birdy",
-    "albumArt": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
-    "duration_ms": 256236,
-    "isFallback": true,
-    "votes": 0,
-    "displayName": "People Help the People",
-    "displayArtist": "Birdy",
-    "startedAt": 1767967590375,
-    "addedBy": "Station Alpha",
+    "uri": "spotify:track:57bgtoPSgt236HzfBOd8kj",
+    "name": "Thunderstruck",
+    "artist": "AC/DC",
+    "albumArt": "https://i.scdn.co/image/ab67616d0000b2739a9b1cc067e4460da04adce2",
+    "album": "The Razors Edge",
+    "displayName": "Thunderstruck",
+    "displayArtist": "AC/DC",
+    "votes": 1,
+    "addedBy": "Craig",
+    "addedByGuestId": "g-w241lhept",
+    "votedBy": [
+      "g-w241lhept"
+    ],
+    "isFallback": false,
+    "startedAt": 1768154565713,
+    "duration_ms": 180000,
     "lyrics": {
-      "synced": "[00:21.70] God knows what is hiding in those weak and drunken hearts\n[00:28.05] I guess you kissed the girls and made them cry\n[00:31.95] Those Hardfaced Queens of misadventure\n[00:36.95] God knows what is hiding in those weak and sunken eyes\n[00:42.55] A Fiery throng of muted angels\n[00:45.98] Giving love but getting nothing back\n[00:50.82] People help the people\n[00:56.72] And if your homesick, give me your hand and I'll hold it\n[01:03.93] People help the people\n[01:10.08] And nothing will drag you down\n[01:13.53] Oh and if I had a brain, Oh and if I had a brain\n[01:21.30] I'd be cold as a stone and rich as the fool\n[01:25.82] That turned all those good hearts away\n[01:32.02] \n[01:37.03] God knows what is hiding in this world of little consequence\n[01:43.78] Behind the tears, inside the lies\n[01:47.07] A thousand slowly dying sunsets\n[01:50.55] God knows what is hiding in those weak and drunken hearts\n[01:56.09] I guess the loneliness came knocking\n[01:59.53] No one needs to be alone, oh save me\n[02:03.87] People help the people\n[02:09.17] And if your homesick, give me your hand and I'll hold it\n[02:16.45] People help the people\n[02:22.24] Nothing will drag you down\n[02:25.76] Oh and if I had a brain, Oh and if I had a brain\n[02:32.84] I'd be cold as a stone and rich as the fool\n[02:37.20] That turned, all those good hearts away\n[02:42.99] \n[03:26.86] People help the people\n[03:32.27] And if your homesick, give me your hand and I'll hold it\n[03:39.11] People help the people\n[03:45.18] Nothing will drag you down\n[03:48.35] Oh and if I had a brain, Oh and if I had a brain\n[03:55.31] I'd be cold as a stone and rich as the fool\n[03:59.73] That turned all those good hearts away\n[04:03.88] ",
-      "plain": "God knows what is hiding in those weak and drunken hearts\nI guess you kissed the girls and made them cry\nThose Hardfaced Queens of misadventure\nGod knows what is hiding in those weak and sunken eyes\nA Fiery throng of muted angels\nGiving love but getting nothing back\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nAnd nothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned all those good hearts away\nGod knows what is hiding in this world of little consequence\nBehind the tears, inside the lies\nA thousand slowly dying sunsets\nGod knows what is hiding in those weak and drunken hearts\nI guess the loneliness came knocking\nNo one needs to be alone, oh save me\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nNothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned, all those good hearts away\nPeople help the people\nAnd if your homesick, give me your hand and I'll hold it\nPeople help the people\nNothing will drag you down\nOh and if I had a brain, Oh and if I had a brain\nI'd be cold as a stone and rich as the fool\nThat turned all those good hearts away"
+      "synced": "[00:28.92] Thunder\n[00:32.53] Thunder\n[00:36.21] Thunder\n[00:39.74] Thunder\n[00:43.48] Thunder\n[00:47.00] Thunder\n[00:50.68] Thunder\n[00:54.28] Thunder\n[00:57.95] Thunder\n[01:01.44] Thunder\n[01:02.52] \n[01:04.49] I was caught in the middle of a railroad track\n[01:11.64] I looked around, and I knew there was no turning back\n[01:18.71] My mind raced, and I thought \"What could I do?\"\n[01:25.99] And I knew there was no help, no help from you\n[01:31.17] \n[01:32.75] Sound of the drums\n[01:36.42] Beatin' in my heart\n[01:39.82] The thunder of guns (yeah)\n[01:43.54] Tore me apart\n[01:45.67] \n[01:49.68] You've been thunderstruck\n[01:52.53] \n[01:57.94] Rolled down the highway\n[02:00.28] Broke the limit, we hit the town\n[02:05.24] Went through to Texas, yeah, Texas\n[02:08.74] And we had some fun\n[02:11.18] \n[02:12.29] We met some girls\n[02:14.99] Some dancers who gave a good time\n[02:19.65] Broke all the rules, played all the fools\n[02:23.44] Yeah, yeah, they, they, they blew our minds\n[02:27.95] \n[02:29.11] And I was shakin' at the knees\n[02:32.73] Could I come again, please?\n[02:36.36] Yeah, the ladies were too kind\n[02:39.95] You've been, thunderstruck\n[02:42.91] \n[02:44.96] Thunderstruck\n[02:47.50] Yeah, yeah, yeah, thunderstruck\n[02:51.06] Ooh, thunderstruck\n[02:53.93] \n[03:05.19] Well, I was shaking at the knees\n[03:09.06] Could I come again, please?\n[03:11.11] \n[03:42.68] Thunderstruck, thunderstruck\n[03:48.47] Yeah, yeah, yeah, thunderstruck\n[03:50.80] \n[03:53.22] Thunderstruck, yeah, yeah, yeah\n[03:56.92] Said, \"Yeah, it's all right, we're doing fine\"\n[04:04.67] Yeah, it's all right, we're doing fine, so fine\n[04:11.66] Thunderstruck\n[04:12.27] \n[04:13.84] Yeah, yeah, yeah, thunderstruck\n[04:16.76] Thunderstruck (thunderstruck)\n[04:19.32] Whoa, baby, baby (thunderstruck)\n[04:24.36] You've been thunderstruck\n[04:26.09] \n[04:28.72] Thunderstruck\n[04:31.98] Thunderstruck\n[04:35.46] Thunderstruck\n[04:37.84] You've been thunderstruck\n[04:42.91] ",
+      "plain": "Thunder\nThunder\nThunder\nThunder\nThunder\nThunder\nThunder\nThunder\nThunder\nThunder\n\nI was caught in the middle of a railroad track\nI looked around, and I knew there was no turning back\nMy mind raced, and I thought \"What could I do?\"\nAnd I knew there was no help, no help from you\n\nSound of the drums\nBeatin' in my heart\nThe thunder of guns (yeah)\nTore me apart\n\nYou've been thunderstruck\n\nRolled down the highway\nBroke the limit, we hit the town\nWent through to Texas, yeah, Texas\nAnd we had some fun\n\nWe met some girls\nSome dancers who gave a good time\nBroke all the rules, played all the fools\nYeah, yeah, they, they, they blew our minds\n\nAnd I was shakin' at the knees\nCould I come again, please?\nYeah, the ladies were too kind\nYou've been, thunderstruck\n\nThunderstruck\nYeah, yeah, yeah, thunderstruck\nOoh, thunderstruck\n\nWell, I was shaking at the knees\nCould I come again, please?\n\nThunderstruck, thunderstruck\nYeah, yeah, yeah, thunderstruck\n\nThunderstruck, yeah, yeah, yeah\nSaid, \"Yeah, it's all right, we're doing fine\"\nYeah, it's all right, we're doing fine, so fine\nThunderstruck\n\nYeah, yeah, yeah, thunderstruck\nThunderstruck (thunderstruck)\nWhoa, baby, baby (thunderstruck)\nYou've been thunderstruck\n\nThunderstruck\nThunderstruck\nThunderstruck\nYou've been thunderstruck\n"
     }
   },
-  "startedAt": 1767967590369,
+  "startedAt": 1768154565638,
   "guestNames": {
     "guest_d1qjlesy6": "Craig 1",
     "g-yzr4butkt": "craig",
@@ -39,14 +60,11 @@
   },
   "latestJoiner": null,
   "isDjMode": false,
-  "youtubeId": "OmLNs6zQIHo",
+  "youtubeId": "v2AC41dglnM",
   "isKaraokeMode": false,
   "karaokeQueue": [],
-  "karaokeAnnouncement": {
-    "message": "Coming up next: Craig with Nothin' On You - B.o.B ft Bruno Mars (Karaoke Songs With Lyrics - Original Key)",
-    "expiresAt": 1767967618636
-  },
-  "tokensEnabled": false,
+  "karaokeAnnouncement": null,
+  "tokensEnabled": true,
   "tokensInitial": 1,
   "tokensPerHour": 5,
   "tokensMax": 3,
@@ -64,8 +82,8 @@
       "lastAccrual": 1767777078248
     },
     "g-w241lhept": {
-      "balance": 3,
-      "lastAccrual": 1767967407269
+      "balance": 2,
+      "lastAccrual": 1768153887269
     },
     "g-pggp62p06": {
       "balance": 1,
@@ -78,33 +96,27 @@
   },
   "lyricsDelayMs": 1000,
   "djStatus": {
-    "message": "Playing: People Help the People",
-    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2735cfea5b67002f2a0fbc32ba4",
-    "bpm": 148,
-    "key": "F# major",
+    "message": "Playing: Thunderstruck",
+    "albumArtwork": "https://i.scdn.co/image/ab67616d0000b2739a9b1cc067e4460da04adce2",
+    "bpm": 133.4,
+    "key": "N/A",
     "genres": [
-      "Pop"
+      "Rock"
     ],
     "year": "1985",
     "isDjMode": false,
-    "researchTitle": "People Help the People",
-    "researchArtist": "Birdy",
-    "researchAlbum": "Birdy (Deluxe Version)",
-    "valence": 65,
-    "publisher": "Atlantic Records UK",
-    "isrc": "GBAHS1100351",
-    "releaseDate": "2011-11-04",
+    "researchTitle": "Thunderstruck",
+    "researchArtist": "AC/DC",
+    "researchAlbum": "The Razors Edge",
+    "valence": 0,
+    "publisher": "Columbia",
+    "isrc": "AUAP09000014",
+    "releaseDate": "1990-09-21",
     "crossfadeSec": 3
   },
-  "lastSavedAt": "2026-01-09T14:06:36.530Z",
+  "lastSavedAt": "2026-01-11T18:03:00.711Z",
   "isPopping": false,
   "playedHistory": [
-    "spotify:track:7j31rVgGX9Q2blT92VBEA0",
-    "spotify:track:1bA2ZK7CFxEMnyn1dWP2jp",
-    "spotify:track:3pBnRFCyLUm3ErAfZMagQi",
-    "spotify:track:2ti6vKzYNKvZVIpbPNtTcq",
-    "spotify:track:57bgtoPSgt236HzfBOd8kj",
-    "spotify:track:7vggqxNKwd6xdRoYS0pQtM",
-    "spotify:track:0ia0JAsndEIZ268L3phuUa"
+    "spotify:track:57bgtoPSgt236HzfBOd8kj"
   ]
 }

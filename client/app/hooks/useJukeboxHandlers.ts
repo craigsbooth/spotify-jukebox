@@ -59,17 +59,25 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
                   id: track.id, 
                   title: track.name, 
                   thumb: track.albumArt, 
-                  guestId: track.guestId || 'guest', 
-                  singer: track.singer || 'Guest' 
+                  guestId: track.guestId || 'host', 
+                  singer: track.singer || 'Host' 
               }) 
           });
       } else {
           // 2. Otherwise, add to Standard Spotify Queue
           console.log("🎵 Adding to Spotify Queue:", track.name);
-          await fetch(`${API_URL}/add`, { 
+          // FIXED: Changed endpoint from /add to /queue to match backend route
+          await fetch(`${API_URL}/queue`, { 
               method: 'POST', 
               headers: {'Content-Type': 'application/json'}, 
-              body: JSON.stringify({ uri: track.uri }) 
+              body: JSON.stringify({ 
+                  uri: track.uri,
+                  name: track.name,
+                  artist: track.artist,
+                  album: track.album,
+                  albumArt: track.albumArt,
+                  guestId: 'host'
+              }) 
           });
       }
     },
@@ -256,7 +264,7 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify(settings) 
       });
-      await fetch(`${API_URL}/sync-token-caps`, { method: 'POST' });
+      // await fetch(`${API_URL}/sync-token-caps`, { method: 'POST' }); // Removed non-existent endpoint
     },
 
     setPlaylistQuery: (q: string) => setters.setPlaylistQuery(q),

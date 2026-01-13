@@ -44,6 +44,20 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
   };
 
   return {
+    searchTracks: async (query: string) => {
+        setters.setHostSearchQuery(query);
+        if (query.length < 2) {
+            setters.setHostSearchResults([]);
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            setters.setHostSearchResults(data);
+        } catch (e) {
+            console.error("Host search failed", e);
+        }
+    },
     skipTrack: handleSkip,
 
     // --- CONTEXT-AWARE ADD TRACK ---
@@ -90,6 +104,20 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({ name }) 
         });
+    },
+    // --- MAINTENANCE HANDLER ---
+    handleMaintenanceSync: async () => {
+        if (!confirm("Run system clean-up? This will fix duplicate tracks and sync data.")) return;
+        
+        try {
+            const res = await fetch(`${API_URL}/maintenance/sync`, { method: 'POST' });
+            const data = await res.json();
+            alert(`Sync Complete!\nFixed: ${data.stats?.duplicates || 0} duplicates, ${data.stats?.voteFixes || 0} votes.`);
+            window.location.reload();
+        } catch (e) {
+            console.error("Maintenance failed:", e);
+            window.location.reload(); // Reload anyway to be safe
+        }
     },
 
     // --- RESTORED HANDLER: CROSSFADER ---
@@ -264,7 +292,6 @@ export const useJukeboxHandlers = (state: any, setters: any) => {
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify(settings) 
       });
-      // await fetch(`${API_URL}/sync-token-caps`, { method: 'POST' }); // Removed non-existent endpoint
     },
 
     setPlaylistQuery: (q: string) => setters.setPlaylistQuery(q),

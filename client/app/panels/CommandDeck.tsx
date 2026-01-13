@@ -4,10 +4,25 @@ import { styles } from '../dashboard_ui';
 
 interface PanelProps { state: any; handlers: any; }
 
+// Helper for search results
+const SearchResult = ({ track, onAdd }: { track: any, onAdd: () => void }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px' }}>
+        <img src={track.albumArt || '/placeholder.png'} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.name}</div>
+            <div style={{ fontSize: '0.7rem', color: '#888' }}>{track.artist}</div>
+        </div>
+        <button onClick={onAdd} style={{ background: '#D4AF37', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 900 }}>+</button>
+    </div>
+);
+
 export const CommandDeck = ({ state, handlers }: PanelProps) => {
     const dj = state.djStatus || {};
     const isScanning = String(dj.publisher || '').includes('Scanning') || dj.bpm === '--';
     const isPerformanceActive = !!state.youtubeId;
+
+    // NEW: Destructure search state
+    const { hostSearchQuery, hostSearchResults } = state;
 
     // --- FIX: MEMOIZE URIS TO PREVENT RESTARTS ---
     // This ensures the player only reloads if the song ID actually changes.
@@ -99,6 +114,31 @@ export const CommandDeck = ({ state, handlers }: PanelProps) => {
 
                 {state.isDjMode && (
                     <div>
+                        {/* --- NEW: HOST QUICK ADD --- */}
+                        <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '15px' }}>
+                            <span style={{ ...styles.label, marginBottom: '10px' }}>QUICK REQUEST</span>
+                            <input 
+                                style={{ ...styles.input, height: '40px', marginBottom: '10px', fontSize: '0.85rem' }} 
+                                placeholder="Search track..." 
+                                value={hostSearchQuery || ''}
+                                onChange={(e) => handlers.searchTracks(e.target.value)}
+                            />
+                            {hostSearchResults && hostSearchResults.length > 0 && (
+                                <div style={{ maxHeight: '200px', overflowY: 'auto', paddingRight: '5px' }} className="no-scrollbar">
+                                    {hostSearchResults.slice(0, 10).map((track: any) => (
+                                        <SearchResult 
+                                            key={track.uri} 
+                                            track={track} 
+                                            onAdd={() => {
+                                                handlers.addTrack(track);
+                                                handlers.searchTracks(''); // Clear after add
+                                            }} 
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         <div style={styles.intelHeader}>
                             <div style={{ fontSize: '0.7rem', color: '#D4AF37', fontWeight: 900, marginBottom: '4px', letterSpacing: '2px' }}>DATA VERIFICATION</div>
                             <div style={{ fontWeight: 950, fontSize: '1.2rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

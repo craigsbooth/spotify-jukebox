@@ -1,5 +1,4 @@
-// client/app/projector/StandardView.tsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { styles } from './styles';
 import { Track, LyricLine } from './types';
 
@@ -8,8 +7,8 @@ interface Props {
   nowPlaying: Track | null;
   showUpNext: boolean;
   showLyrics: boolean;
-  syncedLyrics: LyricLine[];
-  plainLyrics: string;
+  syncedLyrics: LyricLine[]; 
+  // removed plainLyrics property completely
   activeLineIndex: number;
   progress: number;
   currentArt: string;
@@ -19,9 +18,31 @@ const RECORD_PLACEHOLDER = "https://images.unsplash.com/photo-1603048588665-791c
 
 export const StandardView = ({ 
   queue, nowPlaying, showUpNext, showLyrics, 
-  syncedLyrics, plainLyrics, activeLineIndex, progress, currentArt 
+  syncedLyrics, activeLineIndex, currentArt 
 }: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [smoothProgress, setSmoothProgress] = useState(0);
+
+  useEffect(() => {
+    const start = nowPlaying?.startedAt;
+    const duration = nowPlaying?.duration_ms || nowPlaying?.duration;
+
+    if (!start || !duration) {
+        setSmoothProgress(0);
+        return;
+    }
+
+    let animationFrameId: number;
+    const animate = () => {
+        const now = Date.now();
+        const elapsed = now - start;
+        const pct = (elapsed / duration) * 100;
+        setSmoothProgress(Math.min(100, Math.max(0, pct)));
+        animationFrameId = requestAnimationFrame(animate);
+    };
+    animationFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [nowPlaying]); 
 
   // Auto-scroll logic
   useEffect(() => {
@@ -31,31 +52,39 @@ export const StandardView = ({
     }
   }, [activeLineIndex]);
 
-  // Helper for "Added By" text
+  const upNextTrack = (() => {
+      if (!queue || queue.length === 0) return null;
+      const first = queue[0];
+      if (nowPlaying && first.uri === nowPlaying.uri) {
+          return queue.length > 1 ? queue[1] : null;
+      }
+      return first;
+  })();
+
   const addedByInfo = (() => {
-    const item = queue[0];
-    if (!item) return null;
-    const isSystem = item.isFallback || item.addedBy === 'Fallback Track';
+    if (!upNextTrack) return null;
+    const isSystem = upNextTrack.isFallback || upNextTrack.addedBy === 'Fallback Track';
     if (isSystem) return { icon: '📻', text: 'Fallback Track' };
-    if (item.addedBy) return { icon: '👤', text: `Added by ${item.addedBy}` };
+    if (upNextTrack.addedBy) return { icon: '👤', text: `Added by ${upNextTrack.addedBy}` };
     return null;
   })();
 
+  const shouldShowLyrics = showLyrics && syncedLyrics && syncedLyrics.length > 0;
+
   return (
     <div style={styles.standardContainer}>
-      {/* UP NEXT PILL */}
       <div style={{
         ...styles.upNextPosition, 
         transition: 'transform 0.5s', 
         transform: showUpNext ? 'translateY(0)' : 'translateY(-100px)',
         opacity: showUpNext ? 1 : 0
       }}>
-        {queue[0] && (
+        {upNextTrack && (
           <div className="pill" style={styles.upNextPill}>
-            <img src={queue[0].albumArt || RECORD_PLACEHOLDER} style={styles.upNextArt} />
+            <img src={upNextTrack.albumArt || RECORD_PLACEHOLDER} style={styles.upNextArt} />
             <div>
               <small>UP NEXT</small>
-              <div style={{ fontWeight: 900 }}>{queue[0].displayName ?? queue[0].name}</div>
+              <div style={{ fontWeight: 900 }}>{upNextTrack.displayName ?? upNextTrack.name}</div>
               {addedByInfo && (
                 <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
                   {addedByInfo.icon} {addedByInfo.text}
@@ -66,11 +95,10 @@ export const StandardView = ({
         )}
       </div>
       
-      {/* LYRICS WINDOW */}
-      {showLyrics && (
+      {shouldShowLyrics && (
         <div ref={scrollContainerRef} className="no-scrollbar" style={styles.lyricsWindow}>
           <div style={{ height: '20vh' }} /> 
-          {syncedLyrics.length > 0 ? syncedLyrics.map((l, i) => (
+          {syncedLyrics.map((l, i) => (
             <div key={i} id={`line-${i}`} 
               className={`lyric-line ${i === activeLineIndex ? 'active' : 'inactive'}`}
               style={{
@@ -79,11 +107,7 @@ export const StandardView = ({
                 opacity: i === activeLineIndex ? 1 : 0.5
               }}
             >{l.text}</div>
-          )) : (
-            <div style={styles.plainLyricsText}>
-              {plainLyrics || (nowPlaying ? "Searching for lyrics..." : "")}
-            </div>
-          )}
+          ))}
           <div style={{ height: '20vh' }} /> 
         </div>
       )}
@@ -94,7 +118,9 @@ export const StandardView = ({
           <div>
             <h1 style={styles.footerTitle}>{nowPlaying?.displayName ?? nowPlaying?.name}</h1>
             <h3 style={styles.footerArtist}>{nowPlaying?.displayArtist ?? nowPlaying?.artist}</h3>
-            <div style={styles.footerProgressBase}><div style={{ ...styles.footerProgressFill, width: `${progress}%` }} /></div>
+            <div style={styles.footerProgressBase}>
+                <div style={{ ...styles.footerProgressFill, width: `${smoothProgress}%` }} />
+            </div>
           </div>
         </div>
         <div style={styles.qrContainer}>

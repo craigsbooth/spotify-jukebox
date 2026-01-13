@@ -1,39 +1,34 @@
-// automation.js - Server-Side Autopilot (DISABLED)
+// automation.js - Watchdog & Prefetch Trigger
 const state = require('./state');
-const playbackEngine = require('./playback_engine');
+const intel = require('./intel_engine');
 
 const startWatchdog = () => {
-    console.log("🤖 Auto-DJ Watchdog: STANDBY MODE (Client-Driven)");
+    console.log("🤖 Automation Watchdog: ACTIVE");
 
     setInterval(() => {
-        // 1. SAFETY: Do not auto-skip if Karaoke is active
+        // 1. SAFETY: Do not interfere if Karaoke is active
         if (state.isKaraokeMode) return;
 
-        // 2. CHECK: Do we have a track?
-        if (!state.currentPlayingTrack || !state.currentPlayingTrack.startedAt) return;
+        // 2. CHECK: Do we have a playing track?
+        const track = state.currentPlayingTrack;
+        if (!track || !track.startedAt || !track.duration_ms) return;
 
-        const { startedAt, duration_ms, name } = state.currentPlayingTrack;
         const now = Date.now();
-        const elapsed = now - startedAt;
-        const limit = (duration_ms || 180000) + 2500; // Duration + 2.5s buffer
+        const elapsed = now - track.startedAt;
+        const remaining = track.duration_ms - elapsed;
         
-        // 3. LOGGING ONLY (Debug "Mid-Skip" issues)
-        // We log if we are close to the limit, but we DO NOT trigger a skip.
-        if (elapsed > limit - 10000 && elapsed < limit) {
-             // console.log(`⏳ Watchdog: ${name} | Elapsed: ${(elapsed/1000).toFixed(1)}s / ${(limit/1000).toFixed(1)}s`);
+        // 3. PREFETCH TRIGGER (The Magic)
+        // If between 15 seconds and 2 seconds remaining, prefetch the next song.
+        // The Intel Engine handles deduplication, so calling this every second is fine.
+        if (remaining < 15000 && remaining > 2000) {
+            intel.prefetchNext();
         }
+        
+        // 4. AUTO-SKIP (Optional Backup)
+        // If track is waaaay over (e.g. 5 seconds past end), we could force a pop here.
+        // But currently we trust the Client Auto-DJ logic.
 
-        // 4. TRIGGER REMOVED
-        // The server no longer forces playback. It waits for the client.
-        /*
-        if (elapsed > limit) {
-            if (!state.isPopping) {
-                console.log(`🤖 Watchdog: Track Time Limit Reached. Waiting for Client...`);
-                // playbackEngine.popNextTrack(); <--- DISABLED
-            }
-        }
-        */
-    }, 1000); // Check every second
+    }, 1000); // Run every second
 };
 
 module.exports = { startWatchdog };

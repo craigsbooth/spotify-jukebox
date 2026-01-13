@@ -53,8 +53,7 @@ export default function GuestPage() {
     }
   };
 
-  // --- NEW: AUTO-PRUNE VOTED URIS ---
-  // If a song leaves the queue (played), we remove it from 'votedUris' so you can add it again.
+  // --- AUTO-PRUNE VOTED URIS ---
   useEffect(() => {
     setVotedUris(prev => {
         const nextSet = new Set(prev);
@@ -63,14 +62,13 @@ export default function GuestPage() {
 
         // 1. Remove votes for songs that are no longer in either queue
         prev.forEach(uri => {
-            // We only keep it if it's currently in the queue OR we *just* added it (optimistic handling could be added here, but relying on queue is safer)
             const stillExists = currentQueueUris.has(uri) || currentKaraokeIds.has(uri);
             if (!stillExists) {
                 nextSet.delete(uri);
             }
         });
 
-        // 2. Add votes if the server explicitly says we voted (e.g. after refresh)
+        // 2. Add votes if the server explicitly says we voted
         queue.forEach(t => {
             if (t.votedBy?.includes(guestId)) nextSet.add(t.uri);
         });
@@ -86,7 +84,6 @@ export default function GuestPage() {
     let gid = localStorage.getItem('jukebox_guest_id') || 'g-' + Math.random().toString(36).substr(2, 9);
     let gname = localStorage.getItem('jukebox_guest_name');
     
-    // Logic: If no name is saved, or it's just "Guest", show the modal
     if (gname && gname !== 'Guest') {
         setGuestName(gname);
         setShowWelcomeModal(false);
@@ -98,7 +95,7 @@ export default function GuestPage() {
     localStorage.setItem('jukebox_guest_id', gid);
     setGuestId(gid); 
 
-    // B. SSE Connection (The "Fast Path" for Mode/Queue/Reactions/Lyrics)
+    // B. SSE Connection
     const connectSSE = () => {
         if (eventSourceRef.current) eventSourceRef.current.close();
         const es = new EventSource(`${API_URL}/events`);
@@ -112,46 +109,63 @@ export default function GuestPage() {
                 if (type === 'INIT') {
                     if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
                     if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
-                    
-                    // --- CATCH DELAY UPDATES ---
                     if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
 
-                    // Instant Lyrics Load
-                    if (payload.currentLyrics) {
-                        const l = payload.currentLyrics;
-                        if (l.synced) setSyncedLyrics(l.synced);
-                        else { setSyncedLyrics([]); setPlainLyrics(l.plain || ""); }
+                    // --- LYRICS LOGIC ---
+                    const l = payload.currentLyrics;
+                    if (l) {
+                        if (l.synced && l.synced.length > 0) {
+                             setSyncedLyrics(l.synced);
+                             setPlainLyrics("");
+                        } else if (l.plain) {
+                             setSyncedLyrics([]);
+                             setPlainLyrics(l.plain);
+                        } else {
+                             setSyncedLyrics([]);
+                             setPlainLyrics("Lyrics not available for this song");
+                        }
+                    } else if (payload.currentTrack) {
+                        // Track exists but no lyrics data sent
+                        setSyncedLyrics([]);
+                        setPlainLyrics("Lyrics not available for this song");
                     }
                 }
 
                 if (type === 'THEME_UPDATE') {
                       if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
                       if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
-                      // --- CATCH DELAY UPDATES ---
                       if (payload.lyricsDelayMs !== undefined) setLyricsDelayMs(payload.lyricsDelayMs);
                 }
                 if (type === 'KARAOKE_MODE') setIsKaraokeMode(!!payload.isKaraokeMode);
                 if (type === 'KARAOKE_QUEUE') setKaraokeQueue(payload.karaokeQueue || []);
                 
-                // Show Global Reactions
+                // --- NEW: RESET ON TRACK CHANGE ---
+                if (type === 'CURRENT_TRACK') {
+                    // Temporarily clear or show loading state while backend fetches
+                    setSyncedLyrics([]);
+                    setPlainLyrics("Searching for lyrics..."); 
+                }
+
                 if (type === 'REACTION') {
                     const id = payload.id || Date.now();
                     setActiveReactions(prev => [...prev, { id, emoji: payload.emoji, left: Math.random() * 80 + 10 }]);
                     setTimeout(() => setActiveReactions(prev => prev.filter(r => r.id !== id)), 4000);
                 }
 
-                // --- NEW: LISTEN FOR LYRICS ---
+                // --- LYRICS UPDATE ---
                 if (type === 'LYRICS_UPDATE') {
-                    const l = payload.lyrics;
-                    if (l && l.synced) {
+                    const l = payload.lyrics || payload; // Handle wrapper or direct
+                    
+                    if (l && l.synced && l.synced.length > 0) {
                         setSyncedLyrics(l.synced);
                         setPlainLyrics("");
                     } else if (l && l.plain) {
                         setSyncedLyrics([]);
                         setPlainLyrics(l.plain);
                     } else {
+                        // FALLBACK MESSAGE AS REQUESTED
                         setSyncedLyrics([]);
-                        setPlainLyrics("No lyrics found.");
+                        setPlainLyrics("Lyrics not available for this song");
                     }
                 }
             } catch (err) { console.error("SSE Error:", err); }
@@ -161,7 +175,7 @@ export default function GuestPage() {
     // Attempt connection
     try { connectSSE(); } catch (e) {}
 
-    // C. Polling (The "Slow Path" for Tokens/Standard Queue)
+    // C. Polling
     const interval = setInterval(refreshData, 10000); 
 
     return () => {
@@ -175,11 +189,7 @@ export default function GuestPage() {
       const nameToSave = guestName.trim() || "Guest";
       setGuestName(nameToSave);
       setShowWelcomeModal(false);
-      
-      // Persist
       localStorage.setItem('jukebox_guest_name', nameToSave);
-      
-      // Register with Server
       fetch(`${API_URL}/join`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
@@ -209,7 +219,6 @@ export default function GuestPage() {
   };
 
   const handleRequest = async (track: any) => {
-    // Safety check just in case
     if (isKaraokeMode && (!guestName || guestName === "Guest")) {
         alert("Please set your name first!");
         setIsEditingName(true);
@@ -240,13 +249,10 @@ export default function GuestPage() {
 
     const data = await res.json();
     if (data.success) {
-        // Optimistic add (will be reconciled by the useEffect above)
         setVotedUris(prev => [...prev, track.uri || track.id]);
         setResults([]); 
         setSearchQuery(''); 
         if (data.tokens !== undefined) setTokenBalance(data.tokens);
-        
-        // Immediate refresh to confirm queue status
         setTimeout(refreshData, 200); 
     }
   };

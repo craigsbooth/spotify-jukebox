@@ -160,6 +160,12 @@ router.post('/reaction-event', (req, res) => {
     res.json(state.reactionEvent);
 });
 
+// Add this new route (around line 150, near other system tools)
+router.post('/maintenance/sync', (req, res) => {
+    const stats = sm.performMaintenance();
+    res.json({ success: true, stats });
+});
+
 router.get('/reaction-event', (req, res) => res.json(state.reactionEvent));
 
 // --- 9. SEARCH & FALLBACK POOL ---

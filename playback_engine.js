@@ -1,96 +1,104 @@
-// playback_engine.js - Simplified Priority-First Brain
+// playback_engine.js - Stable Core (Root)
 const state = require('./state');
 const sessions = require('./session_manager');
 const spotifyCtrl = require('./spotify_ctrl');
-const intel = require('./intel_engine');
+const intel = require('./intel_engine'); 
 const sse = require('./sse');
 const utils = require('./utils');
 const sm = require('./state_manager');
 
-// --- SAFETY LOCK: Prevent double-skipping ---
-let lastSkipTime = 0;
-const SKIP_COOLDOWN_MS = 10000; 
-
-// Helper: Fetch Lyrics
-const fetchLyrics = async (track) => {
-    if (!track || !track.name || !track.artist) return null;
+// --- LOAD SEPARATE LYRICS ENGINE ---
+// This prevents breaking the player if lyrics fail
+let lyrics;
+try {
+    lyrics = require('./lyrics_engine'); // Assumes lyrics_engine.js is in root
+} catch (e) {
     try {
-        const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(track.artist)}&track_name=${encodeURIComponent(track.name)}`;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const data = await res.json();
-        return {
-            synced: data.syncedLyrics || null,
-            plain: data.plainLyrics || null
-        };
-    } catch (e) {
-        return null;
+        lyrics = require('../lyrics_engine'); // Try fallback path
+    } catch (e2) {
+        console.warn("⚠️ Playback: Could not load lyrics_engine.js");
     }
-};
+}
+
+// --- SAFETY VARIABLES ---
+let lastSkipTime = 0;
+let popStartTime = 0;
+const SKIP_COOLDOWN_MS = 1000; 
 
 // Helper: Sync Bridge
 const syncState = (party, track) => {
     if (party) {
         party.currentPlayingTrack = track;
+        if (!party.playedHistory) party.playedHistory = new Set();
         party.playedHistory.add(track.uri);
     }
-
     state.currentPlayingTrack = track;
-    if (state.playedHistory instanceof Set) state.playedHistory.add(track.uri);
-    else state.playedHistory = new Set([track.uri]);
-    
+    if (!state.playedHistory || !(state.playedHistory instanceof Set)) {
+        state.playedHistory = new Set(state.playedHistory || []);
+    }
+    state.playedHistory.add(track.uri);
     sm.saveSettings();
 };
 
-/**
- * POP NEXT TRACK
- * Original logic: Priority Queue -> Shuffle Bag fallback
- */
 const popNextTrack = async () => {
     const now = Date.now();
+
+    // 1. COOLDOWN
     if (now - lastSkipTime < SKIP_COOLDOWN_MS) {
-        console.warn("🛡️ Engine: Skip request ignored (Cooldown Active)");
+        console.warn("🛡️ POP: Ignored (Cooldown)");
         return { success: false, message: "Skipping too fast!" };
     }
 
     const party = sessions.getActiveParty();
     const targetState = party || state;
 
-    if (targetState.isPopping) return { success: false, message: "Already popping" };
+    // 2. STALE LOCK BREAKER (Fixes "Already in progress" bug)
+    if (targetState.isPopping) {
+        if (now - popStartTime > 5000) {
+            console.warn("🔨 POP: Smashing stale lock");
+            targetState.isPopping = false;
+        } else {
+            console.warn("⚠️ POP: Already in progress");
+            return { success: false, message: "Already popping" };
+        }
+    }
+
     targetState.isPopping = true;
+    popStartTime = now;
 
     try {
+        // 3. SANITIZE QUEUE
+        if (!Array.isArray(targetState.partyQueue)) targetState.partyQueue = [];
+        if (!Array.isArray(targetState.shuffleBag)) targetState.shuffleBag = [];
+
         let nextTrack = null;
 
-        // 1. ORIGINAL PRIORITY: Check Guest Queue First
-        if (targetState.partyQueue && targetState.partyQueue.length > 0) {
-            // FIXED: Removed .shift(). We only peek. Routes/queue.js handles removal.
-            nextTrack = targetState.partyQueue[0];
-            console.log(`🎯 Engine: Popped Guest Track - ${nextTrack.name}`);
+        // 4. QUEUE LOGIC (Shift is required for Skip/Next to work)
+        if (targetState.partyQueue.length > 0) {
+            nextTrack = targetState.partyQueue.shift(); 
+            console.log(`🎯 POP: Popped Guest Track - ${nextTrack?.name}`);
         } 
-        // 2. FALLBACK: Check Shuffle Bag
         else {
-            const bag = Array.isArray(targetState.shuffleBag) ? targetState.shuffleBag : [];
             const historySet = targetState.playedHistory instanceof Set 
                 ? targetState.playedHistory 
                 : new Set(targetState.playedHistory || []);
 
-            nextTrack = bag.find(t => !historySet.has(t.uri));
+            nextTrack = targetState.shuffleBag.find(t => !historySet.has(t.uri));
 
-            if (!nextTrack && bag.length > 0) {
-                console.log("♻️ Engine: Pool exhausted. Clearing history.");
+            if (!nextTrack && targetState.shuffleBag.length > 0) {
+                console.log("♻️ POP: Pool exhausted. Clearing history.");
                 if (targetState.playedHistory instanceof Set) targetState.playedHistory.clear();
-                nextTrack = bag[0];
+                nextTrack = targetState.shuffleBag[0];
             }
         }
         
-        if (nextTrack) {
-            const success = await spotifyCtrl.playTrack(nextTrack.uri);
+        if (nextTrack && nextTrack.uri) {
+            // A. PLAY AUDIO
+            await spotifyCtrl.playTrack(nextTrack.uri);
             lastSkipTime = Date.now();
 
+            // B. PREPARE DATA
             const sanitized = utils.sanitizeTrack(nextTrack);
-            intel.analyzeTrack(sanitized).catch(err => console.error(err));
-
             const finalTrackObj = { 
                 ...sanitized, 
                 startedAt: Date.now(),
@@ -100,28 +108,48 @@ const popNextTrack = async () => {
                 lyrics: null 
             };
 
+            // C. UPDATE STATE
             syncState(party, finalTrackObj);
+
+            // D. BROADCAST (Immediate)
+            sse.send('CURRENT_TRACK', finalTrackObj);
             sse.send('THEME_UPDATE', { isSpotifyPlaying: true });
+            sse.send('LYRICS_UPDATE', { lyrics: null, trackUri: sanitized.uri });
 
-            fetchLyrics(sanitized).then(lyrics => {
-                if (state.currentPlayingTrack && state.currentPlayingTrack.uri === sanitized.uri) {
-                    state.currentPlayingTrack.lyrics = lyrics;
-                    if (party) party.currentPlayingTrack.lyrics = lyrics;
-                    sse.send('LYRICS_UPDATE', { lyrics, trackUri: sanitized.uri });
-                }
-            });
+            // E. BACKGROUND TASKS (Non-Blocking / Fire & Forget)
+            
+            // 1. DJ Intel
+            if (intel && typeof intel.analyzeTrack === 'function') {
+                intel.analyzeTrack(sanitized).catch(e => console.error("Intel Error:", e));
+            }
 
-            targetState.isPopping = false;
+            // 2. Lyrics
+            if (lyrics && typeof lyrics.fetchLyrics === 'function') {
+                lyrics.fetchLyrics(sanitized).then(lyricData => {
+                    const safeLyrics = lyricData || { plain: "No lyrics found." };
+                    
+                    // Update State
+                    if (state.currentPlayingTrack) state.currentPlayingTrack.lyrics = safeLyrics;
+                    if (party && party.currentPlayingTrack) party.currentPlayingTrack.lyrics = safeLyrics;
+                    
+                    // Update UI
+                    sse.send('LYRICS_UPDATE', { lyrics: safeLyrics, trackUri: sanitized.uri });
+                }).catch(e => console.error("Lyrics Error:", e));
+            }
+
             return { success: true, track: finalTrackObj };
+
         } else {
+            console.warn("⚠️ POP: Station Empty");
             await spotifyCtrl.refreshShuffleBag();
-            targetState.isPopping = false;
             return { success: false, error: "Station Empty" };
         }
+
     } catch (e) {
-        console.error("Pop Error:", e);
-        targetState.isPopping = false;
+        console.error("🔥 POP ERROR:", e);
         return { success: false, error: e.message };
+    } finally {
+        targetState.isPopping = false;
     }
 };
 

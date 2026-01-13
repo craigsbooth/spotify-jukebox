@@ -4,6 +4,7 @@ import { styles } from '../dashboard_ui';
 interface PanelProps { state: any; handlers: any; }
 
 export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
+    // 1. Local State for Tokens
     const [localTokens, setLocalTokens] = React.useState({
         tokensEnabled: state.tokensEnabled,
         tokensInitial: state.tokensInitial,
@@ -11,12 +12,13 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
         tokensMax: state.tokensMax
     });
 
-    // RESTORED: Identity State
+    // 2. Local State for Identity & Sync
     const [identityName, setIdentityName] = React.useState(state.partyName || 'The Pinfold');
-    
-    // NEW: Sync Offset State
     const [syncOffset, setSyncOffset] = React.useState(state.lyricsDelayMs || 0);
 
+    // --- CRITICAL FIX: Split useEffects to stop text inputs resetting ---
+
+    // A. Sync Tokens (Only when token settings change)
     React.useEffect(() => {
         setLocalTokens({
             tokensEnabled: state.tokensEnabled,
@@ -24,9 +26,18 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
             tokensPerHour: state.tokensPerHour,
             tokensMax: state.tokensMax
         });
+    }, [state.tokensEnabled, state.tokensInitial, state.tokensPerHour, state.tokensMax]);
+
+    // B. Sync Party Name (Only when the server name actually changes)
+    React.useEffect(() => {
         if (state.partyName) setIdentityName(state.partyName);
+    }, [state.partyName]); 
+
+    // C. Sync Delay (Only when delay settings change)
+    React.useEffect(() => {
         if (state.lyricsDelayMs !== undefined) setSyncOffset(state.lyricsDelayMs);
-    }, [state]);
+    }, [state.lyricsDelayMs]);
+
 
     // HANDLER: Adjust Sync
     const adjustSync = async (delta: number, absolute: boolean = false) => {
@@ -47,7 +58,7 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
     return (
         <section style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
             
-            {/* RESTORED: STATION IDENTITY CARD */}
+            {/* STATION IDENTITY */}
             <div style={styles.configCard}>
                 <span style={styles.label}>STATION IDENTITY</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -66,7 +77,7 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                 </div>
             </div>
 
-            {/* 3A. KARAOKE MASTER CONTROL */}
+            {/* KARAOKE MASTER CONTROL */}
             <div style={styles.configCard}>
                 <span style={styles.label}>Karaoke Mode</span>
                 <button 
@@ -77,16 +88,17 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                 </button>
             </div>
 
-            {/* 3C. STATION CONFIGURATION */}
+            {/* STATION CONFIG */}
             <div style={styles.configCard}>
                 <span style={styles.label}>STATION CONFIG</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    
+                    {/* View Mode Selectors */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {['standard', 'monitor', 'carousel'].map(m => ( 
                             <button key={m} style={{ ...styles.btn(state.viewMode === m), fontSize: '0.7rem', padding: '10px' }} onClick={() => handlers.changeView(m)}>{m.toUpperCase()}</button> 
                         ))}
                     </div>
-                    <button style={{ ...styles.outlineBtn, width: '100%', height: '40px', fontSize: '0.8rem' }} onClick={() => window.open('/projector', '_blank')}>LAUNCH PROJECTOR 📺</button>
                     
                     {/* LYRICS & SYNC CONTROL */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
@@ -98,7 +110,7 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                             {state.showLyrics ? 'DISABLE' : 'ENABLE'}
                         </button>
 
-                        {/* --- NEW: SYNC NUDGE CONTROLS --- */}
+                        {/* SYNC NUDGE CONTROLS */}
                         {state.showLyrics && (
                             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -122,7 +134,7 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                 </div>
             </div>
 
-            {/* 3D. TOKEN ECONOMY */}
+            {/* TOKEN ECONOMY */}
             <div style={styles.card}>
                 <span style={styles.label}>TOKEN ECONOMY</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -147,7 +159,7 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                 </div>
             </div>
 
-            {/* 3E. FALLBACK POOL */}
+            {/* FALLBACK POOL */}
             <div style={styles.card}>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <span style={styles.label}>FALLBACK POOL</span>

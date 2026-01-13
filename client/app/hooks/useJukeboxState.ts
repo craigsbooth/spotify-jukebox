@@ -31,6 +31,11 @@ export const useJukeboxState = (isAuthorized: boolean) => {
   const [playlistResults, setPlaylistResults] = useState<any[]>([]);
   const [fallbackName, setFallbackName] = useState('Viva Latino');
   
+  // --- NEW: HOST TRACK SEARCH ---
+  const [hostSearchQuery, setHostSearchQuery] = useState('');
+  const [hostSearchResults, setHostSearchResults] = useState<any[]>([]);
+  // ------------------------------
+
   const lastActionRef = useRef<number>(0);
   const pendingChanges = useRef<{ [key: string]: number }>({});
   const isStable = (key: string) => (Date.now() - (pendingChanges.current[key] || 0)) > 4000;
@@ -104,6 +109,8 @@ export const useJukeboxState = (isAuthorized: boolean) => {
     playlistQuery, setPlaylistQuery,
     playlistResults, setPlaylistResults,
     fallbackName, setFallbackName,
+    hostSearchQuery, setHostSearchQuery,      // <--- Export
+    hostSearchResults, setHostSearchResults,  // <--- Export
     pendingChanges, lastActionRef, fetchMetadata
   };
 };

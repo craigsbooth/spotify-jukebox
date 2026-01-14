@@ -87,7 +87,7 @@ router.post('/queue', (req, res) => {
 /**
  * 2.5. VOTE (NEW: DOWNVOTE / VETO)
  * Handles explicit Downvotes and Veto logic.
- * NOW WITH TOKEN ECONOMY CHECK
+ * NOW WITH FALLBACK TRACK SUPPORT
  */
 router.post('/vote', (req, res) => {
     const { uri, guestId, type } = req.body; // type: 'UP' or 'DOWN'
@@ -99,60 +99,86 @@ router.post('/vote', (req, res) => {
         return res.status(403).json({ success: false, message: "Not enough tokens!", balance: tokenCheck.balance });
     }
 
+    // 2. FIND TRACK (Check Queue FIRST, then Shuffle Bag)
     const trackIndex = state.partyQueue.findIndex(t => t.uri === uri);
-    if (trackIndex === -1) return res.status(404).json({ error: "Track not found" });
 
-    const track = state.partyQueue[trackIndex];
+    // SCENARIO A: It is a Real Track (In Priority Queue)
+    if (trackIndex !== -1) {
+        const track = state.partyQueue[trackIndex];
 
-    // Initialize arrays if missing
-    if (!track.votedBy) track.votedBy = [];
-    if (!track.downvotedBy) track.downvotedBy = [];
+        // Initialize arrays if missing
+        if (!track.votedBy) track.votedBy = [];
+        if (!track.downvotedBy) track.downvotedBy = [];
 
-    // Check if user has already interacted
-    const hasUpvoted = track.votedBy.includes(guestId);
-    const hasDownvoted = track.downvotedBy.includes(guestId);
+        // Check interaction
+        const hasUpvoted = track.votedBy.includes(guestId);
+        const hasDownvoted = track.downvotedBy.includes(guestId);
 
-    if (hasUpvoted || hasDownvoted) {
-        // Refund the token if the vote failed logically
-        // (Optional, but friendly UI typically prevents this anyway)
-        return res.json({ success: false, message: "You have already voted on this track." });
+        if (hasUpvoted || hasDownvoted) {
+            return res.json({ success: false, message: "You have already voted on this track." });
+        }
+
+        if (voteType === 'DOWN') {
+            track.downvotedBy.push(guestId);
+            console.log(`👎 Downvote: ${track.name} by ${guestId}`);
+        } else {
+            track.votedBy.push(guestId);
+            console.log(`👍 Upvote: ${track.name} by ${guestId}`);
+        }
+
+        // Recalculate & Check Rules
+        const upvotes = track.votedBy.length;
+        const downvotes = track.downvotedBy.length;
+        track.votes = upvotes - downvotes;
+
+        let removed = false;
+
+        // Rule: Fallback/System Track Removal (0 Upvotes, 1 Downvote)
+        if (upvotes === 0 && downvotes >= 1) {
+            state.partyQueue.splice(trackIndex, 1);
+            console.log(`🗑️ Fallback Veto: ${track.name} removed (0 up, 1 down).`);
+            removed = true;
+        }
+        // Rule: Community Veto (Downvotes >= Upvotes + 3)
+        else if (downvotes >= (upvotes + 3)) {
+            state.partyQueue.splice(trackIndex, 1);
+            console.log(`🚫 Community Veto: ${track.name} removed (${downvotes} down vs ${upvotes} up).`);
+            removed = true;
+        }
+        else {
+            state.partyQueue.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        }
+
+        sm.saveSettings();
+        return res.json({ success: true, votes: track.votes, removed, tokens: tokenCheck.balance });
     }
 
-    if (voteType === 'DOWN') {
-        track.downvotedBy.push(guestId);
-        console.log(`👎 Downvote: ${track.name} by ${guestId}`);
-    } else {
-        track.votedBy.push(guestId);
-        console.log(`👍 Upvote: ${track.name} by ${guestId}`);
+    // SCENARIO B: It is a Fallback/Suggestion (In Shuffle Bag)
+    // The user saw a suggestion and clicked "Downvote" to nuke it.
+    const bagIndex = state.shuffleBag.findIndex(t => t.uri === uri);
+    
+    if (bagIndex !== -1) {
+        if (voteType === 'DOWN') {
+            // "if a track has 0 votes (fallback track) and 1 person down votes it, it can be removed"
+            const removedTrack = state.shuffleBag.splice(bagIndex, 1)[0];
+            console.log(`🗑️ Fallback Suggestion Vetoed: ${removedTrack.name}`);
+            sm.saveSettings();
+            
+            return res.json({ 
+                success: true, 
+                removed: true, 
+                message: "Suggestion removed from pool", 
+                tokens: tokenCheck.balance 
+            });
+        } else {
+            // If they tried to UPVOTE via this endpoint, we ideally shouldn't be here (client uses /queue for Adds)
+            // But we accept it gracefully or tell them to use the Add button.
+            return res.json({ success: false, message: "Use the + button to add suggestions." });
+        }
     }
 
-    // --- RECALCULATE & CHECK RULES ---
-    const upvotes = track.votedBy.length;
-    const downvotes = track.downvotedBy.length;
-    track.votes = upvotes - downvotes;
-
-    let removed = false;
-
-    // RULE A: Fallback/System Track Removal (0 Upvotes, 1 Downvote)
-    if (upvotes === 0 && downvotes >= 1) {
-        state.partyQueue.splice(trackIndex, 1);
-        console.log(`🗑️ Fallback Veto: ${track.name} removed (0 up, 1 down).`);
-        removed = true;
-    }
-    // RULE B: Community Veto (Downvotes >= Upvotes + 3)
-    else if (downvotes >= (upvotes + 3)) {
-        state.partyQueue.splice(trackIndex, 1);
-        console.log(`🚫 Community Veto: ${track.name} removed (${downvotes} down vs ${upvotes} up).`);
-        removed = true;
-    }
-    else {
-        // Only re-sort if not removed
-        state.partyQueue.sort((a, b) => (b.votes || 0) - (a.votes || 0));
-    }
-
-    sm.saveSettings();
-    // Return token balance so frontend can update
-    res.json({ success: true, votes: track.votes, removed, tokens: tokenCheck.balance });
+    // SCENARIO C: Not found anywhere
+    return res.status(404).json({ error: "Track not found" });
 });
 
 /**

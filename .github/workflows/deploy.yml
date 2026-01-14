@@ -1,0 +1,110 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Read Version
+      id: version
+      run: |
+        if [ -f version.txt ]; then
+          echo "APP_VERSION=$(cat version.txt | xargs)" >> $GITHUB_ENV
+        else
+          echo "APP_VERSION=3.0.0-ci" >> $GITHUB_ENV
+        fi
+
+    - name: Install & Build Frontend
+      env:
+        NEXT_PUBLIC_APP_VERSION: ${{ env.APP_VERSION }}
+      run: |
+        cd client
+        # Clean install for stability
+        npm ci --legacy-peer-deps
+        # Build Next.js
+        npm run build
+
+    - name: Prepare Deployment Package
+      run: |
+        mkdir -p deploy/client
+        mkdir -p deploy/routes
+        
+        # Copy Backend Files
+        cp *.js package.json version.txt deploy/
+        cp -r routes/* deploy/routes/ || true
+        
+        # Copy Frontend Build Artifacts
+        cp -r client/.next deploy/client/
+        cp -r client/public deploy/client/
+        cp client/package.json deploy/client/
+        cp client/next.config.ts deploy/client/
+        
+        # Create Version Env for server
+        echo "APP_VERSION=${{ env.APP_VERSION }}" > deploy/.version_env
+
+    - name: Zip Artifact
+      run: |
+        cd deploy
+        zip -r ../jukebox_deploy.zip .
+
+    - name: Copy Files to Server (SCP)
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.AWS_HOST }}
+        username: ${{ secrets.AWS_USER }}
+        key: ${{ secrets.AWS_KEY }}
+        source: "jukebox_deploy.zip"
+        target: "/home/ubuntu/jukebox"
+
+    - name: Execute Remote Deployment (SSH)
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_HOST }}
+        username: ${{ secrets.AWS_USER }}
+        key: ${{ secrets.AWS_KEY }}
+        script: |
+          cd /home/ubuntu/jukebox
+          
+          # 1. Stop Services
+          pm2 stop all || true
+          
+          # 2. Unzip (Protect .env)
+          unzip -o jukebox_deploy.zip -x .env
+          
+          # 3. Update APP_VERSION in .env
+          if grep -q 'APP_VERSION=' .env; then
+            sed -i 's/^APP_VERSION=.*/APP_VERSION=${{ env.APP_VERSION }}/' .env
+          else
+            echo "APP_VERSION=${{ env.APP_VERSION }}" >> .env
+          fi
+          
+          # 4. Cleanup Artifacts
+          rm jukebox_deploy.zip .version_env
+          
+          # 5. Install Backend Dependencies
+          npm install --omit=dev --legacy-peer-deps
+          
+          # 6. Restart Backend
+          pm2 delete backend || true
+          pm2 start server.js --name "backend"
+          
+          # 7. Install Frontend Dependencies & Restart
+          cd client
+          npm install --omit=dev --legacy-peer-deps
+          pm2 delete frontend || true
+          pm2 start npm --name "frontend" -- start
+          
+          # 8. Save State
+          pm2 save

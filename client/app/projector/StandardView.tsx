@@ -8,7 +8,6 @@ interface Props {
   showUpNext: boolean;
   showLyrics: boolean;
   syncedLyrics: LyricLine[]; 
-  // removed plainLyrics property completely
   activeLineIndex: number;
   progress: number;
   currentArt: string;
@@ -22,6 +21,20 @@ export const StandardView = ({
 }: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [smoothProgress, setSmoothProgress] = useState(0);
+
+  // Inject animations for the new visuals
+  const visualKeyframes = `
+    @keyframes pulse-art {
+      0% { transform: scale(1); opacity: 1; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+      50% { transform: scale(1.02); opacity: 0.9; box-shadow: 0 30px 60px rgba(29, 185, 84, 0.3); }
+      100% { transform: scale(1); opacity: 1; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    }
+    @keyframes equalizer-bar {
+      0% { height: 10px; }
+      50% { height: 35px; }
+      100% { height: 10px; }
+    }
+  `;
 
   useEffect(() => {
     const start = nowPlaying?.startedAt;
@@ -70,14 +83,20 @@ export const StandardView = ({
   })();
 
   const shouldShowLyrics = showLyrics && syncedLyrics && syncedLyrics.length > 0;
+  
+  // Future-proofing: Check if the track has a Spotify Canvas video URL
+  const canvasUrl = (nowPlaying as any)?.canvasUrl;
 
   return (
     <div style={styles.standardContainer}>
+      <style dangerouslySetInnerHTML={{__html: visualKeyframes}} />
+
       <div style={{
         ...styles.upNextPosition, 
         transition: 'transform 0.5s', 
         transform: showUpNext ? 'translateY(0)' : 'translateY(-100px)',
-        opacity: showUpNext ? 1 : 0
+        opacity: showUpNext ? 1 : 0,
+        zIndex: 20
       }}>
         {upNextTrack && (
           <div className="pill" style={styles.upNextPill}>
@@ -95,8 +114,73 @@ export const StandardView = ({
         )}
       </div>
       
+      {/* 1. VISUALS MODE (Center Stage when Lyrics are OFF) */}
+      {!shouldShowLyrics && (
+          <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              top: 0, left: 0,
+              zIndex: 0
+          }}>
+              {canvasUrl ? (
+                  <video 
+                     src={canvasUrl}
+                     autoPlay loop muted playsInline
+                     style={{
+                         height: '60vh',
+                         aspectRatio: '9/16',
+                         borderRadius: '16px',
+                         boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+                         objectFit: 'cover'
+                     }}
+                  />
+              ) : (
+                  <div style={{ position: 'relative' }}>
+                      <img 
+                          src={currentArt} 
+                          alt="Album Art"
+                          style={{
+                              height: '50vh',
+                              width: '50vh',
+                              borderRadius: '12px',
+                              objectFit: 'cover',
+                              animation: 'pulse-art 6s infinite ease-in-out'
+                          }}
+                      />
+                      {/* Equalizer Overlay */}
+                      <div style={{
+                          position: 'absolute',
+                          bottom: '-40px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          display: 'flex',
+                          gap: '6px',
+                          alignItems: 'flex-end',
+                          height: '40px'
+                      }}>
+                          {[0, 1, 2, 3, 4].map((i) => (
+                              <div key={i} style={{
+                                  width: '8px',
+                                  background: '#1DB954',
+                                  borderRadius: '4px',
+                                  animation: `equalizer-bar 1.2s infinite ease-in-out ${i * 0.15}s`
+                              }} />
+                          ))}
+                      </div>
+                  </div>
+              )}
+          </div>
+      )}
+
+      {/* 2. LYRICS MODE */}
       {shouldShowLyrics && (
-        <div ref={scrollContainerRef} className="no-scrollbar" style={styles.lyricsWindow}>
+        <div ref={scrollContainerRef} className="no-scrollbar" style={{...styles.lyricsWindow, zIndex: 10}}>
           <div style={{ height: '20vh' }} /> 
           {syncedLyrics.map((l, i) => (
             <div key={i} id={`line-${i}`} 
@@ -112,9 +196,15 @@ export const StandardView = ({
         </div>
       )}
 
-      <div style={styles.standardFooter}>
+      <div style={{...styles.standardFooter, zIndex: 20}}>
         <div style={styles.footerFlex}>
-          <img src={currentArt} className="reflect-image" style={styles.footerArt} />
+          {/* Footer Art also supports Video now */}
+          {canvasUrl ? (
+             <video src={canvasUrl} autoPlay loop muted style={{...styles.footerArt, objectFit: 'cover'}} />
+          ) : (
+             <img src={currentArt} className="reflect-image" style={styles.footerArt} />
+          )}
+          
           <div>
             <h1 style={styles.footerTitle}>{nowPlaying?.displayName ?? nowPlaying?.name}</h1>
             <h3 style={styles.footerArtist}>{nowPlaying?.displayArtist ?? nowPlaying?.artist}</h3>

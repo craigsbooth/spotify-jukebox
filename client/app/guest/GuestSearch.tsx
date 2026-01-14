@@ -16,10 +16,12 @@ interface SearchProps {
   nextTokenMinutes?: number; 
   handleSearch: (q: string) => void;
   handleRequest: (track: any) => void;
+  // --- NEW: Veto Handler ---
+  handleVote?: (track: any, type: 'UP' | 'DOWN') => void;
 }
 
 export const GuestSearch = (props: SearchProps) => {
-  const { searchQuery, results, queue, karaokeQueue, isKaraokeMode, showMetadata, votedUris, tokensEnabled, tokenBalance, nextTokenMinutes } = props;
+  const { searchQuery, results, queue, karaokeQueue, isKaraokeMode, showMetadata, votedUris, tokensEnabled, tokenBalance, nextTokenMinutes, handleVote } = props;
 
   // Global check: Is the user completely out of tokens?
   const isWalletEmpty = tokensEnabled && tokenBalance <= 0;
@@ -117,6 +119,13 @@ export const GuestSearch = (props: SearchProps) => {
                 rowStyle.borderLeftStyle = 'solid';
             }
 
+            // --- VETO BUTTON LOGIC ---
+            // Only show Veto if:
+            // 1. We are in the Queue View (not Search, not Karaoke)
+            // 2. The user hasn't voted yet
+            // 3. The function exists
+            const showVeto = !searchQuery && !isKaraokeMode && !hasVoted && handleVote;
+
             return (
                 <div key={`${trackUri}-${i}`} style={rowStyle}>
                     <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flex: 1, overflow: 'hidden' }}>
@@ -160,18 +169,44 @@ export const GuestSearch = (props: SearchProps) => {
                         </div>
                     </div>
                     
-                    <button 
-                        onClick={() => props.handleRequest(t)} 
-                        disabled={isDisabled}
-                        style={{
-                            ...styles.voteBtn(hasVoted), 
-                            ...btnStyle,                
-                            minWidth: '80px',            
-                            padding: '0 12px'
-                        }}
-                    >
-                        {btnText}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {/* VETO BUTTON */}
+                        {showVeto && (
+                            <button
+                                onClick={() => handleVote(t, 'DOWN')}
+                                disabled={isDisabled}
+                                style={{
+                                    background: 'rgba(255, 50, 50, 0.1)',
+                                    border: '1px solid rgba(255, 50, 50, 0.3)',
+                                    color: '#ff5555',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                    fontSize: '0.8rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                👎
+                            </button>
+                        )}
+
+                        <button 
+                            onClick={() => props.handleRequest(t)} 
+                            disabled={isDisabled}
+                            style={{
+                                ...styles.voteBtn(hasVoted), 
+                                ...btnStyle,                
+                                minWidth: '80px',            
+                                padding: '0 12px'
+                            }}
+                        >
+                            {btnText}
+                        </button>
+                    </div>
                 </div>
             );
         })}

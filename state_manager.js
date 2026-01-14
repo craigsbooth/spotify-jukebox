@@ -44,12 +44,19 @@ const stateManager = {
             // Fix Vote Counts & Missing Fields
             state.partyQueue.forEach(track => {
                 if (!Array.isArray(track.votedBy)) track.votedBy = [];
+                
+                // NEW: Integrity check for downvotes
+                if (!Array.isArray(track.downvotedBy)) track.downvotedBy = [];
 
-                // Ensure vote count is at least the number of voters
-                if (track.votedBy.length > (track.votes || 0)) {
-                    track.votes = track.votedBy.length;
+                // NEW: Calculate Net Score (Upvotes - Downvotes)
+                const netScore = track.votedBy.length - track.downvotedBy.length;
+
+                // Sync the 'votes' property with the actual arrays
+                if (track.votes !== netScore) {
+                    track.votes = netScore;
                     stats.voteFixes++;
                 }
+                
                 // Ensure valid fallback flags
                 if (track.isFallback === undefined) track.isFallback = false;
             });

@@ -17,6 +17,7 @@ const path = require('path');
 const spotifyApi = require('./spotify_instance');
 const spotifyCtrl = require('./spotify_ctrl');
 const automation = require('./automation'); // <--- THE NEW WATCHDOG
+const state = require('./state'); // <--- NEW: Import State for Persistence
 const pkg = require('./package.json');
 
 const app = express();
@@ -48,6 +49,28 @@ app.get('/api/version', (req, res) => {
  */
 app.listen(port, async () => {
     console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port}`);
+
+    // --- NEW: CRASH RECOVERY (PERSISTENCE) ---
+    const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+    if (fs.existsSync(SETTINGS_FILE)) {
+        try {
+            const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
+            const savedData = JSON.parse(raw);
+            
+            // 1. Restore plain data (Queues, Configs, Tokens)
+            Object.assign(state, savedData);
+            
+            // 2. Hydrate Complex Objects (Sets)
+            if (Array.isArray(state.playedHistory)) {
+                state.playedHistory = new Set(state.playedHistory);
+            }
+            
+            console.log(`💾 Persistence: Restored ${state.partyQueue?.length || 0} tracks and ${state.karaokeQueue?.length || 0} karaoke singers.`);
+        } catch (e) {
+            console.error("⚠️ Persistence: Failed to load settings.json", e.message);
+        }
+    }
+    // ------------------------------------------
 
     // --- A. START THE AUTOMATION WATCHDOG ---
     try {

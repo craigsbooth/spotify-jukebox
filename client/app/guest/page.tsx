@@ -71,6 +71,8 @@ export default function GuestPage() {
         // 2. Add votes if the server explicitly says we voted
         queue.forEach(t => {
             if (t.votedBy?.includes(guestId)) nextSet.add(t.uri);
+            // NEW: Also check downvotes to disable buttons
+            if (t.downvotedBy?.includes(guestId)) nextSet.add(t.uri);
         });
 
         return Array.from(nextSet);
@@ -259,6 +261,28 @@ export default function GuestPage() {
     }
   };
 
+  // --- NEW: Handle Veto / Downvote ---
+  const handleVote = async (track: any, type: 'UP' | 'DOWN') => {
+    if (!guestId) return;
+    
+    const res = await fetch(`${API_URL}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            uri: track.uri || track.id, 
+            guestId, 
+            type 
+        })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        // Mark as voted so buttons disable
+        setVotedUris(prev => [...prev, track.uri || track.id]);
+        setTimeout(refreshData, 200);
+    }
+  };
+
   const triggerReaction = (emoji: string) => {
     const id = Date.now();
     setActiveReactions(prev => [...prev, { id, emoji, left: Math.random() * 80 + 10 }]);
@@ -364,6 +388,8 @@ export default function GuestPage() {
         nextTokenMinutes={nextTokenMinutes}
         handleSearch={handleSearch}
         handleRequest={handleRequest}
+        // --- PASSING DOWN THE NEW HANDLER ---
+        handleVote={handleVote}
       />
 
       <div style={styles.reactionBar}>

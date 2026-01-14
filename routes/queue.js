@@ -34,8 +34,8 @@ router.get('/queue', (req, res) => {
 });
 
 /**
- * 2. ADD / VOTE
- * Handles token economy and prevents auto-sort conflicts with manual reordering.
+ * 2. ADD / VOTE (Legacy + Token Economy)
+ * Handles "Add Track" and "Upvote" actions with token spending.
  */
 router.post('/queue', (req, res) => {
     const { uri, name, artist, albumArt, album, guestId } = req.body;
@@ -52,9 +52,16 @@ router.post('/queue', (req, res) => {
     if (existingIndex !== -1) {
         // Increment votes but DO NOT re-sort (preserves manual DJ order)
         const track = state.partyQueue[existingIndex];
-        track.votes = (track.votes || 0) + 1;
+        
+        // Ensure arrays exist
         if (!track.votedBy) track.votedBy = [];
-        track.votedBy.push(guestId);
+        if (!track.downvotedBy) track.downvotedBy = [];
+        
+        if (!track.votedBy.includes(guestId)) {
+            track.votedBy.push(guestId);
+            // Recalculate Score
+            track.votes = track.votedBy.length - track.downvotedBy.length;
+        }
 
         sm.saveSettings();
         return res.json({ success: true, message: "Upvoted!", tokens: tokenCheck.balance });
@@ -67,12 +74,61 @@ router.post('/queue', (req, res) => {
             addedBy: currentGuestName,
             addedByGuestId: guestId,
             votedBy: [guestId],
+            downvotedBy: [], // NEW: Initialize Downvotes
             isFallback: false 
         });
         
         sm.saveSettings();
         return res.json({ success: true, message: "Added!", tokens: tokenCheck.balance });
     }
+});
+
+/**
+ * 2.5. VOTE (NEW: DOWNVOTE / VETO)
+ * Handles explicit Downvotes and Veto logic.
+ */
+router.post('/vote', (req, res) => {
+    const { uri, guestId, type } = req.body; // type: 'UP' or 'DOWN'
+    const voteType = type || 'UP'; 
+
+    const trackIndex = state.partyQueue.findIndex(t => t.uri === uri);
+    if (trackIndex === -1) return res.status(404).json({ error: "Track not found" });
+
+    const track = state.partyQueue[trackIndex];
+
+    // Initialize arrays if missing
+    if (!track.votedBy) track.votedBy = [];
+    if (!track.downvotedBy) track.downvotedBy = [];
+
+    // Check if user has already interacted
+    const hasUpvoted = track.votedBy.includes(guestId);
+    const hasDownvoted = track.downvotedBy.includes(guestId);
+
+    if (hasUpvoted || hasDownvoted) {
+        return res.json({ success: false, message: "You have already voted on this track." });
+    }
+
+    if (voteType === 'DOWN') {
+        track.downvotedBy.push(guestId);
+        console.log(`👎 Downvote: ${track.name} by ${guestId}`);
+    } else {
+        track.votedBy.push(guestId);
+        console.log(`👍 Upvote: ${track.name} by ${guestId}`);
+    }
+
+    // Recalculate Net Score
+    track.votes = track.votedBy.length - track.downvotedBy.length;
+
+    // VETO CHECK: If score drops to -3, delete the track
+    if (track.votes <= -3) {
+        state.partyQueue.splice(trackIndex, 1);
+        console.log(`🚫 VETOED: ${track.name} was removed by community vote.`);
+        sm.saveSettings();
+        return res.json({ success: true, message: "Track Vetoed!", vetoed: true });
+    }
+
+    sm.saveSettings();
+    res.json({ success: true, votes: track.votes });
 });
 
 /**

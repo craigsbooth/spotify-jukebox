@@ -52,7 +52,9 @@ export default function ProjectorPage() {
   const [lyricsDelayMs, setLyricsDelayMs] = useState(0);
 
   const eventSourceRef = useRef<EventSource | null>(null);
-  const prevUriRef = useRef<string | null>(null);
+  
+  // FIX 1: Use a Ref to hold the *full* current track object for history archival
+  const nowPlayingRef = useRef<Track | null>(null);
 
   const nextUpItem = (() => {
       if (isKaraokeMode) return karaokeQueue.length > 0 ? karaokeQueue[0] : null;
@@ -82,8 +84,11 @@ export default function ProjectorPage() {
             
             setQueue(await qRes.json());
             const curr = await cRes.json();
+            
             setNowPlaying(curr);
-            if (curr?.name) setHistory([curr]);
+            // FIX 2: Initialize the ref, but DO NOT add current track to history yet
+            nowPlayingRef.current = curr; 
+            // Removed: if (curr?.name) setHistory([curr]);
 
             if (curr?.lyrics?.synced) {
                 setSyncedLyrics(parseLrcString(curr.lyrics.synced));
@@ -128,7 +133,10 @@ export default function ProjectorPage() {
                     } else {
                         setSyncedLyrics([]);
                     }
-                    if (payload.currentTrack) setNowPlaying(payload.currentTrack);
+                    if (payload.currentTrack) {
+                        setNowPlaying(payload.currentTrack);
+                        nowPlayingRef.current = payload.currentTrack;
+                    }
                 }
 
                 if (type === 'QUEUE_UPDATE') setQueue(payload);
@@ -136,13 +144,19 @@ export default function ProjectorPage() {
                 
                 if (type === 'CURRENT_TRACK') {
                     const newTrack = payload;
+                    
+                    // FIX 3: Detect change using Ref, archive OLD track to history
+                    if (newTrack && newTrack.uri !== nowPlayingRef.current?.uri) {
+                        if (nowPlayingRef.current) {
+                            const oldTrack = nowPlayingRef.current;
+                            setHistory(prev => [...prev, oldTrack].slice(-5));
+                        }
+                        nowPlayingRef.current = newTrack;
+                    }
+
                     setNowPlaying(newTrack);
                     setSyncedLyrics([]);
                     setActiveLineIndex(-1);
-                    if (newTrack && newTrack.uri !== prevUriRef.current) {
-                        setHistory(prev => [...prev, newTrack].slice(-5));
-                        prevUriRef.current = newTrack.uri;
-                    }
                 }
                 
                 if (type === 'THEME_UPDATE') {
@@ -246,14 +260,13 @@ export default function ProjectorPage() {
              activeLineIndex={activeLineIndex}
              progress={progress}
              currentArt={currentArt}
-             // NOTE: plainLyrics is removed from props here because StandardView doesn't need it anymore
           />
         )}
         {(viewMode === 'monitor' || isKaraokeMode) && (
            <MonitorView showUpNext={showUpNext} nextUpItem={nextUpItem} isKaraokeMode={isKaraokeMode} nowPlaying={nowPlaying} progress={progress} />
         )}
         {viewMode === 'carousel' && !isKaraokeMode && (
-           <CarouselView history={history} nowPlaying={nowPlaying} queue={queue} progress={progress} />
+           <CarouselView history={history} nowPlaying={nowPlaying} queue={queue} progress={progress} partyName={partyName} />
         )}
       </div>
       {showDebug && (<div style={styles.debugOverlay}>🛠️ Q: {queue.length}</div>)}

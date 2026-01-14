@@ -7,13 +7,16 @@ interface Props {
   nowPlaying: Track | null;
   queue: Track[];
   progress: number;
+  partyName: string;
 }
 
 const RECORD_PLACEHOLDER = "https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&q=80&w=1000";
 
-export const CarouselView = ({ history, nowPlaying, queue, progress }: Props) => {
+export const CarouselView = ({ history, nowPlaying, queue, progress, partyName }: Props) => {
   return (
     <div style={styles.carouselPerspective}>
+      <div style={styles.brandingHeader}><h1>{partyName || 'The Pinfold'}</h1></div>
+      
       <div style={styles.carouselContainer}>
         {[...history.slice(-3), nowPlaying, ...queue.slice(0, 5)].map((track, index) => {
           if (!track) return null;

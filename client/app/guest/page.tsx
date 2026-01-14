@@ -14,7 +14,7 @@ export default function GuestPage() {
   const [results, setResults] = useState<any[]>([]);
   const [queue, setQueue] = useState<any[]>([]);
   const [votedUris, setVotedUris] = useState<string[]>([]);
-  const [partyName, setPartyName] = useState('The Pinfold');
+  const [partyName, setPartyName] = useState('Jukbox');
   const [isKaraokeMode, setIsKaraokeMode] = useState(false);
   const [karaokeQueue, setKaraokeQueue] = useState<any[]>([]);
   const [tokensEnabled, setTokensEnabled] = useState(false);
@@ -131,6 +131,7 @@ export default function GuestPage() {
                     }
                 }
 
+                if (type === 'NAME_UPDATE') setPartyName(payload.name);
                 if (type === 'THEME_UPDATE') {
                       if (payload.isKaraokeMode !== undefined) setIsKaraokeMode(!!payload.isKaraokeMode);
                       if (payload.karaokeQueue) setKaraokeQueue(payload.karaokeQueue);
@@ -176,6 +177,7 @@ export default function GuestPage() {
     try { connectSSE(); } catch (e) {}
 
     // C. Polling
+    refreshData(); // Initial Fetch
     const interval = setInterval(refreshData, 10000); 
 
     return () => {

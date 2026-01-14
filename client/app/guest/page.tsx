@@ -298,6 +298,8 @@ export default function GuestPage() {
             </p>
             <input 
                 type="text" 
+                name="guest_nickname"
+                autoComplete="nickname"
                 placeholder="Your Name (e.g. Craig)" 
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}

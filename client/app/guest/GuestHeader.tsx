@@ -148,6 +148,8 @@ export const GuestHeader = (props: HeaderProps) => {
             {props.isEditingName ? (
                 <form onSubmit={(e) => { e.preventDefault(); props.handleNameUpdate(e); }}>
                     <input 
+                        name="guest_nickname"
+                        autoComplete="nickname"
                         style={{...styles.inputField, padding: '8px 15px', width: '90px', marginBottom: 0, fontSize: '0.8rem', borderRadius: '30px'}}
                         value={props.guestName}
                         autoFocus

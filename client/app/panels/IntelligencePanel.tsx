@@ -93,10 +93,16 @@ export const IntelligencePanel = ({ state, handlers }: PanelProps) => {
                 <span style={styles.label}>STATION CONFIG</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     
-                    {/* View Mode Selectors */}
+                    {/* View Mode Launchers (Updated to Open New Pages) */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {['standard', 'monitor', 'carousel'].map(m => ( 
-                            <button key={m} style={{ ...styles.btn(state.viewMode === m), fontSize: '0.7rem', padding: '10px' }} onClick={() => handlers.changeView(m)}>{m.toUpperCase()}</button> 
+                            <button 
+                                key={m} 
+                                style={{ ...styles.outlineBtn, fontSize: '0.7rem', padding: '10px', textAlign: 'center' }} 
+                                onClick={() => window.open(`/projector/${m}`, '_blank')}
+                            >
+                                ↗ {m.toUpperCase()}
+                            </button> 
                         ))}
                     </div>
                     

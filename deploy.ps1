@@ -36,6 +36,13 @@ Write-Host "--- (Previous was: $RawVersion) ---" -ForegroundColor DarkGray
 # --- 1. PREPARE AND BUILD (LOCAL) ---
 Write-Host "--- Building Frontend Locally ---" -ForegroundColor Cyan
 Set-Location "$LocalProject\client"
+
+# FIX: Clear Next.js cache to prevent case-sensitivity build errors
+if (Test-Path ".next") { 
+    Write-Host "Clearing .next cache..." -ForegroundColor Gray
+    Remove-Item -Recurse -Force ".next" 
+}
+
 $env:NEXT_PUBLIC_APP_VERSION = $NewVersion
 npm run build
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed!"; pause; exit }

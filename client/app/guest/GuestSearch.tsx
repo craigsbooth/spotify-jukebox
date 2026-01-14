@@ -28,6 +28,8 @@ export const GuestSearch = (props: SearchProps) => {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={styles.searchSection}>
         <input 
+            name="search_query"
+            autoComplete="off"
             style={styles.inputField} 
             placeholder={isKaraokeMode ? "Search for Karaoke songs..." : "Tap to search music..."} 
             value={searchQuery} 
@@ -163,7 +165,7 @@ export const GuestSearch = (props: SearchProps) => {
                         disabled={isDisabled}
                         style={{
                             ...styles.voteBtn(hasVoted), 
-                            ...btnStyle,                 
+                            ...btnStyle,                
                             minWidth: '80px',            
                             padding: '0 12px'
                         }}

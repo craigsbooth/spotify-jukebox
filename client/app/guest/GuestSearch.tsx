@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { styles } from './guest_ui'; 
 
 interface SearchProps {
@@ -25,6 +25,18 @@ export const GuestSearch = (props: SearchProps) => {
 
   // Global check: Is the user completely out of tokens?
   const isWalletEmpty = tokensEnabled && tokenBalance <= 0;
+
+  // Local state for "Optimistic" feedback (buttons disable instantly on click)
+  const [localProcessing, setLocalProcessing] = useState<Set<string>>(new Set());
+
+  const onVoteClick = (track: any, type: 'UP' | 'DOWN') => {
+      const uri = track.uri || track.id;
+      setLocalProcessing(prev => new Set(prev).add(uri));
+      
+      // Call parent handler
+      if (type === 'DOWN' && handleVote) handleVote(track, 'DOWN');
+      else if (type === 'UP') props.handleRequest(track);
+  };
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -72,6 +84,7 @@ export const GuestSearch = (props: SearchProps) => {
         {(searchQuery ? results : (isKaraokeMode ? karaokeQueue : queue)).map((t, i) => {
             const trackUri = t.uri || t.id;
             const hasVoted = votedUris.includes(trackUri);
+            const isProcessing = localProcessing.has(trackUri);
             
             // Priority logic for border styling
             const isPriority = !t.isFallback; 
@@ -84,7 +97,8 @@ export const GuestSearch = (props: SearchProps) => {
             let btnText = '';
             let btnStyle = {};
             
-            const isDisabled = hasVoted || (!hasVoted && isWalletEmpty);
+            // Disable if already voted OR processing a click
+            const isDisabled = hasVoted || isProcessing || (!hasVoted && isWalletEmpty);
 
             if (isKaraokeMode) {
                  btnText = hasVoted ? 'SIGNED UP' : '🎤 SING';
@@ -96,11 +110,15 @@ export const GuestSearch = (props: SearchProps) => {
                  btnText = '✓ VOTED';
                  btnStyle = { background: '#2ecc71', color: '#000', fontWeight: '900', border: 'none' };
             
-            } else if (isDisabled) {
-                 // DYNAMIC WAIT MESSAGE
+            } else if (isDisabled && !hasVoted && !isProcessing) {
+                 // DYNAMIC WAIT MESSAGE (Only if disabled due to wallet)
                  btnText = `⏳ ${nextTokenMinutes ?? '?'}m`;
                  btnStyle = { opacity: 0.6, cursor: 'not-allowed', background: '#222', color: '#D4AF37', border: '1px solid #333' };
             
+            } else if (isProcessing) {
+                 btnText = '...';
+                 btnStyle = { background: '#333', color: '#888' };
+
             } else if (searchQuery || isSystem) {
                  btnText = 'ADD +';
                  btnStyle = { background: 'transparent', border: '1px solid #D4AF37', color: '#D4AF37' };
@@ -124,7 +142,8 @@ export const GuestSearch = (props: SearchProps) => {
             // 1. We are in the Queue View (not Search, not Karaoke)
             // 2. The user hasn't voted yet
             // 3. The function exists
-            const showVeto = !searchQuery && !isKaraokeMode && !hasVoted && handleVote;
+            // 4. We are not currently processing a click
+            const showVeto = !searchQuery && !isKaraokeMode && !hasVoted && !isProcessing && handleVote;
 
             return (
                 <div key={`${trackUri}-${i}`} style={rowStyle}>
@@ -173,7 +192,7 @@ export const GuestSearch = (props: SearchProps) => {
                         {/* VETO BUTTON */}
                         {showVeto && (
                             <button
-                                onClick={() => handleVote(t, 'DOWN')}
+                                onClick={() => onVoteClick(t, 'DOWN')}
                                 disabled={isDisabled}
                                 style={{
                                     background: 'rgba(255, 50, 50, 0.1)',
@@ -195,7 +214,7 @@ export const GuestSearch = (props: SearchProps) => {
                         )}
 
                         <button 
-                            onClick={() => props.handleRequest(t)} 
+                            onClick={() => onVoteClick(t, 'UP')} 
                             disabled={isDisabled}
                             style={{
                                 ...styles.voteBtn(hasVoted), 

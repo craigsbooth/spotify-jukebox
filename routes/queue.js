@@ -41,6 +41,7 @@ router.post('/queue', (req, res) => {
     const { uri, name, artist, albumArt, album, guestId } = req.body;
     if (!guestId) return res.status(400).json({ error: "No Guest ID" });
     
+    // ECONOMY CHECK
     const tokenCheck = sm.spendToken(guestId); 
     if (!tokenCheck.success) {
         return res.status(403).json({ success: false, message: "Not enough tokens!", balance: tokenCheck.balance });
@@ -86,10 +87,17 @@ router.post('/queue', (req, res) => {
 /**
  * 2.5. VOTE (NEW: DOWNVOTE / VETO)
  * Handles explicit Downvotes and Veto logic.
+ * NOW WITH TOKEN ECONOMY CHECK
  */
 router.post('/vote', (req, res) => {
     const { uri, guestId, type } = req.body; // type: 'UP' or 'DOWN'
     const voteType = type || 'UP'; 
+
+    // 1. ECONOMY CHECK
+    const tokenCheck = sm.spendToken(guestId); 
+    if (!tokenCheck.success) {
+        return res.status(403).json({ success: false, message: "Not enough tokens!", balance: tokenCheck.balance });
+    }
 
     const trackIndex = state.partyQueue.findIndex(t => t.uri === uri);
     if (trackIndex === -1) return res.status(404).json({ error: "Track not found" });
@@ -105,6 +113,8 @@ router.post('/vote', (req, res) => {
     const hasDownvoted = track.downvotedBy.includes(guestId);
 
     if (hasUpvoted || hasDownvoted) {
+        // Refund the token if the vote failed logically
+        // (Optional, but friendly UI typically prevents this anyway)
         return res.json({ success: false, message: "You have already voted on this track." });
     }
 
@@ -116,19 +126,33 @@ router.post('/vote', (req, res) => {
         console.log(`👍 Upvote: ${track.name} by ${guestId}`);
     }
 
-    // Recalculate Net Score
-    track.votes = track.votedBy.length - track.downvotedBy.length;
+    // --- RECALCULATE & CHECK RULES ---
+    const upvotes = track.votedBy.length;
+    const downvotes = track.downvotedBy.length;
+    track.votes = upvotes - downvotes;
 
-    // VETO CHECK: If score drops to -3, delete the track
-    if (track.votes <= -3) {
+    let removed = false;
+
+    // RULE A: Fallback/System Track Removal (0 Upvotes, 1 Downvote)
+    if (upvotes === 0 && downvotes >= 1) {
         state.partyQueue.splice(trackIndex, 1);
-        console.log(`🚫 VETOED: ${track.name} was removed by community vote.`);
-        sm.saveSettings();
-        return res.json({ success: true, message: "Track Vetoed!", vetoed: true });
+        console.log(`🗑️ Fallback Veto: ${track.name} removed (0 up, 1 down).`);
+        removed = true;
+    }
+    // RULE B: Community Veto (Downvotes >= Upvotes + 3)
+    else if (downvotes >= (upvotes + 3)) {
+        state.partyQueue.splice(trackIndex, 1);
+        console.log(`🚫 Community Veto: ${track.name} removed (${downvotes} down vs ${upvotes} up).`);
+        removed = true;
+    }
+    else {
+        // Only re-sort if not removed
+        state.partyQueue.sort((a, b) => (b.votes || 0) - (a.votes || 0));
     }
 
     sm.saveSettings();
-    res.json({ success: true, votes: track.votes });
+    // Return token balance so frontend can update
+    res.json({ success: true, votes: track.votes, removed, tokens: tokenCheck.balance });
 });
 
 /**

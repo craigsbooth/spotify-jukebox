@@ -46,6 +46,11 @@ export const LogisticsPanel = ({ state, handlers }: PanelProps) => {
                         spotifyItems.map((t: any, i: number) => {
                             // LOGIC: Check if this is a "System" track (Fallback) or a "Human" track
                             const isSystem = t.isFallback || t.addedBy === 'Fallback Track';
+                            
+                            // CALCULATE VOTE BREAKDOWN
+                            const upvotes = t.votedBy ? t.votedBy.length : (t.votes > 0 ? t.votes : 0);
+                            const downvotes = t.downvotedBy ? t.downvotedBy.length : 0;
+                            const hasControversy = downvotes > 0;
 
                             return (
                                 <div key={`s-${i}`} style={styles.qItem(!!t.isFallback)}>
@@ -78,22 +83,38 @@ export const LogisticsPanel = ({ state, handlers }: PanelProps) => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         {/* VOTE COUNT / SYSTEM ICON */}
                                         <div style={{ 
-                                            background: isSystem ? '#444' : '#D4AF37', 
+                                            background: isSystem ? '#444' : (hasControversy ? '#e67e22' : '#D4AF37'), 
                                             color: isSystem ? '#aaa' : '#000', 
                                             padding: '4px 8px', 
                                             borderRadius: '6px', 
                                             fontSize: '0.75rem', 
                                             fontWeight: 950,
                                             minWidth: '30px',
-                                            textAlign: 'center'
+                                            textAlign: 'center',
+                                            display: 'flex',
+                                            gap: '4px'
                                         }}>
-                                            {isSystem ? '📻' : `${t.votes || 1}v`}
+                                            {isSystem ? (
+                                                '📻'
+                                            ) : (
+                                                hasControversy ? (
+                                                    // Detailed View: +5 | -2
+                                                    <>
+                                                        <span>+{upvotes}</span>
+                                                        <span style={{ opacity: 0.5 }}>|</span>
+                                                        <span>-{downvotes}</span>
+                                                    </>
+                                                ) : (
+                                                    // Simple View: 5v
+                                                    `${t.votes || 1}v`
+                                                )
+                                            )}
                                         </div>
                                         
                                         <button onClick={() => handlers.reorder(i, 'up')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>🔼</button>
                                         <button onClick={() => handlers.reorder(i, 'down')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>🔽</button>
                                         
-                                        <button onClick={() => handlers.removeItem(t.uri)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>🗑️</button>
+                                        <button onClick={() => handlers.removeItem(t.uri)} title="Host Veto (Remove)" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>🗑️</button>
                                     </div>
                                 </div>
                             );

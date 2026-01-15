@@ -102,6 +102,9 @@ jobs:
           # We force ownership to 'ubuntu' immediately after unzip
           sudo chown -R ubuntu:ubuntu /home/ubuntu/jukebox
           
+          # FIX: Force directories to be readable/executable to prevent 'scandir' error
+          chmod -R 755 /home/ubuntu/jukebox/client/.next || true
+          
           # 5. Update APP_VERSION
           if grep -q 'APP_VERSION=' .env; then
             sed -i 's/^APP_VERSION=.*/APP_VERSION=${{ env.APP_VERSION }}/' .env

@@ -80,6 +80,16 @@ jobs:
           # 1. Stop Services
           pm2 stop all || true
           
+          # ---------------------------------------------------
+          # [CRITICAL FIX] Clean old artifacts to prevent disk fill
+          # ---------------------------------------------------
+          echo "🧹 Cleaning old build artifacts..."
+          rm -rf client/.next
+          rm -rf client/public
+          rm -rf node_modules 
+          rm -rf client/node_modules
+          # ---------------------------------------------------
+          
           # 2. Unzip (Protect .env)
           unzip -o jukebox_deploy.zip -x .env
           
@@ -94,6 +104,7 @@ jobs:
           rm jukebox_deploy.zip .version_env
           
           # 5. Install Backend Dependencies
+          echo "📦 Installing Backend..."
           npm install --omit=dev --legacy-peer-deps
           
           # 6. Restart Backend
@@ -101,8 +112,10 @@ jobs:
           pm2 start server.js --name "backend"
           
           # 7. Install Frontend Dependencies & Restart
+          echo "📦 Installing Frontend..."
           cd client
           npm install --omit=dev --legacy-peer-deps
+          
           pm2 delete frontend || true
           pm2 start npm --name "frontend" -- start
           

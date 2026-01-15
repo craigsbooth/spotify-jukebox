@@ -9,6 +9,8 @@ if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
 
 // 3. Import Standard Libraries
 const express = require('express');
+const http = require('http'); // Required for WebSockets
+const { Server } = require('socket.io'); // The Real-Time Engine
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -16,17 +18,20 @@ const path = require('path');
 // 4. Import Local Modular Logic
 const spotifyApi = require('./spotify_instance');
 const spotifyCtrl = require('./spotify_ctrl');
-const automation = require('./automation'); // <--- THE NEW WATCHDOG
-const state = require('./state'); // <--- NEW: Import State for Persistence
+const automation = require('./automation'); 
+const state = require('./state'); 
 const pkg = require('./package.json');
+// Note: Quiz Engine is now imported inside the specific route files, not here.
 
 const app = express();
+const server = http.createServer(app); // Wrap Express
+const io = new Server(server, { cors: { origin: "*" } }); // Init Socket.io
 const port = process.env.PORT || 8888;
 
 /**
  * 5. VERSION DISCOVERY
  */
-const APP_VERSION = pkg.version || "3.0.229";
+const APP_VERSION = pkg.version || "3.3.0-clean-arch";
 
 // Middleware
 app.use(express.json());
@@ -35,9 +40,19 @@ app.use(cors({ origin: true }));
 /**
  * 6. ATTACH ROUTES
  */
+// --- NEW: CLEAN QUIZ INTEGRATION (MOUNTED BEFORE GENERIC API ROUTES) ---
+// Import the Quiz API Routes and pass 'io' for broadcasting
+const quizRoutes = require('./routes/quiz_routes')(io);
+app.use('/api/quiz', quizRoutes);
+
+// Import the Quiz Real-Time Socket Handler
+require('./routes/quiz_socket')(io);
+// -----------------------------------
+
+// --- EXISTING JUKEBOX ROUTES ---
 app.use('/', require('./routes/auth'));
 app.use('/api', require('./routes/queue'));
-app.use('/api', require('./routes/system')); // Karaoke routes are handled here now!
+app.use('/api', require('./routes/system'));
 
 // Endpoint for Dashboard Sync
 app.get('/api/version', (req, res) => {
@@ -47,10 +62,12 @@ app.get('/api/version', (req, res) => {
 /**
  * 7. STARTUP SEQUENCE
  */
-app.listen(port, async () => {
-    console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port}`);
+// Use server.listen instead of app.listen to support WebSockets
+server.listen(port, async () => {
+    console.log(`🚀 Modular Engine v${APP_VERSION} live on port ${port} (with WebSockets)`);
+    console.log(`📡 Quiz API: Mounted at /api/quiz/ (Endpoints: /config, /next, /ask-question)`);
 
-    // --- NEW: CRASH RECOVERY (PERSISTENCE) ---
+    // --- CRASH RECOVERY (PERSISTENCE) ---
     const SETTINGS_FILE = path.join(__dirname, 'settings.json');
     if (fs.existsSync(SETTINGS_FILE)) {
         try {
@@ -81,7 +98,7 @@ app.listen(port, async () => {
     }
 
     // --- B. CHECK SPOTIFY SESSION ---
-    // Immediate Session Check (No 5s Delay)
+    // Immediate Session Check
     if (spotifyApi.getAccessToken()) {
         console.log(`📦 Startup [v${APP_VERSION}]: Session found. Rebuilding Shuffle Bag...`);
         try {

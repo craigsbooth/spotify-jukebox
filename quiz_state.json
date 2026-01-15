@@ -1,0 +1,158 @@
+{
+  "status": "PLAYING",
+  "teams": [
+    {
+      "id": "hdvu6zam3",
+      "name": "CRAIG",
+      "icon": "record",
+      "color": "#fff",
+      "score": 3000,
+      "hasAnswered": false,
+      "lastAnswerCorrect": false,
+      "lastPointsGained": 0,
+      "roundPoints": 0
+    },
+    {
+      "id": "w9067zehe",
+      "name": "BILLY",
+      "icon": "record",
+      "color": "#fff",
+      "score": 9000,
+      "hasAnswered": false,
+      "lastAnswerCorrect": false,
+      "lastPointsGained": 0,
+      "roundPoints": 0
+    }
+  ],
+  "quizQueue": [
+    {
+      "name": "Black Hole Sun",
+      "artist": "Soundgarden",
+      "genre": "Grunge",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "GEAR",
+          "text": "Chris Cornell used what specific effect on his guitar to get the 'underwater' swirling sound?",
+          "options": [
+            "Leslie Speaker Cabinet",
+            "Chorus Pedal",
+            "Flanger",
+            "Phaser"
+          ],
+          "correct": "Leslie Speaker Cabinet",
+          "difficulty": "Extreme",
+          "points": 5000
+        },
+        {
+          "type": "TRIVIA",
+          "text": "The song's famous music video features 'melting' faces. What was the director's name?",
+          "options": [
+            "Howard Greenhalgh",
+            "Samuel Bayer",
+            "Michel Gondry",
+            "Spike Jonze"
+          ],
+          "correct": "Howard Greenhalgh",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "4zoarwtcdqv",
+        "type": "TRIVIA",
+        "text": "The song's famous music video features 'melting' faces. What was the director's name?",
+        "options": [
+          "Howard Greenhalgh",
+          "Spike Jonze",
+          "Michel Gondry",
+          "Samuel Bayer"
+        ],
+        "correctIndex": 0,
+        "correct": "Howard Greenhalgh",
+        "image": null,
+        "points": 2000,
+        "difficulty": "Hard",
+        "expiresAt": 1768493582613
+      }
+    }
+  ],
+  "currentTrack": {
+    "name": "Good Times",
+    "artist": "Chic",
+    "genre": "Disco",
+    "decade": "70s",
+    "questions": [
+      {
+        "type": "SAMPLE",
+        "text": "The iconic bassline of 'Good Times' was the foundation for which first-ever mainstream Hip Hop hit?",
+        "options": [
+          "Rapper's Delight",
+          "The Message",
+          "Planet Rock",
+          "White Lines"
+        ],
+        "correct": "Rapper's Delight",
+        "difficulty": "Medium",
+        "points": 1000
+      }
+    ],
+    "preparedQuestion": {
+      "id": "f6ahd3qic",
+      "type": "HISTORY",
+      "text": "The song's famous 'Freak out!' refrain was originally a much ruder phrase directed at the doorman of which club?",
+      "options": [
+        "The Roxy",
+        "Paradise Garage",
+        "The Loft",
+        "Studio 54"
+      ],
+      "correctIndex": 3,
+      "correct": "Studio 54",
+      "image": null,
+      "points": 1000,
+      "difficulty": "Medium",
+      "expiresAt": 1768493582613
+    },
+    "uri": "spotify:track:1Ket3P7fn8XF7y3f15rUH8"
+  },
+  "isPlaying": true,
+  "currentQuestion": null,
+  "questionHistory": [
+    "VGhpcyBsZWdlbmRhcnkgYW50aGVtIHdhcyBvcmlnaW5hbGx5IHJlbGVhc2VkIGFzIHdoYXQ/QSBCLXNpZGUgdG8gYSBjb3ZlciBzb25n",
+    "TGlwcHMgSW5jLiB3YXMgYSAnc3R1ZGlvIGdyb3VwJyBmcm9tIHdoaWNoIHVubGlrZWx5IEFtZXJpY2FuIGNpdHk/TWlubmVhcG9saXM=",
+    "S2VuZHJpY2sgTGFtYXIgYmVjYW1lIHRoZSBmaXJzdCByYXBwZXIgdG8gd2luIHdoYXQgcHJlc3RpZ2lvdXMgcHJpemUgZm9yIHRoZSBhbGJ1bSAnREFNTi4nP1B1bGl0emVyIFByaXplIGZvciBNdXNpYw==",
+    "TW90b3duIGZvdW5kZXIgQmVycnkgR29yZHkgb3JpZ2luYWxseSByZWZ1c2VkIHRvIHJlbGVhc2UgdGhpcyBzb25nLCBjYWxsaW5nIGl0IHdoYXQ/VGhlIHdvcnN0IHRoaW5nIEkgZXZlciBoZWFyZA==",
+    "VHJhZ2ljYWxseSwgaG93IG1hbnkgZGF5cyBhZnRlciByZWNvcmRpbmcgdGhpcyBzb25nIGRpZCBPdGlzIFJlZGRpbmcgZGllIGluIGEgcGxhbmUgY3Jhc2g/VGhyZWUgZGF5cw==",
+    "TmFzIGZhbW91c2x5IHJlY29yZGVkIGhpcyBmaXJzdCB2ZXJzZSBmb3IgdGhpcyBzb25nIGluIGhvdyBtYW55IHRha2VzP09uZSB0YWtl",
+    "VGhpcyB0cmFjayBzYW1wbGVzICdUaHJvdWdoIHRoZSBGaXJlJyBieSB3aGljaCBsZWdlbmRhcnkgUiZCIHNpbmdlcj9DaGFrYSBLaGFu",
+    "V2hpY2ggcHJvZHVjZXIgY3JlYXRlZCB0aGUgYWdncmVzc2l2ZSBwaWFuby1kcml2ZW4gYmVhdCBmb3IgSFVNQkxFLj9NaWtlIFdpTEwgTWFkZS1JdA==",
+    "VGhlIHNvbmcncyBmYW1vdXMgJ0ZyZWFrIG91dCEnIHJlZnJhaW4gd2FzIG9yaWdpbmFsbHkgYSBtdWNoIHJ1ZGVyIHBocmFzZSBkaXJlY3RlZCBhdCB0aGUgZG9vcm1hbiBvZiB3aGljaCBjbHViP1N0dWRpbyA1NA==",
+    "VGhlIHNvbmcncyBmYW1vdXMgbXVzaWMgdmlkZW8gZmVhdHVyZXMgJ21lbHRpbmcnIGZhY2VzLiBXaGF0IHdhcyB0aGUgZGlyZWN0b3IncyBuYW1lP0hvd2FyZCBHcmVlbmhhbGdo",
+    "V2hvIHBlcmZvcm1zIHRoZSB0cmFjayAiSSBXaWxsIFN1cnZpdmUiP0dsb3JpYSBHYXlub3I=",
+    "SWRlbnRpZnkgdGhlIEFydGlzdCBmcm9tIHRoaXMgQWxidW1HbG9yaWEgR2F5bm9y",
+    "SWRlbnRpZnkgdGhpcyBBcnRpc3RHbG9yaWEgR2F5bm9y",
+    "SWRlbnRpZnkgdGhpcyBBcnRpc3RMaXBwcyBJbmMu",
+    "SWRlbnRpZnkgdGhlIEFydGlzdCBmcm9tIHRoaXMgQWxidW1LZW5kcmljayBMYW1hcg==",
+    "VGhlICdwYXJ0eSBjaGF0dGVyJyBoZWFyZCBpbiB0aGUgYmFja2dyb3VuZCBmZWF0dXJlcyB3aGljaCByZWFsLWxpZmUgc3BvcnRzIHN0YXJzP0RldHJvaXQgTGlvbnMgcGxheWVycw=="
+  ],
+  "config": {
+    "duration": 30,
+    "timePerQuestion": 18,
+    "difficultyFocus": 48,
+    "selectedGenres": [
+      "Classical",
+      "Folk",
+      "Blues",
+      "Grunge",
+      "Hip Hop",
+      "Disco",
+      "Soul"
+    ],
+    "selectedEras": [],
+    "enablePictures": true,
+    "audioFadeEnabled": true
+  },
+  "roundCount": 0,
+  "roundTimer": 0
+}

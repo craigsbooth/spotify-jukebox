@@ -139,8 +139,8 @@ router.post('/vote', (req, res) => {
             console.log(`🗑️ Fallback Veto: ${track.name} removed (0 up, 1 down).`);
             removed = true;
         }
-        // Rule: Community Veto (Downvotes >= Upvotes + 3)
-        else if (downvotes >= (upvotes + 3)) {
+        // Rule: Community Veto (Downvotes >= Upvotes + 2)
+        else if (downvotes >= (upvotes + 2)) {
             state.partyQueue.splice(trackIndex, 1);
             console.log(`🚫 Community Veto: ${track.name} removed (${downvotes} down vs ${upvotes} up).`);
             removed = true;

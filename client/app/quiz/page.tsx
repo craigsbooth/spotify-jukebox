@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { styles } from './ReactionPad.styles';
-import { API_URL, SOCKET_URL } from '../config'; // <--- IMPORT FROM CONFIG
+import { API_URL, SOCKET_URL } from '../config';
 
-const COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c']; 
+const COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c'];
 const ICONS = ['▲', '◆', '●', '■'];
 
 export default function ReactionPad() {
@@ -24,7 +24,7 @@ export default function ReactionPad() {
 
     newSocket.on('quiz_update', (state) => {
       setGameState(state);
-      
+
       // Auto-join logic
       if (savedId && !hasJoined) {
         if (state.teams.find((t: any) => t.id === savedId)) {
@@ -52,8 +52,8 @@ export default function ReactionPad() {
   // Force local reset when a specific question ID changes
   useEffect(() => {
     if (gameState?.currentQuestion?.id) {
-        setHasAnswered(false);
-        setSelectedIdx(null);
+      setHasAnswered(false);
+      setSelectedIdx(null);
     }
   }, [gameState?.currentQuestion?.id]);
 
@@ -61,14 +61,14 @@ export default function ReactionPad() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (gameState?.status === 'SHOW_RESULTS') {
-      timer = setTimeout(() => setShowStandings(true), 15000); 
+      timer = setTimeout(() => setShowStandings(true), 15000);
     }
     return () => clearTimeout(timer);
   }, [gameState?.status]);
 
   const handleJoin = async () => {
     if (!name.trim()) return;
-    const res = await fetch(`${API_URL}/api/quiz/join`, {
+    await fetch(`${API_URL}/quiz/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name.toUpperCase(), icon: 'record', color: '#fff' })
@@ -86,8 +86,8 @@ export default function ReactionPad() {
     setHasAnswered(true);
     setSelectedIdx(index);
     if (navigator.vibrate) navigator.vibrate(50);
-    
-    await fetch(`${API_URL}/api/quiz/answer`, {
+
+ await fetch(`${API_URL}/quiz/answer`, { // <--- Removed extra /api
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ teamId: myTeamId, answerIndex: index })
@@ -108,7 +108,7 @@ export default function ReactionPad() {
   const isQuestion = gameState?.status === 'QUESTION_ACTIVE';
   const isResults = gameState?.status === 'SHOW_RESULTS';
   const currentQ = gameState?.currentQuestion;
-  const sortedTeams = gameState?.teams ? [...gameState.teams].sort((a,b) => b.score - a.score) : [];
+  const sortedTeams = gameState?.teams ? [...gameState.teams].sort((a, b) => b.score - a.score) : [];
 
   return (
     <div style={styles.container}>
@@ -123,9 +123,9 @@ export default function ReactionPad() {
             <h2 style={styles.standingsTitle}>STANDINGS</h2>
             <div style={styles.standingsList}>
               {sortedTeams.slice(0, 5).map((t: any, i: number) => (
-                <div key={t.id} style={{...styles.standingRow, background: t.id === myTeamId ? 'rgba(255,255,255,0.15)' : 'transparent'}}>
-                  <span>#{i+1} {t.name}</span>
-                  <span style={{fontWeight: 900}}>{t.score}</span>
+                <div key={t.id} style={{ ...styles.standingRow, background: t.id === myTeamId ? 'rgba(255,255,255,0.15)' : 'transparent' }}>
+                  <span>#{i + 1} {t.name}</span>
+                  <span style={{ fontWeight: 900 }}>{t.score}</span>
                 </div>
               ))}
             </div>
@@ -134,14 +134,14 @@ export default function ReactionPad() {
           <div style={styles.questionView}>
             <div style={styles.grid}>
               {currentQ?.options.map((opt: string, i: number) => (
-                <button 
-                  key={i} 
-                  onClick={() => handleAnswer(i)} 
-                  disabled={hasAnswered} 
+                <button
+                  key={i}
+                  onClick={() => handleAnswer(i)}
+                  disabled={hasAnswered}
                   style={{
-                    ...styles.answerBtn, 
-                    background: COLORS[i], 
-                    opacity: hasAnswered ? (selectedIdx === i ? 1 : 0.3) : 1, 
+                    ...styles.answerBtn,
+                    background: COLORS[i],
+                    opacity: hasAnswered ? (selectedIdx === i ? 1 : 0.3) : 1,
                     transform: hasAnswered && selectedIdx === i ? 'scale(0.95)' : 'scale(1)'
                   }}>
                   <span style={styles.btnIcon}>{ICONS[i]}</span>
@@ -151,7 +151,7 @@ export default function ReactionPad() {
             </div>
           </div>
         ) : isResults ? (
-          <div style={{...styles.resultsScreen, background: myTeam?.lastAnswerCorrect ? '#26890c' : '#e21b3c'}}>
+          <div style={{ ...styles.resultsScreen, background: myTeam?.lastAnswerCorrect ? '#26890c' : '#e21b3c' }}>
             <div style={styles.resultIcon}>{myTeam?.lastAnswerCorrect ? '✓' : '✕'}</div>
             <h2 style={styles.resultTitle}>{myTeam?.lastAnswerCorrect ? 'CORRECT' : 'INCORRECT'}</h2>
             <div style={styles.resultPoints}>

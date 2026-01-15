@@ -26,14 +26,14 @@ export default function BroadcastConsole() {
 
   const refreshDevices = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/quiz/devices`);
+      const res = await fetch(`${API_URL}/quiz/devices`);
       const data = await res.json();
       setAvailableDevices(data.devices || []);
     } catch (e) { console.error("⚠️ Device fetch failed:", e); }
   };
 
   const updateGlobalConfig = async (updates: any) => {
-    await fetch(`${API_URL}/api/quiz/config`, {
+    await fetch(`${API_URL}/quiz/config`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     });

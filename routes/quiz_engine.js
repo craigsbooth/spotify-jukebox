@@ -1,4 +1,4 @@
-// routes/quiz_engine.js - Full V7.0 (Async Queue, Deferred Scoring, Multi-Question Support)
+// routes/quiz_engine.js - Full V7.1 (Security Masking + Async Queue + Deferred Scoring)
 const EventEmitter = require('events');
 const fs = require('fs');
 const path = require('path');
@@ -196,12 +196,12 @@ class QuizEngine extends EventEmitter {
 
         if (!question) return null;
 
-        // FIX #1: Consume/Remove the prepared question so it isn't reused on the next click
+        // Consume/Remove the prepared question so it isn't reused on the next click
         if (this.gameState.currentTrack) {
             delete this.gameState.currentTrack.preparedQuestion;
         }
 
-        // FIX #4: Double-check logic. The Factory shuffles options now.
+        // Double-check logic. The Factory shuffles options now.
         // We must ensure the correctIndex points to the correct string in the new array.
         const verifiedIndex = question.options.findIndex(opt => opt === question.correct || opt === question.correctAnswer);
         
@@ -253,18 +253,18 @@ class QuizEngine extends EventEmitter {
         team.lastAnswerCorrect = isCorrect;
         team.lastPointsGained = pointsAwarded;
         
-        // FIX #2: Store points in temporary 'roundPoints', do NOT add to total score yet.
+        // Store points in temporary 'roundPoints', do NOT add to total score yet.
         team.roundPoints = pointsAwarded; 
 
         this.emit('state_update', this.gameState);
         return { correct: isCorrect, pointsGained: pointsAwarded };
     }
 
-    // NEW METHOD: Call this when timer ends or Host clicks "Reveal"
+    // Call this when timer ends or Host clicks "Reveal"
     revealResults() {
         this.gameState.status = 'SHOW_RESULTS';
         
-        // FIX #2: Apply deferred scores now
+        // Apply deferred scores now
         this.gameState.teams.forEach(t => {
             if (t.roundPoints > 0) {
                 t.score += t.roundPoints;
@@ -281,8 +281,10 @@ class QuizEngine extends EventEmitter {
         // Anti-Cheat: Remove correct index from public data
         if (safeState.currentQuestion) delete safeState.currentQuestion.correctIndex;
         
-        // Anti-Cheat: Hide track meta during active questions
-        if (safeState.currentQuestion && ['ARTIST', 'TITLE', 'PICTURE', 'SOUNDTRACK', 'PICTURE_ARTIST', 'PICTURE_ALBUM'].includes(safeState.currentQuestion.type)) {
+        // Anti-Cheat: Hide track meta during active questions AND during Listen phase (PLAYING)
+        const shouldHide = safeState.status === 'PLAYING' || (safeState.currentQuestion && ['ARTIST', 'TITLE', 'PICTURE', 'SOUNDTRACK', 'PICTURE_ARTIST', 'PICTURE_ALBUM'].includes(safeState.currentQuestion.type));
+        
+        if (shouldHide) {
             safeState.currentTrack = { ...safeState.currentTrack, name: "???", artist: "???" };
         }
         

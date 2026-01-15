@@ -89,10 +89,8 @@ jobs:
           
           # 2. Disk Cleanup (WITH SUDO) - Forces clean state
           echo "🧹 Cleaning old build artifacts..."
-          sudo rm -rf client/.next
-          sudo rm -rf client/public
+          sudo rm -rf client
           sudo rm -rf node_modules 
-          sudo rm -rf client/node_modules
           sudo rm -rf routes data server public
           
           # 3. Unzip new code

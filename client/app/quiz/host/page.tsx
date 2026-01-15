@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import WebPlayer from './WebPlayer'; 
 import { styles } from './BroadcastConsole.styles';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888';
-const SOCKET_URL = API_URL;
+import { API_URL, SOCKET_URL } from '../../config'; // <--- IMPORT FROM CONFIG
 
 const GENRES = ["Rock", "Pop", "Hip Hop", "Grunge", "Indie", "Metal", "Country", "R&B", "Electronic", "Disco", "Jazz", "Soul", "Punk", "Funk", "Reggae", "Classical", "Folk", "Blues", "Latin", "Soundtrack"];
 const ERAS = ["60s", "70s", "80s", "90s", "00s", "10s", "20s"];

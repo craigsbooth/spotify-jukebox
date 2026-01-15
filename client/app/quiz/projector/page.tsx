@@ -2,9 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { styles } from './Projector.styles';
+import { SOCKET_URL } from '../../config'; // <--- IMPORT FROM CONFIG
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888';
-const SOCKET_URL = API_URL;
 const ICONS = ['▲', '◆', '●', '■'];
 
 function AnimatedNumber({ value }: { value: number }) {

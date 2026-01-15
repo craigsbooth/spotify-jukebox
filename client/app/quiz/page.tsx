@@ -2,9 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { styles } from './ReactionPad.styles';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888';
-const SOCKET_URL = API_URL;
+import { API_URL, SOCKET_URL } from '../config'; // <--- IMPORT FROM CONFIG
 
 const COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c']; 
 const ICONS = ['▲', '◆', '●', '■'];

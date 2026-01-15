@@ -31,25 +31,32 @@ jobs:
         NEXT_PUBLIC_APP_VERSION: ${{ env.APP_VERSION }}
       run: |
         cd client
-        # Clean install for stability
         npm ci --legacy-peer-deps
-        # Build Next.js
         npm run build
 
     - name: Prepare Deployment Package
       run: |
+        # Create structure
         mkdir -p deploy/client
         mkdir -p deploy/routes
+        mkdir -p deploy/data
+        mkdir -p deploy/server
+        mkdir -p deploy/public
         
-        # Copy Backend Files
+        # Copy Backend Root Files
         cp *.js package.json version.txt deploy/
+        
+        # Copy Backend Folders
         cp -r routes/* deploy/routes/ || true
+        cp -r data/* deploy/data/ || true
+        cp -r server/* deploy/server/ || true
+        cp -r public/* deploy/public/ || true
         
         # Copy Frontend Build Artifacts
         cp -r client/.next deploy/client/
         cp -r client/public deploy/client/
         cp client/package.json deploy/client/
-        cp client/next.config.ts deploy/client/
+        cp client/next.config.mjs deploy/client/
         
         # Create Version Env for server
         echo "APP_VERSION=${{ env.APP_VERSION }}" > deploy/.version_env
@@ -80,38 +87,39 @@ jobs:
           # 1. Stop Services
           pm2 stop all || true
           
-          # ---------------------------------------------------
-          # [CRITICAL FIX] Clean old artifacts to prevent disk fill
-          # ---------------------------------------------------
+          # 2. Disk Cleanup (WITH SUDO)
           echo "🧹 Cleaning old build artifacts..."
-          rm -rf client/.next
-          rm -rf client/public
-          rm -rf node_modules 
-          rm -rf client/node_modules
-          # ---------------------------------------------------
+          sudo rm -rf client/.next
+          sudo rm -rf client/public
+          sudo rm -rf node_modules 
+          sudo rm -rf client/node_modules
+          sudo rm -rf routes data server public
           
-          # 2. Unzip (Protect .env)
+          # 3. Unzip
           unzip -o jukebox_deploy.zip -x .env
           
-          # 3. Update APP_VERSION in .env
+          # 4. FIX PERMISSIONS (CRITICAL)
+          sudo chown -R ubuntu:ubuntu /home/ubuntu/jukebox
+          
+          # 5. Update APP_VERSION
           if grep -q 'APP_VERSION=' .env; then
             sed -i 's/^APP_VERSION=.*/APP_VERSION=${{ env.APP_VERSION }}/' .env
           else
             echo "APP_VERSION=${{ env.APP_VERSION }}" >> .env
           fi
           
-          # 4. Cleanup Artifacts
+          # 6. Cleanup Zip
           rm jukebox_deploy.zip .version_env
           
-          # 5. Install Backend Dependencies
+          # 7. Install Backend
           echo "📦 Installing Backend..."
           npm install --omit=dev --legacy-peer-deps
           
-          # 6. Restart Backend
+          # 8. Restart Backend
           pm2 delete backend || true
           pm2 start server.js --name "backend"
           
-          # 7. Install Frontend Dependencies & Restart
+          # 9. Install Frontend
           echo "📦 Installing Frontend..."
           cd client
           npm install --omit=dev --legacy-peer-deps
@@ -119,5 +127,5 @@ jobs:
           pm2 delete frontend || true
           pm2 start npm --name "frontend" -- start
           
-          # 8. Save State
+          # 10. Save State
           pm2 save

@@ -1,5 +1,5 @@
 # ==========================================
-# JUKEBOX DEPLOY SCRIPT - V3.0 MODULAR PRO
+# JUKEBOX DEPLOY SCRIPT - V3.4 STABLE
 # ==========================================
 
 # --- CONFIGURATION ---
@@ -15,7 +15,7 @@ $VersionFile = "$LocalProject\version.txt"
 
 # Force check if file exists, if not, create the V3 baseline
 if (!(Test-Path $VersionFile)) { 
-    Write-Host "⚠️ version.txt not found. Creating new baseline at 3.0.217" -ForegroundColor String
+    Write-Host "[WARN] version.txt not found. Creating new baseline at 3.0.217" -ForegroundColor Yellow
     "3.0.217" | Out-File $VersionFile -Encoding ascii 
 }
 
@@ -52,12 +52,14 @@ Write-Host "--- Packaging for Server ---" -ForegroundColor Cyan
 $DeployTemp = "$env:TEMP\jukebox_staging"
 if (Test-Path $DeployTemp) { Remove-Item -Recurse -Force $DeployTemp }
 
+# Create Directory Structure
 New-Item -ItemType Directory -Path "$DeployTemp\client" | Out-Null
 New-Item -ItemType Directory -Path "$DeployTemp\routes" | Out-Null
+New-Item -ItemType Directory -Path "$DeployTemp\data" | Out-Null
+New-Item -ItemType Directory -Path "$DeployTemp\server" | Out-Null
+New-Item -ItemType Directory -Path "$DeployTemp\public" | Out-Null
 
-# A. SECURITY FIX: NO MORE HARDCODED SECRETS
-# We no longer generate a full .env file locally.
-# We only create a temporary version file for the build.
+# A. Create Version Env
 $VersionEnv = @(
     "APP_VERSION=$NewVersion"
 )
@@ -67,16 +69,17 @@ $VersionEnv = @(
 Copy-Item "$LocalProject\*.js" -Destination "$DeployTemp\"
 Copy-Item "$LocalProject\package.json" -Destination "$DeployTemp\"
 Copy-Item "$LocalProject\version.txt" -Destination "$DeployTemp\"
-if (Test-Path "$LocalProject\routes") {
-    Copy-Item -Recurse "$LocalProject\routes\*" -Destination "$DeployTemp\routes\"
-}
+
+if (Test-Path "$LocalProject\routes") { Copy-Item -Recurse "$LocalProject\routes\*" -Destination "$DeployTemp\routes\" }
+if (Test-Path "$LocalProject\data") { Copy-Item -Recurse "$LocalProject\data\*" -Destination "$DeployTemp\data\" }
+if (Test-Path "$LocalProject\server") { Copy-Item -Recurse "$LocalProject\server\*" -Destination "$DeployTemp\server\" }
+if (Test-Path "$LocalProject\public") { Copy-Item -Recurse "$LocalProject\public\*" -Destination "$DeployTemp\public\" }
 
 # C. Copy Frontend (Build + Config)
 Copy-Item -Recurse "$LocalProject\client\.next" -Destination "$DeployTemp\client\"
-Copy-Item -Recurse "$LocalProject\client\app" -Destination "$DeployTemp\client\"
 Copy-Item -Recurse "$LocalProject\client\public" -Destination "$DeployTemp\client\"
 Copy-Item "$LocalProject\client\package.json" -Destination "$DeployTemp\client\"
-Copy-Item "$LocalProject\client\next.config.ts" -Destination "$DeployTemp\client\"
+Copy-Item "$LocalProject\client\next.config.mjs" -Destination "$DeployTemp\client\"
 
 if (Test-Path "$DeployTemp\client\.next\cache") { 
     Remove-Item -Recurse -Force "$DeployTemp\client\.next\cache" 
@@ -93,22 +96,24 @@ scp -i "$KeyPath" "$ZipFile" "${ServerUser}@${ServerIP}:${RemotePath}/"
 
 # --- 4. REMOTE EXECUTION (CLEAN VERSIONING) ---
 Write-Host "--- Server Restart Sequence ---" -ForegroundColor Cyan
-# LOGIC: 
-# 1. Unzip everything EXCEPT .env.
-# 2. Use grep/sed to update APP_VERSION in .env if it exists, otherwise append it.
-# 3. This prevents duplicate entries and keeps HOST_PIN safe.
+
 $RemoteCmd = "cd ${RemotePath}; " +
              "pm2 stop all || true; " +
+             "echo 'Cleaning old artifacts...'; " +
+             "sudo rm -rf client/.next client/public client/node_modules node_modules routes data server public; " + 
              "unzip -o jukebox_deploy.zip -x .env; " +
+             "sudo chown -R ubuntu:ubuntu ${RemotePath}; " + 
              "if grep -q 'APP_VERSION=' .env; then " +
              "  sed -i 's/^APP_VERSION=.*/APP_VERSION=$NewVersion/' .env; " +
              "else " +
              "  echo 'APP_VERSION=$NewVersion' >> .env; " +
              "fi; " +
              "rm jukebox_deploy.zip .version_env; " +
+             "echo 'Installing Backend...'; " +
              "npm install --omit=dev --no-save --legacy-peer-deps; " +
              "pm2 delete backend || true; pm2 start server.js --name 'backend'; " +
              "cd client; " +
+             "echo 'Installing Frontend...'; " +
              "npm install --omit=dev --no-save --legacy-peer-deps; " +
              "pm2 delete frontend || true; pm2 start npm --name 'frontend' -- start; " +
              "pm2 save"

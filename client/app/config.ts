@@ -22,5 +22,9 @@ const BASE_URL = isLocal
  */
 export const API_URL = `${BASE_URL}/api`;
 
+// --- CRITICAL ADDITION FOR QUIZ ---
+// Sockets must connect to the Root URL (https://site.com), NOT the API URL (https://site.com/api)
+export const SOCKET_URL = BASE_URL; 
+
 console.log(`🌐 Jukebox Mode: ${isLocal ? 'LOCAL (127.0.0.1)' : 'PRODUCTION'}`);
 console.log(`🔗 API Endpoint: ${API_URL}`);

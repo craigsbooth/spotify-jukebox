@@ -25,7 +25,7 @@ export default function WebPlayer({ apiUrl, onDeviceReady }: WebPlayerProps) {
                 name: 'Quiz Host (Web Browser)',
                 getOAuthToken: async (cb: (token: string) => void) => {
                     try {
-                        const res = await fetch(`${apiUrl}/api/quiz/token`);
+                        const res = await fetch(`${apiUrl}/quiz/token`);
                         const data = await res.json();
                         cb(data.token);
                     } catch (e) {

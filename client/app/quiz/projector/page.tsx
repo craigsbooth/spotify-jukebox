@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { styles } from './Projector.styles';
-import { SOCKET_URL } from '../../config'; // <--- IMPORT FROM CONFIG
+import { API_URL, SOCKET_URL } from '../../config'; // <--- IMPORT FROM CONFIG
 
 const ICONS = ['▲', '◆', '●', '■'];
 
@@ -50,8 +50,11 @@ export default function KahootDeezerProjector() {
   const podium = leaderboard.slice(0, 3);
   
   // Anti-Cheat: Hide track info if the question is identifying it
-  // Note: We also forcefully hide it in the LISTEN view now.
   const hideDetails = isQuestion && ['ARTIST', 'TITLE', 'SOUNDTRACK'].includes(currentQuestion.type);
+
+  // QR Code Link (Dynamic based on where the app is running)
+  // We use API_URL but strip the '/api' suffix to get the clean root domain
+  const joinUrl = API_URL.replace('/api', '') + '/quiz';
 
   return (
     <div style={{ ...styles.stage, background: isQuestion ? '#46178f' : (isResults ? '#1368ce' : (isFinished ? '#050505' : '#00c6ff')) }}>
@@ -168,27 +171,25 @@ export default function KahootDeezerProjector() {
           <div style={styles.centerStage}>
             {isPlaying ? (
               <div style={styles.listenWrapper}>
-                {/* Centered Pulsing Circles */}
                 <div style={styles.pulseContainer}>
                    <div className="pulse-circle" style={{animationDelay: '0s'}} />
                    <div className="pulse-circle" style={{animationDelay: '0.8s'}} />
                    <div className="pulse-circle" style={{animationDelay: '1.6s'}} />
                 </div>
-                {/* Centered Text Overlay */}
                 <div style={styles.listenTextContent}>
                     <h1 style={styles.bigListen}>LISTEN</h1>
-                    {/* FIX: Hardcoded text to prevent spoilers */}
                     <p style={styles.subListen}>IDENTIFY THE TRACK...</p>
                 </div>
               </div>
             ) : (
               <div style={styles.lobbyView}>
                 <div style={styles.qrSide}>
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent('https://jukebox.boldron.info/quiz')}`} style={styles.qr} alt="QR" />
+                  {/* FIX: Use Dynamic URL for QR Code */}
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`} style={styles.qr} alt="QR" />
                 </div>
                 <div style={styles.joinText}>
                   <h2 style={{fontSize:'4rem', margin:0}}>JOIN THE QUIZ</h2>
-                  <p style={{fontSize:'1.8rem', opacity:0.7}}>jukebox.boldron.info/quiz</p>
+                  <p style={{fontSize:'1.8rem', opacity:0.7}}>{joinUrl.replace('https://', '')}</p>
                   <div style={styles.playerCount}>{teams.length} TEAMS READY</div>
                 </div>
               </div>

@@ -87,7 +87,7 @@ jobs:
           # 1. Stop Services
           pm2 stop all || true
           
-          # 2. Disk Cleanup (WITH SUDO)
+          # 2. Disk Cleanup (WITH SUDO) - Forces clean state
           echo "🧹 Cleaning old build artifacts..."
           sudo rm -rf client/.next
           sudo rm -rf client/public
@@ -95,10 +95,11 @@ jobs:
           sudo rm -rf client/node_modules
           sudo rm -rf routes data server public
           
-          # 3. Unzip
+          # 3. Unzip new code
           unzip -o jukebox_deploy.zip -x .env
           
-          # 4. FIX PERMISSIONS (CRITICAL)
+          # 4. FIX PERMISSIONS (CRITICAL STEP)
+          # We force ownership to 'ubuntu' immediately after unzip
           sudo chown -R ubuntu:ubuntu /home/ubuntu/jukebox
           
           # 5. Update APP_VERSION
@@ -111,21 +112,22 @@ jobs:
           # 6. Cleanup Zip
           rm jukebox_deploy.zip .version_env
           
-          # 7. Install Backend
+          # 7. Install Backend (Install ALL deps to be safe)
           echo "📦 Installing Backend..."
-          npm install --omit=dev --legacy-peer-deps
+          npm install --legacy-peer-deps
           
           # 8. Restart Backend
           pm2 delete backend || true
           pm2 start server.js --name "backend"
           
-          # 9. Install Frontend
+          # 9. Install Frontend (Install ALL deps to include Tailwind)
           echo "📦 Installing Frontend..."
           cd client
-          npm install --omit=dev --legacy-peer-deps
+          npm install --legacy-peer-deps
           
+          # 10. Start Frontend
           pm2 delete frontend || true
           pm2 start npm --name "frontend" -- start
           
-          # 10. Save State
+          # 11. Save State
           pm2 save

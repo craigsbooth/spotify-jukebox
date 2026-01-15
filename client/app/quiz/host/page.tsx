@@ -17,6 +17,7 @@ export default function BroadcastConsole() {
   const [availableDevices, setAvailableDevices] = useState<any[]>([]);
 
   useEffect(() => {
+    // FIX: Using SOCKET_URL connects to the root domain correctly
     const socket = io(SOCKET_URL);
     socket.emit('join_room', 'quiz_projector');
     socket.on('quiz_update', (state) => setGameState(state));
@@ -47,27 +48,31 @@ export default function BroadcastConsole() {
   };
 
   const handleAutoPopulate = async () => {
-    await fetch(`${API_URL}/api/quiz/auto-populate`, {
+    // FIX: Removed extra /api
+    await fetch(`${API_URL}/quiz/auto-populate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ count: 10 })
     });
   };
 
   const removeFromQueue = async (index: number) => {
-    await fetch(`${API_URL}/api/quiz/queue/remove`, {
+    // FIX: Removed extra /api
+    await fetch(`${API_URL}/quiz/queue/remove`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index })
     });
   };
 
   const searchTracks = async () => {
-    const res = await fetch(`${API_URL}/api/quiz/search?q=${search}`);
+    // FIX: Removed extra /api
+    const res = await fetch(`${API_URL}/quiz/search?q=${search}`);
     const data = await res.json();
     setResults(data.tracks || []);
   };
 
   const addToQueue = async (track: any) => {
-    await fetch(`${API_URL}/api/quiz/queue`, {
+    // FIX: Removed extra /api
+    await fetch(`${API_URL}/quiz/queue`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ track })
     });
@@ -75,7 +80,8 @@ export default function BroadcastConsole() {
 
   const handlePlayNext = async () => {
     if (!deviceId) { alert("Select a playback device!"); return; }
-    await fetch(`${API_URL}/api/quiz/next`, {
+    // FIX: Removed extra /api
+    await fetch(`${API_URL}/quiz/next`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deviceId })
     });
@@ -115,9 +121,10 @@ export default function BroadcastConsole() {
 
         <div style={styles.masterActions}>
             <button onClick={handlePlayNext} style={{...styles.mainBtn, background: '#2ecc71'}}>▶ PLAY NEXT TRACK <span style={styles.subBtn}>Queue: {gameState.quizQueue?.length || 0} left</span></button>
-            <button onClick={() => fetch(`${API_URL}/api/quiz/ask-question`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#95a5a6' : '#e21b3c'}} disabled={isQuestion || !gameState.isPlaying}>❓ ASK QUESTION</button>
-            <button onClick={() => fetch(`${API_URL}/api/quiz/reveal-answer`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#f1c40f' : '#333', color: isQuestion ? '#000' : '#666'}} disabled={!isQuestion}>🏆 REVEAL WINNERS</button>
-            <button onClick={() => window.confirm("End Quiz?") && fetch(`${API_URL}/api/quiz/end-quiz`, { method: 'POST' })} style={{...styles.mainBtn, background: '#f1c40f', color: '#000'}}>🥇 END QUIZ</button>
+            {/* FIX: Removed extra /api from buttons below */}
+            <button onClick={() => fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#95a5a6' : '#e21b3c'}} disabled={isQuestion || !gameState.isPlaying}>❓ ASK QUESTION</button>
+            <button onClick={() => fetch(`${API_URL}/quiz/reveal-answer`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#f1c40f' : '#333', color: isQuestion ? '#000' : '#666'}} disabled={!isQuestion}>🏆 REVEAL WINNERS</button>
+            <button onClick={() => window.confirm("End Quiz?") && fetch(`${API_URL}/quiz/end-quiz`, { method: 'POST' })} style={{...styles.mainBtn, background: '#f1c40f', color: '#000'}}>🥇 END QUIZ</button>
         </div>
 
         {/* LIVE INTEL PANEL - HIGHLIGHT RESTORED */}
@@ -213,7 +220,8 @@ export default function BroadcastConsole() {
             </div>
         </div>
 
-        <div style={styles.dangerZone}><button onClick={() => window.confirm("Reset?") && fetch(`${API_URL}/api/quiz/reset`, { method: 'POST' })} style={styles.resetBtn}>💥 MASTER RESET</button></div>
+        {/* FIX: Removed extra /api */}
+        <div style={styles.dangerZone}><button onClick={() => window.confirm("Reset?") && fetch(`${API_URL}/quiz/reset`, { method: 'POST' })} style={styles.resetBtn}>💥 MASTER RESET</button></div>
       </div>
 
       <div style={styles.audiencePanel}>

@@ -19,7 +19,12 @@ export default function ReactionPad() {
 
   useEffect(() => {
     const savedId = localStorage.getItem('quiz_team_id');
-    const newSocket = io(SOCKET_URL);
+    
+    // FIX: Connect using the correct SOCKET_URL
+    const newSocket = io(SOCKET_URL, {
+        transports: ['polling', 'websocket'],
+        path: '/socket.io'
+    });
     setSocket(newSocket);
 
     newSocket.on('quiz_update', (state) => {
@@ -27,7 +32,7 @@ export default function ReactionPad() {
 
       // Auto-join logic
       if (savedId && !hasJoined) {
-        if (state.teams.find((t: any) => t.id === savedId)) {
+        if (state.teams && state.teams.find((t: any) => t.id === savedId)) {
           setHasJoined(true);
           setMyTeamId(savedId);
         }
@@ -68,16 +73,32 @@ export default function ReactionPad() {
 
   const handleJoin = async () => {
     if (!name.trim()) return;
-    await fetch(`${API_URL}/quiz/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.toUpperCase(), icon: 'record', color: '#fff' })
-    });
-    const data = await res.json();
-    if (data.success) {
-      setMyTeamId(data.team.id);
-      setHasJoined(true);
-      localStorage.setItem('quiz_team_id', data.team.id);
+    
+    try {
+        // FIX: Defined 'res' variable so it can be used below
+        const res = await fetch(`${API_URL}/quiz/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // Added socketId to payload to ensure robust backend linking
+            body: JSON.stringify({ 
+                name: name.toUpperCase(), 
+                icon: 'record', 
+                color: '#fff',
+                socketId: socket?.id 
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            setMyTeamId(data.team.id);
+            setHasJoined(true);
+            localStorage.setItem('quiz_team_id', data.team.id);
+        } else {
+            alert("Join failed: " + (data.message || "Unknown error"));
+        }
+    } catch (e) {
+        console.error("Join Error:", e);
     }
   };
 
@@ -87,11 +108,15 @@ export default function ReactionPad() {
     setSelectedIdx(index);
     if (navigator.vibrate) navigator.vibrate(50);
 
- await fetch(`${API_URL}/quiz/answer`, { // <--- Removed extra /api
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ teamId: myTeamId, answerIndex: index })
-    });
+    try {
+        await fetch(`${API_URL}/quiz/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teamId: myTeamId, answerIndex: index })
+        });
+    } catch (e) {
+        console.error("Answer failed:", e);
+    }
   };
 
   if (!hasJoined) {
@@ -104,17 +129,17 @@ export default function ReactionPad() {
     );
   }
 
-  const myTeam = gameState?.teams.find((t: any) => t.id === myTeamId);
+  const myTeam = gameState?.teams?.find((t: any) => t.id === myTeamId);
   const isQuestion = gameState?.status === 'QUESTION_ACTIVE';
   const isResults = gameState?.status === 'SHOW_RESULTS';
   const currentQ = gameState?.currentQuestion;
-  const sortedTeams = gameState?.teams ? [...gameState.teams].sort((a, b) => b.score - a.score) : [];
+  const sortedTeams = gameState?.teams ? [...gameState.teams].sort((a: any, b: any) => b.score - a.score) : [];
 
   return (
     <div style={styles.container}>
       <header style={styles.hud}>
         <div style={styles.hudTeam}>{myTeam?.name}</div>
-        <div style={styles.hudScore}>{myTeam?.score} PTS</div>
+        <div style={styles.hudScore}>{myTeam?.score || 0} PTS</div>
       </header>
 
       <main style={styles.pad}>
@@ -133,7 +158,7 @@ export default function ReactionPad() {
         ) : isQuestion ? (
           <div style={styles.questionView}>
             <div style={styles.grid}>
-              {currentQ?.options.map((opt: string, i: number) => (
+              {currentQ?.options?.map((opt: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(i)}

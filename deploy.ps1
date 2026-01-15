@@ -1,5 +1,5 @@
 # ==========================================
-# JUKEBOX DEPLOY SCRIPT - V3.4 STABLE
+# JUKEBOX DEPLOY SCRIPT - V3.5 STABLE (FIXED)
 # ==========================================
 
 # --- CONFIGURATION ---
@@ -94,9 +94,12 @@ Compress-Archive -Path "$DeployTemp\*" -DestinationPath $ZipFile -Force
 Write-Host "--- Uploading to AWS ---" -ForegroundColor Cyan
 scp -i "$KeyPath" "$ZipFile" "${ServerUser}@${ServerIP}:${RemotePath}/"
 
-# --- 4. REMOTE EXECUTION (CLEAN VERSIONING) ---
+# --- 4. REMOTE EXECUTION (FIXED DEPENDENCIES) ---
 Write-Host "--- Server Restart Sequence ---" -ForegroundColor Cyan
 
+# CRITICAL FIXES IN THIS COMMAND BLOCK:
+# 1. sudo chown (Fixes 'Permission Denied' crashes)
+# 2. Removed --omit=dev (Fixes 'Module not found: tailwindcss')
 $RemoteCmd = "cd ${RemotePath}; " +
              "pm2 stop all || true; " +
              "echo 'Cleaning old artifacts...'; " +
@@ -110,11 +113,11 @@ $RemoteCmd = "cd ${RemotePath}; " +
              "fi; " +
              "rm jukebox_deploy.zip .version_env; " +
              "echo 'Installing Backend...'; " +
-             "npm install --omit=dev --no-save --legacy-peer-deps; " +
+             "npm install --legacy-peer-deps; " +
              "pm2 delete backend || true; pm2 start server.js --name 'backend'; " +
              "cd client; " +
              "echo 'Installing Frontend...'; " +
-             "npm install --omit=dev --no-save --legacy-peer-deps; " +
+             "npm install --legacy-peer-deps; " +
              "pm2 delete frontend || true; pm2 start npm --name 'frontend' -- start; " +
              "pm2 save"
 

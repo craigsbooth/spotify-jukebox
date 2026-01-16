@@ -1,4 +1,4 @@
-// routes/quiz_engine.js - Full V7.1 (Security Masking + Async Queue + Deferred Scoring)
+// routes/quiz_engine.js - Full V7.2 (Security Masking + Async Queue + Deferred Scoring + Shuffle Fix)
 const EventEmitter = require('events');
 const fs = require('fs');
 const path = require('path');
@@ -127,6 +127,7 @@ class QuizEngine extends EventEmitter {
 
         if (pool.length === 0) return { error: "No unique tracks left!" };
 
+        // Sort pool randomly and slice to get the requested count
         const selection = pool.sort(() => Math.random() - 0.5).slice(0, count);
 
         // Pre-generate questions loop
@@ -138,9 +139,13 @@ class QuizEngine extends EventEmitter {
             }
         }
 
-        this.gameState.quizQueue = [...this.gameState.quizQueue, ...selection];
+        // FIX: Final shuffle of the selection before adding to the queue. 
+        // This ensures the order of questions is unpredictable and reduces spoilers.
+        const shuffledSelection = selection.sort(() => Math.random() - 0.5);
+
+        this.gameState.quizQueue = [...this.gameState.quizQueue, ...shuffledSelection];
         this.emit('state_update', this.gameState);
-        return { success: true, added: selection.length };
+        return { success: true, added: shuffledSelection.length };
     }
 
     async playNextTrack() {

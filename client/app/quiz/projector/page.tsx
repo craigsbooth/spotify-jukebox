@@ -53,7 +53,6 @@ export default function KahootDeezerProjector() {
   const hideDetails = isQuestion && ['ARTIST', 'TITLE', 'SOUNDTRACK'].includes(currentQuestion.type);
 
   // QR Code Link (Dynamic based on where the app is running)
-  // We use API_URL but strip the '/api' suffix to get the clean root domain
   const joinUrl = API_URL.replace('/api', '') + '/quiz';
 
   return (
@@ -75,7 +74,16 @@ export default function KahootDeezerProjector() {
           <div style={{...styles.qCard, display: currentQuestion.image ? 'flex' : 'block', gap: 60}}>
             {currentQuestion.image && (
               <div style={styles.qImageContainer}>
-                <img src={currentQuestion.image} style={styles.qImage} alt="Visual" />
+                <img 
+                  src={currentQuestion.image} 
+                  style={{
+                    ...styles.qImage,
+                    // FIX: Blur image during question to prevent spoilers on album covers
+                    filter: 'blur(30px)',
+                    transition: 'filter 1.2s ease'
+                  }} 
+                  alt="Visual" 
+                />
               </div>
             )}
             <div style={{flex: 1}}>
@@ -101,6 +109,24 @@ export default function KahootDeezerProjector() {
                 <span style={{marginRight: 20}}>{ICONS[currentQuestion.correctIndex]}</span>
                 {currentQuestion.options[currentQuestion.correctIndex]}
               </div>
+
+              {/* REVEAL IMAGE WITHOUT BLUR IN RESULTS */}
+              {currentQuestion.image && (
+                <div style={{marginTop: '30px', textAlign: 'center'}}>
+                   <img 
+                    src={currentQuestion.image} 
+                    style={{
+                      ...styles.qImage,
+                      maxHeight: '300px',
+                      width: 'auto',
+                      filter: 'none',
+                      borderRadius: '15px',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }} 
+                    alt="Revealed Visual" 
+                  />
+                </div>
+              )}
               
               <div style={styles.leaderboardBox}>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20, borderBottom:'1px solid rgba(255,255,255,0.2)', paddingBottom:10}}>
@@ -116,7 +142,6 @@ export default function KahootDeezerProjector() {
                     </div>
                     
                     <div style={{display:'flex', alignItems:'center', gap: 20}}>
-                        {/* NEW: Round Points Display (Blank if 0) */}
                         {t.lastPointsGained > 0 && (
                             <span style={styles.roundPoints}>+{t.lastPointsGained}</span>
                         )}
@@ -184,7 +209,6 @@ export default function KahootDeezerProjector() {
             ) : (
               <div style={styles.lobbyView}>
                 <div style={styles.qrSide}>
-                  {/* FIX: Use Dynamic URL for QR Code */}
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`} style={styles.qr} alt="QR" />
                 </div>
                 <div style={styles.joinText}>

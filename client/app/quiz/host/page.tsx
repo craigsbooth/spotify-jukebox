@@ -15,6 +15,10 @@ export default function BroadcastConsole() {
   const [results, setResults] = useState([]);
   const [deviceId, setDeviceId] = useState('');
   const [availableDevices, setAvailableDevices] = useState<any[]>([]);
+  const [autoMode, setAutoMode] = useState(false); // Master switch
+  const [gapTimer, setGapTimer] = useState(0);     // The countdown value
+  const [isPaused, setIsPaused] = useState(false); // Pause toggle
+  const GAP_TIME = 10;                             // Seconds between questions
 
   useEffect(() => {
     // FIX: Using SOCKET_URL connects to the root domain correctly
@@ -24,6 +28,50 @@ export default function BroadcastConsole() {
     refreshDevices();
     return () => { socket.disconnect(); };
   }, []);
+// --- AUTO DIRECTOR ENGINE ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (autoMode && !isPaused) {
+      // Logic: If we are in RESULTS mode, start counting down
+      if (gameState?.status === 'SHOW_RESULTS') {
+        interval = setInterval(() => {
+          setGapTimer((prev) => {
+            if (prev <= 1) {
+              // TIMER FINISHED: TRIGGER NEXT STEP
+              handleAutoNext();
+              return GAP_TIME; // Reset
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } 
+      // Reset timer if we are manually moved out of results
+      else {
+        setGapTimer(GAP_TIME);
+      }
+    }
+
+    return () => clearInterval(interval);
+  }, [autoMode, isPaused, gameState?.status, gapTimer]); // Dependencies
+
+  // The function that decides what to do when timer hits 0
+  const handleAutoNext = async () => {
+    // 1. Is there another question ready?
+    // We check if the current track queue has items OR if we haven't asked all Qs for this track
+    // (Simplification: Just try to ask. If backend says "No questions", we skip track)
+    
+    // Attempt to Ask Question
+    await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
+    
+    // Wait a tiny bit to check state (optional), but if the question fails (because none left),
+    // We trigger Next Track. 
+    // *Implementation Note:* For V1, the Host still needs to decide when to change tracks, 
+    // OR we simply hit "Ask". If the backend returns error, we hit "Next Track".
+    
+    // For now, let's keep it simple: Just Auto-Ask Question. 
+    // You will manually hit "Play Next Track" when the song gets boring.
+  };
 
   const refreshDevices = async () => {
     try {
@@ -104,7 +152,27 @@ export default function BroadcastConsole() {
             <h1 style={styles.title}>BROADCAST CONSOLE v4.5</h1>
             <div style={{...styles.statusPill, color: isQuestion ? '#f1c40f' : '#2ecc71'}}>{gameState.status}</div>
         </header>
-
+{/* AUTO DIRECTOR PANEL */}
+        <div style={{...styles.settingsSection, border: autoMode ? '1px solid #2ecc71' : '1px solid #333'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <label style={styles.label}>🤖 AUTO-HOST ({gapTimer}s)</label>
+                <button 
+                    onClick={() => setAutoMode(!autoMode)} 
+                    style={{
+                        ...styles.toggleBtn, 
+                        background: autoMode ? '#2ecc71' : '#333'
+                    }}>
+                    {autoMode ? 'ON' : 'OFF'}
+                </button>
+            </div>
+            {autoMode && (
+                <div style={{marginTop: 10, display:'flex', gap: 10}}>
+                    <button onClick={() => setIsPaused(!isPaused)} style={styles.mainBtn}>
+                        {isPaused ? '▶ RESUME' : '⏸ PAUSE TIMER'}
+                    </button>
+                </div>
+            )}
+        </div>
         {/* PLAYER SELECTOR */}
         <div style={styles.settingsSection}>
             <label style={styles.label}>SPOTIFY PLAYBACK DEVICE</label>

@@ -19,11 +19,11 @@ export default function ReactionPad() {
 
   useEffect(() => {
     const savedId = localStorage.getItem('quiz_team_id');
-    
+
     // FIX: Connect using the correct SOCKET_URL
     const newSocket = io(SOCKET_URL, {
-        transports: ['polling', 'websocket'],
-        path: '/socket.io'
+      transports: ['polling', 'websocket'],
+      path: '/socket.io'
     });
     setSocket(newSocket);
 
@@ -73,32 +73,32 @@ export default function ReactionPad() {
 
   const handleJoin = async () => {
     if (!name.trim()) return;
-    
+
     try {
-        // FIX: Defined 'res' variable so it can be used below
-        const res = await fetch(`${API_URL}/quiz/join`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            // Added socketId to payload to ensure robust backend linking
-            body: JSON.stringify({ 
-                name: name.toUpperCase(), 
-                icon: 'record', 
-                color: '#fff',
-                socketId: socket?.id 
-            })
-        });
+      // FIX: Defined 'res' variable so it can be used below
+      const res = await fetch(`${API_URL}/quiz/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Added socketId to payload to ensure robust backend linking
+        body: JSON.stringify({
+          name: name.toUpperCase(),
+          icon: 'record',
+          color: '#fff',
+          socketId: socket?.id
+        })
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (data.success) {
-            setMyTeamId(data.team.id);
-            setHasJoined(true);
-            localStorage.setItem('quiz_team_id', data.team.id);
-        } else {
-            alert("Join failed: " + (data.message || "Unknown error"));
-        }
+      if (data.success) {
+        setMyTeamId(data.team.id);
+        setHasJoined(true);
+        localStorage.setItem('quiz_team_id', data.team.id);
+      } else {
+        alert("Join failed: " + (data.message || "Unknown error"));
+      }
     } catch (e) {
-        console.error("Join Error:", e);
+      console.error("Join Error:", e);
     }
   };
 
@@ -109,13 +109,13 @@ export default function ReactionPad() {
     if (navigator.vibrate) navigator.vibrate(50);
 
     try {
-        await fetch(`${API_URL}/quiz/answer`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ teamId: myTeamId, answerIndex: index })
-        });
+      await fetch(`${API_URL}/quiz/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: myTeamId, answerIndex: index })
+      });
     } catch (e) {
-        console.error("Answer failed:", e);
+      console.error("Answer failed:", e);
     }
   };
 
@@ -123,7 +123,11 @@ export default function ReactionPad() {
     return (
       <div style={styles.lobby}>
         <h1 style={styles.lobbyTitle}>MUSIC QUIZ</h1>
-        <input style={styles.input} placeholder="ENTER NICKNAME" value={name} onChange={e => setName(e.target.value)} />
+        <input style={styles.input} placeholder="ENTER NICKNAME" value={name}
+          onChange={e => setName(e.target.value)}
+          autoComplete="off"
+          name="quiz_nickname"
+        />
         <button style={styles.joinBtn} onClick={handleJoin}>OK, GO!</button>
       </div>
     );

@@ -1,4 +1,4 @@
-// routes/quiz_socket.js - Real-Time Event Handler for Music Quiz (v3.4 - Dual Broadcast)
+// routes/quiz_socket.js - Real-Time Event Handler for Music Quiz (v3.5 - Autohost Sync)
 const quizEngine = require('./quiz_engine');
 
 module.exports = (io) => {
@@ -17,6 +17,12 @@ module.exports = (io) => {
                 socket.emit('quiz_update', quizEngine.gameState);
                 console.log(`📺 Projector/Host Synced: ${socket.id}`);
             }
+        });
+
+        // --- NEW: AUTOHOST SYNC ---
+        // Relays the gap timer from the Host Console to the Projector
+        socket.on('autohost_countdown', (seconds) => {
+            io.to('quiz_projector').emit('autohost_countdown', seconds);
         });
 
         // 3. Handle Client Actions

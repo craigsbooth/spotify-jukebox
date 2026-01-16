@@ -32,11 +32,25 @@ function AnimatedNumber({ value }: { value: number }) {
 export default function KahootDeezerProjector() {
   const [gameState, setGameState] = useState<any>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [nextQuestionTimer, setNextQuestionTimer] = useState<number | null>(null);
 
   useEffect(() => {
     const socket = io(SOCKET_URL);
     socket.emit('join_room', 'quiz_projector');
-    socket.on('quiz_update', (state: any) => setGameState(state));
+    
+    socket.on('quiz_update', (state: any) => {
+      setGameState(state);
+      // Clear local countdown if we move out of results mode
+      if (state.status !== 'SHOW_RESULTS') {
+        setNextQuestionTimer(null);
+      }
+    });
+
+    // Listen for the autohost heartbeat from the host console
+    socket.on('autohost_countdown', (seconds: number) => {
+      setNextQuestionTimer(seconds);
+    });
+
     return () => { socket.disconnect(); };
   }, []);
 
@@ -49,10 +63,6 @@ export default function KahootDeezerProjector() {
   const leaderboard = [...teams].sort((a, b) => b.score - a.score);
   const podium = leaderboard.slice(0, 3);
   
-  // Anti-Cheat: Hide track info if the question is identifying it
-  const hideDetails = isQuestion && ['ARTIST', 'TITLE', 'SOUNDTRACK'].includes(currentQuestion.type);
-
-  // QR Code Link (Dynamic based on where the app is running)
   const joinUrl = API_URL.replace('/api', '') + '/quiz';
 
   return (
@@ -78,8 +88,8 @@ export default function KahootDeezerProjector() {
                   src={currentQuestion.image} 
                   style={{
                     ...styles.qImage,
-                    // FIX: Blur image during question to prevent spoilers on album covers
-                    filter: 'blur(30px)',
+                    // FIX: Blur reduced to 8px so it's visible but not readable
+                    filter: 'blur(8px)',
                     transition: 'filter 1.2s ease'
                   }} 
                   alt="Visual" 
@@ -104,13 +114,24 @@ export default function KahootDeezerProjector() {
         {/* VIEW 2: ROUND RESULTS */}
         {isResults && (
            <div style={styles.resultsReveal}>
+              {/* AUTO-HOST COUNTDOWN OVERLAY */}
+              {nextQuestionTimer !== null && (
+                <div style={{
+                  position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.8)', 
+                  padding: '15px 25px', borderRadius: '40px', border: '3px solid #f1c40f', zIndex: 100,
+                  textAlign: 'center', animation: 'pulse 1s infinite'
+                }}>
+                  <div style={{fontSize: '0.8rem', fontWeight: 900, opacity: 0.8}}>NEXT QUESTION IN</div>
+                  <div style={{fontSize: '2.5rem', fontWeight: 900, color: '#f1c40f'}}>{nextQuestionTimer}s</div>
+                </div>
+              )}
+
               <div style={styles.revealLabel}>CORRECT ANSWER</div>
               <div style={{...styles.answerBanner, background: ['#e21b3c','#1368ce','#d89e00','#26890c'][currentQuestion.correctIndex]}}>
                 <span style={{marginRight: 20}}>{ICONS[currentQuestion.correctIndex]}</span>
                 {currentQuestion.options[currentQuestion.correctIndex]}
               </div>
 
-              {/* REVEAL IMAGE WITHOUT BLUR IN RESULTS */}
               {currentQuestion.image && (
                 <div style={{marginTop: '30px', textAlign: 'center'}}>
                    <img 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import WebPlayer from './WebPlayer'; 
 import { styles } from './BroadcastConsole.styles';
@@ -19,16 +19,20 @@ export default function BroadcastConsole() {
   const [gapTimer, setGapTimer] = useState(0);     // The countdown value
   const [isPaused, setIsPaused] = useState(false); // Pause toggle
   const GAP_TIME = 10;                             // Seconds between questions
+  const socketRef = useRef<any>(null);
 
   useEffect(() => {
     // FIX: Using SOCKET_URL connects to the root domain correctly
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
+
     socket.emit('join_room', 'quiz_projector');
     socket.on('quiz_update', (state) => setGameState(state));
     refreshDevices();
     return () => { socket.disconnect(); };
   }, []);
-// --- AUTO DIRECTOR ENGINE ---
+
+  // --- AUTO DIRECTOR ENGINE ---
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -37,12 +41,19 @@ export default function BroadcastConsole() {
       if (gameState?.status === 'SHOW_RESULTS') {
         interval = setInterval(() => {
           setGapTimer((prev) => {
+            const newVal = prev <= 1 ? GAP_TIME : prev - 1;
+            
+            // Broadcast the countdown to the projector
+            if (socketRef.current) {
+                socketRef.current.emit('autohost_countdown', newVal);
+            }
+
             if (prev <= 1) {
               // TIMER FINISHED: TRIGGER NEXT STEP
               handleAutoNext();
-              return GAP_TIME; // Reset
+              return GAP_TIME; 
             }
-            return prev - 1;
+            return newVal;
           });
         }, 1000);
       } 
@@ -53,24 +64,23 @@ export default function BroadcastConsole() {
     }
 
     return () => clearInterval(interval);
-  }, [autoMode, isPaused, gameState?.status, gapTimer]); // Dependencies
+  }, [autoMode, isPaused, gameState?.status]); // Dependencies
 
   // The function that decides what to do when timer hits 0
   const handleAutoNext = async () => {
-    // 1. Is there another question ready?
-    // We check if the current track queue has items OR if we haven't asked all Qs for this track
-    // (Simplification: Just try to ask. If backend says "No questions", we skip track)
-    
-    // Attempt to Ask Question
-    await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
-    
-    // Wait a tiny bit to check state (optional), but if the question fails (because none left),
-    // We trigger Next Track. 
-    // *Implementation Note:* For V1, the Host still needs to decide when to change tracks, 
-    // OR we simply hit "Ask". If the backend returns error, we hit "Next Track".
-    
-    // For now, let's keep it simple: Just Auto-Ask Question. 
-    // You will manually hit "Play Next Track" when the song gets boring.
+    try {
+        // 1. Attempt to Ask Question
+        const res = await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
+        const data = await res.json();
+        
+        // 2. If no questions left, move to the next track automatically
+        if (data.error === "No question available") {
+            console.log("⏭️ No more questions for track. Advancing...");
+            handlePlayNext();
+        }
+    } catch (e) {
+        console.error("Auto-Next Error:", e);
+    }
   };
 
   const refreshDevices = async () => {
@@ -96,7 +106,6 @@ export default function BroadcastConsole() {
   };
 
   const handleAutoPopulate = async () => {
-    // FIX: Removed extra /api
     await fetch(`${API_URL}/quiz/auto-populate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ count: 10 })
@@ -104,7 +113,6 @@ export default function BroadcastConsole() {
   };
 
   const removeFromQueue = async (index: number) => {
-    // FIX: Removed extra /api
     await fetch(`${API_URL}/quiz/queue/remove`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index })
@@ -112,14 +120,12 @@ export default function BroadcastConsole() {
   };
 
   const searchTracks = async () => {
-    // FIX: Removed extra /api
     const res = await fetch(`${API_URL}/quiz/search?q=${search}`);
     const data = await res.json();
     setResults(data.tracks || []);
   };
 
   const addToQueue = async (track: any) => {
-    // FIX: Removed extra /api
     await fetch(`${API_URL}/quiz/queue`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ track })
@@ -128,7 +134,6 @@ export default function BroadcastConsole() {
 
   const handlePlayNext = async () => {
     if (!deviceId) { alert("Select a playback device!"); return; }
-    // FIX: Removed extra /api
     await fetch(`${API_URL}/quiz/next`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deviceId })
@@ -152,7 +157,8 @@ export default function BroadcastConsole() {
             <h1 style={styles.title}>BROADCAST CONSOLE v4.5</h1>
             <div style={{...styles.statusPill, color: isQuestion ? '#f1c40f' : '#2ecc71'}}>{gameState.status}</div>
         </header>
-{/* AUTO DIRECTOR PANEL */}
+
+        {/* AUTO DIRECTOR PANEL */}
         <div style={{...styles.settingsSection, border: autoMode ? '1px solid #2ecc71' : '1px solid #333'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <label style={styles.label}>🤖 AUTO-HOST ({gapTimer}s)</label>
@@ -173,6 +179,7 @@ export default function BroadcastConsole() {
                 </div>
             )}
         </div>
+
         {/* PLAYER SELECTOR */}
         <div style={styles.settingsSection}>
             <label style={styles.label}>SPOTIFY PLAYBACK DEVICE</label>
@@ -189,13 +196,11 @@ export default function BroadcastConsole() {
 
         <div style={styles.masterActions}>
             <button onClick={handlePlayNext} style={{...styles.mainBtn, background: '#2ecc71'}}>▶ PLAY NEXT TRACK <span style={styles.subBtn}>Queue: {gameState.quizQueue?.length || 0} left</span></button>
-            {/* FIX: Removed extra /api from buttons below */}
             <button onClick={() => fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#95a5a6' : '#e21b3c'}} disabled={isQuestion || !gameState.isPlaying}>❓ ASK QUESTION</button>
             <button onClick={() => fetch(`${API_URL}/quiz/reveal-answer`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#f1c40f' : '#333', color: isQuestion ? '#000' : '#666'}} disabled={!isQuestion}>🏆 REVEAL WINNERS</button>
             <button onClick={() => window.confirm("End Quiz?") && fetch(`${API_URL}/quiz/end-quiz`, { method: 'POST' })} style={{...styles.mainBtn, background: '#f1c40f', color: '#000'}}>🥇 END QUIZ</button>
         </div>
 
-        {/* LIVE INTEL PANEL - HIGHLIGHT RESTORED */}
         {(isQuestion || isResults) && currentQ && (
           <div style={styles.liveIntelPanel}>
               <div style={{flex: 1}}>
@@ -220,7 +225,6 @@ export default function BroadcastConsole() {
                   </div>
               </div>
               
-              {/* PERFORMANCE INTEL */}
               {isResults && (
                 <div style={styles.roundStats}>
                   <label style={styles.label}>PERFORMANCE</label>
@@ -241,7 +245,6 @@ export default function BroadcastConsole() {
           </div>
         )}
 
-        {/* LIVE QUEUE */}
         <div style={styles.settingsSection}>
             <label style={styles.label}>LIVE QUEUE ({gameState.quizQueue?.length || 0})</label>
             <div style={styles.queueScroll}>
@@ -288,7 +291,6 @@ export default function BroadcastConsole() {
             </div>
         </div>
 
-        {/* FIX: Removed extra /api */}
         <div style={styles.dangerZone}><button onClick={() => window.confirm("Reset?") && fetch(`${API_URL}/quiz/reset`, { method: 'POST' })} style={styles.resetBtn}>💥 MASTER RESET</button></div>
       </div>
 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { styles } from './ReactionPad.styles';
 import { API_URL, SOCKET_URL } from '../config';
@@ -16,6 +16,34 @@ export default function ReactionPad() {
   const [hasAnswered, setHasAnswered] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showStandings, setShowStandings] = useState(false);
+  const wakeLockRef = useRef<any>(null);
+
+  // --- WAKE LOCK: Keep screen on during the quiz ---
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          console.log('🔒 Wake Lock Active');
+        }
+      } catch (err) {
+        console.error('⚠️ Wake Lock Error:', err);
+      }
+    };
+
+    requestWakeLock();
+
+    // Re-request wake lock if tab becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockRef.current) wakeLockRef.current.release();
+    };
+  }, []);
 
   useEffect(() => {
     const savedId = localStorage.getItem('quiz_team_id');
@@ -48,6 +76,13 @@ export default function ReactionPad() {
         setHasAnswered(false);
         setSelectedIdx(null);
         setShowStandings(false);
+      }
+    });
+
+    // --- VIBRATION: Alert player before question asks ---
+    newSocket.on('autohost_countdown', (seconds: number) => {
+      if (seconds <= 3 && seconds > 0) {
+        if (navigator.vibrate) navigator.vibrate(100);
       }
     });
 

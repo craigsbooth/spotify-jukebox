@@ -1,6 +1,6 @@
-// routes/quiz_question_factory.js - Full V7.0 (Shuffling, API Images, Decade Decoys)
+// routes/quiz_question_factory.js - V8.3 (Refined Mix & Corrected Suggestion #2)
 const quizDB = require('../data/quiz_db');
-const spotifyApi = require('../spotify_instance');
+const helpers = require('./quiz_helpers');
 
 class QuestionFactory {
     static async generate(track, config, history) {
@@ -24,23 +24,15 @@ class QuestionFactory {
             });
         }
 
-        // 2. If no curated questions, use the generator
+        // 2. Fallback to Generator
         if (pool.length === 0) return await this.generateTemplate(track, config, history);
 
-        // 3. Select a random curated question
+        // 3. Process curated question
         const selected = pool[Math.floor(Math.random() * pool.length)];
-        
-        // FIX #4: Shuffle the options so correct answer position is random
-        // We create a new shuffled array from the options
         const shuffledOptions = [...selected.options].sort(() => Math.random() - 0.5);
+        const calculatedIndex = shuffledOptions.indexOf(selected.correct);
         
-        // Re-calculate index based on shuffle
-        let calculatedIndex = shuffledOptions.indexOf(selected.correct);
-        
-        if (calculatedIndex === -1) {
-             console.error(`⚠️ DATA ERROR: Curated question "${selected.text}" invalid keys. Fallback.`);
-             return await this.generateTemplate(track, config, history);
-        }
+        if (calculatedIndex === -1) return await this.generateTemplate(track, config, history);
 
         const selectedHash = Buffer.from(selected.text + selected.correct).toString('base64');
         history.push(selectedHash);
@@ -49,9 +41,9 @@ class QuestionFactory {
             id: Math.random().toString(36).substr(2),
             type: selected.type,
             text: selected.text,
-            options: shuffledOptions, // Send shuffled options
+            options: shuffledOptions,
             correctIndex: calculatedIndex,
-            correct: selected.correct, // Keep reference for Engine verification
+            correct: selected.correct,
             image: selected.imagePath || null, 
             points: parseInt(selected.points) || 1000,
             difficulty: selected.difficulty,
@@ -60,104 +52,66 @@ class QuestionFactory {
     }
 
     static async generateTemplate(track, config, history) {
-        const rand = Math.random();
+        const typeRoll = Math.random();
+        // DEFAULT: Artist ID (500 pts)
+        let template = { type: 'ARTIST', text: `Who performs "${track.name}"?`, correct: track.artist, points: 500 };
         
-        // FIX #6: Increased picture probability to 80% (if enabled)
-        const usePicture = config.enablePictures && rand > 0.2; 
+        // 1. Manage the % Mix
+        if (typeRoll > 0.8) { // 20% Year Recognition (1000 pts)
+            template = { type: 'YEAR', text: `In what year was "${track.name}" released?`, correct: track.year.toString(), points: 1000 };
+        } else if (typeRoll > 0.6) { // 20% Genre Identification (750 pts)
+            template = { type: 'GENRE', text: `What is the primary genre of "${track.name}"?`, correct: track.genre, points: 750 };
+        }
+
+        // 2. Fetch Spotify Metadata (Popularity & Images)
+        const spotifyData = await helpers.getAlbumData(track);
         
-        let qData = null;
-        if (usePicture) {
-            if (rand > 0.6) {
-                qData = await this.getArtistData(track);
-            } else {
-                qData = await this.getAlbumData(track);
+        // 3. Suggestion #2: Album Context Questions (Only for tracks with Popularity > 70)
+        // Replaces Genre/Year if track is famous enough
+        if (spotifyData && spotifyData.popularity > 70 && Math.random() > 0.6) {
+            template = { 
+                type: 'ALBUM', 
+                text: `On which album does the track "${track.name}" appear?`, 
+                correct: track.album || spotifyData.albumName, 
+                points: 1250 
+            };
+        }
+
+        // 4. Picture Round Enhancement
+        let image = null;
+        if (config.enablePictures && Math.random() > 0.3) {
+            const picData = Math.random() > 0.5 ? await helpers.getArtistData(track) : spotifyData;
+            if (picData?.image) {
+                image = picData.image;
+                template.points += 250; // Visual bonus for identifying from imagery
             }
         }
 
-        // Fallback to text if API fails or random roll was text
-        if (!qData) qData = {
-            text: `Who performs the track "${track.name}"?`,
-            type: 'ARTIST',
-            image: null
-        };
-
-        const qHash = Buffer.from(qData.text + track.artist).toString('base64');
-        
-        // FIX #1: Strict History Check preventing duplicates
+        const qHash = Buffer.from(template.text + template.correct).toString('base64');
         if (history.includes(qHash)) return null; 
 
-        const options = this.getDecoyOptions(track);
+        // Generate Options via Helpers
+        let options = [];
+        if (template.type === 'YEAR') options = helpers.getDecoyYears(template.correct);
+        else if (template.type === 'GENRE') options = helpers.getDecoyGenres(template.correct);
+        else if (template.type === 'ALBUM') options = helpers.getDecoyAlbums(track);
+        else options = helpers.getDecoyArtists(track);
+
         history.push(qHash);
-        
+        if (history.length > 50) history.shift(); // Maintain memory efficiency
+
         return {
             id: Math.random().toString(36).substr(2),
-            type: qData.type,
-            text: qData.text,
-            options: options, // Already shuffled in getDecoyOptions
-            correctIndex: options.indexOf(track.artist),
-            correct: track.artist,
-            image: qData.image,
-            points: 500,
-            difficulty: 'Easy',
+            type: template.type,
+            text: template.text,
+            options: options,
+            correctIndex: options.indexOf(template.correct),
+            correct: template.correct,
+            image: image,
+            points: template.points,
+            difficulty: template.points >= 1250 ? 'Hard' : (template.points >= 750 ? 'Medium' : 'Easy'),
             expiresAt: Date.now() + (config.timePerQuestion * 1000)
         };
-    }
-
-    static getDecoyOptions(track) {
-        const correct = track.artist;
-        const allTracks = quizDB.tracks;
-        
-        // 1. Prioritize artists from the SAME DECADE
-        let decoys = [...new Set(
-            allTracks
-            .filter(t => t.decade === track.decade && t.artist !== correct)
-            .map(t => t.artist)
-        )];
-
-        // 2. Backfill with any artist if needed (if DB is small)
-        if (decoys.length < 3) {
-            const others = [...new Set(
-                allTracks
-                .filter(t => t.artist !== correct && !decoys.includes(t.artist))
-                .map(t => t.artist)
-            )];
-            decoys = [...decoys, ...others];
-        }
-
-        // 3. Shuffle and pick 3
-        const selected = decoys.sort(() => Math.random() - 0.5).slice(0, 3);
-        
-        // 4. Safe Fallback
-        while (selected.length < 3) {
-            selected.push(`Artist ${selected.length + 1}`);
-        }
-
-        // FIX #4: Return final array shuffled (Correct + 3 Decoys)
-        return [correct, ...selected].sort(() => Math.random() - 0.5);
-    }
-
-    static async getAlbumData(track) {
-        if (!track.uri) return null;
-        try {
-            const id = track.uri.split(':').pop();
-            const res = await spotifyApi.getTrack(id);
-            const img = res.body.album.images[0]?.url;
-            return img ? { text: "Identify the Artist from this Album", type: 'PICTURE_ALBUM', image: img } : null;
-        } catch (e) { 
-            console.error("⚠️ Spotify Album Fetch Failed:", e.message);
-            return null; 
-        }
-    }
-
-    static async getArtistData(track) {
-        try {
-            const res = await spotifyApi.searchArtists(track.artist);
-            const img = res.body.artists.items[0]?.images[0]?.url;
-            return img ? { text: "Identify this Artist", type: 'PICTURE_ARTIST', image: img } : null;
-        } catch (e) { 
-            console.error("⚠️ Spotify Artist Fetch Failed:", e.message);
-            return null; 
-        }
     }
 }
 

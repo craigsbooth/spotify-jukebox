@@ -1,0 +1,35 @@
+{
+  "team_nid5rqb2x": {
+    "id": "team_nid5rqb2x",
+    "name": "CRAIG",
+    "icon": "record",
+    "color": "#fff",
+    "score": 7750,
+    "answers": {
+      "olfjfwjgk6": {
+        "answer": 3,
+        "correct": true,
+        "points": 1000,
+        "timestamp": 1768583901848
+      },
+      "c0y09zmn1e": {
+        "answer": 3,
+        "correct": true,
+        "points": 5000,
+        "timestamp": 1768584076871
+      },
+      "mjar0n44t0q": {
+        "answer": 2,
+        "correct": true,
+        "points": 1000,
+        "timestamp": 1768584582929
+      },
+      "wl2qdoix6ks": {
+        "answer": 3,
+        "correct": true,
+        "points": 750,
+        "timestamp": 1768584615803
+      }
+    }
+  }
+}

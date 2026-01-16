@@ -1,57 +1,119 @@
-// lyrics_engine.js - Dedicated & Fast
-const lyricsCache = new Map();
+'use client';
 
-/**
- * Clean title for better search results
- */
-function cleanTitle(title) {
-    if (!title) return "";
-    return title.split(' - ')[0].split(' (')[0].split(' [')[0]
-        .replace(/remastered|version|radio edit|live|feat\..*/gi, '').trim();
-}
+import { useEffect, useState } from 'react';
 
-/**
- * Fetch Lyrics (Non-blocking)
- */
-async function fetchLyrics(track) {
-    if (!track || !track.name || !track.artist) return null;
+export default function TestLyricsPage() {
+  const [status, setStatus] = useState('Disconnected');
+  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [lyricsData, setLyricsData] = useState<any>(null);
+  const [logs, setLogs] = useState<string[]>([]);
 
-    // 1. FAST PATH: Check Cache
-    if (lyricsCache.has(track.uri)) {
-        console.log(`⚡ Lyrics: Cache hit for ${track.name}`);
-        return lyricsCache.get(track.uri);
-    }
+  const addLog = (msg: string) => {
+    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 20));
+  };
 
-    const searchName = cleanTitle(track.name);
-    const searchArtist = track.artist.split(',')[0].trim();
+  useEffect(() => {
+    // Force HTTPS to match your domain
+    const sseUrl = 'https://jukebox.boldron.info/api/events'; 
 
-    console.log(`🔍 Lyrics: Fetching live for "${searchName}"...`);
+    addLog(`Attempting connection to ${sseUrl}...`);
+    const evtSource = new EventSource(sseUrl);
 
-    try {
-        const query = encodeURIComponent(`${searchArtist} ${searchName}`);
-        const url = `https://lrclib.net/api/search?q=${query}`;
-        
-        const res = await fetch(url);
-        if (res.ok) {
-            const results = await res.json();
-            if (Array.isArray(results) && results.length > 0) {
-                const match = results.find(r => r.syncedLyrics) || results[0];
-                const lyricsData = { 
-                    synced: match.syncedLyrics || null, 
-                    plain: match.plainLyrics || null 
-                };
+    evtSource.onopen = () => {
+      setStatus('🟢 Connected to SSE Stream');
+      addLog('Connection Open');
+    };
 
-                // Save to cache so next time it's instant
-                lyricsCache.set(track.uri, lyricsData);
-                console.log(`✅ Lyrics: Found and Cached for "${searchName}"`);
-                return lyricsData;
+    // --- THE FIX: USE ONMESSAGE INSTEAD OF ADDEVENTLISTENER ---
+    evtSource.onmessage = (e) => {
+      try {
+        const parsed = JSON.parse(e.data);
+        const { type, payload } = parsed;
+
+        // 1. Handle Initial Sync (Happens immediately on connect)
+        if (type === 'INIT') {
+            addLog('🔄 Received Initial State');
+            if (payload.currentTrack) setCurrentTrack(payload.currentTrack);
+            if (payload.currentLyrics) {
+                setLyricsData(payload.currentLyrics);
+                addLog('📝 Found Lyrics in Init');
             }
         }
-    } catch (e) {
-        console.warn(`⚠️ Lyrics: Fetch failed for ${searchName}`);
-    }
+        
+        // 2. Handle Track Updates
+        else if (type === 'CURRENT_TRACK') {
+            // Support both direct payload or nested payload
+            const data = payload || parsed; 
+            setCurrentTrack(data);
+            addLog(`🎵 Track Update: ${data.name || 'Unknown'}`);
+        }
 
-    return null;
+        // 3. Handle Lyrics Updates
+        else if (type === 'LYRICS_UPDATE') {
+            const data = payload || parsed;
+            setLyricsData(data.lyrics || data); // Handle {lyrics: {...}} or direct {...}
+            addLog(`📝 Lyrics Update: ${data ? 'HAS DATA' : 'NULL'}`);
+        }
+
+      } catch (err) {
+        console.error("Parse Error", err);
+      }
+    };
+
+    evtSource.onerror = (err) => {
+      // Only log if we were previously connected to avoid spam
+      if (status.startsWith('🟢')) {
+          setStatus('🔴 Connection Error');
+          addLog('Connection Lost');
+      }
+    };
+
+    return () => {
+      evtSource.close();
+    };
+  }, []);
+
+  return (
+    <div style={{ padding: '2rem', fontFamily: 'monospace', backgroundColor: '#111', color: '#0f0', minHeight: '100vh' }}>
+      <h1>🕵️ Lyrics Debugger (v2)</h1>
+      <h3 style={{ color: status.startsWith('🟢') ? '#0f0' : '#f00' }}>{status}</h3>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        
+        {/* COLUMN 1: LIVE DATA */}
+        <div>
+          <h2>🎵 Current Track</h2>
+          <div style={{ background: '#222', padding: '10px', borderRadius: '5px', marginBottom: '20px' }}>
+            {currentTrack ? (
+              <>
+                <p><strong>Name:</strong> {currentTrack.name}</p>
+                <p><strong>Artist:</strong> {currentTrack.artist}</p>
+                <p><strong>URI:</strong> {currentTrack.uri}</p>
+              </>
+            ) : <p>Waiting for track...</p>}
+          </div>
+
+          <h2>📝 Lyrics State</h2>
+          <div style={{ background: '#222', padding: '10px', borderRadius: '5px', minHeight: '200px' }}>
+            {lyricsData ? (
+              <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
+                {JSON.stringify(lyricsData, null, 2)}
+              </pre>
+            ) : <p>Waiting for lyrics event...</p>}
+          </div>
+        </div>
+
+        {/* COLUMN 2: EVENT LOGS */}
+        <div>
+          <h2>📡 Event Log</h2>
+          <div style={{ background: '#000', border: '1px solid #333', padding: '10px', height: '400px', overflowY: 'auto' }}>
+            {logs.map((log, i) => (
+              <div key={i} style={{ borderBottom: '1px solid #222', padding: '4px 0' }}>{log}</div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
 }
-
-module.exports = { fetchLyrics };

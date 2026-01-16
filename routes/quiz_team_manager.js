@@ -1,81 +1,105 @@
-// routes/quiz_team_manager.js - Team Management & Speed Bonus Scoring logic
-const quizDB = require('../data/quiz_db');
+// routes/quiz_team_manager.js
+const fs = require('fs');
+const path = require('path');
+
+// Persistence
+const TEAMS_FILE = path.join(__dirname, '../data/quiz_teams.json');
 
 class QuizTeamManager {
-    /**
-     * Creates a new team object with initialized scoring fields.
-     */
-    static createTeam(name, icon, color, currentTeamsCount) {
-        return {
-            id: Math.random().toString(36).substr(2, 9),
-            name: name || `Team ${currentTeamsCount + 1}`,
-            icon: icon || 'pawn',
-            color: color || '#ffffff',
-            score: 0,
-            hasAnswered: false,
-            lastAnswerCorrect: false,
-            lastPointsGained: 0,
-            roundPoints: 0 // Temp storage for deferred scoring until reveal
-        };
+    constructor() {
+        this.teams = {}; // { teamId: { name, score, members: [], answers: {} } }
+        this.loadTeams();
     }
 
-    /**
-     * Processes a submitted answer and calculates points with a Speed Bonus.
-     * Speed Bonus rewards up to 50% extra points based on remaining time.
-     */
-    static submitAnswer(team, answerIndex, currentQuestion, config) {
-        if (!team || team.hasAnswered) return { error: "Already answered or invalid team." };
-
-        const userChoice = parseInt(answerIndex);
-        const correctChoice = currentQuestion.correctIndex;
-        const potentialPoints = currentQuestion.points;
-
-        // --- SPEED BONUS CALCULATION ---
-        const durationMs = (config.timePerQuestion || 20) * 1000;
-        const timeRemaining = Math.max(0, currentQuestion.expiresAt - Date.now());
-        
-        // Reward up to 50% extra points for speed
-        const speedBonus = Math.floor((potentialPoints * 0.5) * (timeRemaining / durationMs));
-
-        const isCorrect = (userChoice === correctChoice);
-        const pointsAwarded = isCorrect ? (potentialPoints + speedBonus) : 0;
-
-        // Log the result for the host console
-        console.log(`📝 TEAM: ${team.name} | CHOSE: ${userChoice} | CORRECT: ${correctChoice} | RESULT: ${isCorrect ? 'WIN' : 'LOSS'} (+${pointsAwarded} inc. ${speedBonus} speed bonus)`);
-
-        // Update team state
-        team.hasAnswered = true;
-        team.lastAnswerCorrect = isCorrect;
-        team.lastPointsGained = pointsAwarded;
-        
-        // Store points in temporary 'roundPoints' for deferred scoring
-        team.roundPoints = pointsAwarded; 
-
-        return { correct: isCorrect, pointsGained: pointsAwarded };
-    }
-
-    /**
-     * Resets the round-specific state for all teams.
-     */
-    static resetRoundState(teams) {
-        teams.forEach(t => {
-            t.hasAnswered = false;
-            t.lastAnswerCorrect = false;
-            t.lastPointsGained = 0;
-            t.roundPoints = 0;
-        });
-    }
-
-    /**
-     * Finalizes deferred scores by adding round points to the total score.
-     */
-    static finalizeScores(teams) {
-        teams.forEach(t => {
-            if (t.roundPoints > 0) {
-                t.score += t.roundPoints;
+    loadTeams() {
+        if (fs.existsSync(TEAMS_FILE)) {
+            try {
+                this.teams = JSON.parse(fs.readFileSync(TEAMS_FILE));
+            } catch (e) {
+                console.error("Failed to load teams:", e);
+                this.teams = {};
             }
-        });
+        }
+    }
+
+    saveTeams() {
+        try {
+            // Ensure directory exists
+            const dir = path.dirname(TEAMS_FILE);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            
+            fs.writeFileSync(TEAMS_FILE, JSON.stringify(this.teams, null, 2));
+        } catch (e) {
+            console.error("Failed to save teams:", e);
+        }
+    }
+
+    registerTeam(teamName, memberId) {
+        // Check if team exists
+        let teamId = Object.keys(this.teams).find(id => this.teams[id].name === teamName);
+        
+        if (!teamId) {
+            teamId = 'team_' + Math.random().toString(36).substr(2, 9);
+            this.teams[teamId] = {
+                id: teamId,
+                name: teamName,
+                score: 0,
+                members: [],
+                answers: {} // { questionId: { answer, correct, points } }
+            };
+        }
+
+        // Add member if not already there
+        if (!this.teams[teamId].members.includes(memberId)) {
+            this.teams[teamId].members.push(memberId);
+        }
+
+        this.saveTeams();
+        return this.teams[teamId];
+    }
+
+    submitAnswer(teamId, questionId, answer, isCorrect, pointsPossible, timeRemaining, totalTime) {
+        if (!this.teams[teamId]) return null;
+
+        // Prevent double answering
+        if (this.teams[teamId].answers[questionId]) {
+            return this.teams[teamId];
+        }
+
+        let pointsAwarded = 0;
+        if (isCorrect) {
+            // Flat Scoring Logic (Fixed per request)
+            // No speed bonuses. Full points awarded for correct answer.
+            pointsAwarded = pointsPossible || 1000;
+        }
+
+        this.teams[teamId].answers[questionId] = {
+            answer,
+            correct: isCorrect,
+            points: pointsAwarded,
+            timestamp: Date.now()
+        };
+
+        if (pointsAwarded > 0) {
+            this.teams[teamId].score += pointsAwarded;
+        }
+
+        this.saveTeams();
+        return { ...this.teams[teamId], added: pointsAwarded };
+    }
+
+    getLeaderboard() {
+        return Object.values(this.teams)
+            .map(t => ({ name: t.name, score: t.score, id: t.id }))
+            .sort((a, b) => b.score - a.score);
+    }
+
+    resetTeams() {
+        this.teams = {};
+        this.saveTeams();
     }
 }
 
-module.exports = QuizTeamManager;
+// Singleton
+const teamManager = new QuizTeamManager();
+module.exports = teamManager;

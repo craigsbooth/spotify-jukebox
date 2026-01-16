@@ -2,157 +2,288 @@
   "status": "PLAYING",
   "teams": [
     {
-      "id": "hdvu6zam3",
+      "id": "team_nid5rqb2x",
       "name": "CRAIG",
       "icon": "record",
       "color": "#fff",
-      "score": 3000,
-      "hasAnswered": false,
-      "lastAnswerCorrect": false,
-      "lastPointsGained": 0,
-      "roundPoints": 0
-    },
-    {
-      "id": "w9067zehe",
-      "name": "BILLY",
-      "icon": "record",
-      "color": "#fff",
-      "score": 9000,
-      "hasAnswered": false,
-      "lastAnswerCorrect": false,
-      "lastPointsGained": 0,
-      "roundPoints": 0
+      "score": 7750,
+      "answers": {
+        "olfjfwjgk6": {
+          "answer": 3,
+          "correct": true,
+          "points": 1000,
+          "timestamp": 1768583901848
+        },
+        "c0y09zmn1e": {
+          "answer": 3,
+          "correct": true,
+          "points": 5000,
+          "timestamp": 1768584076871
+        }
+      },
+      "lastAnswerCorrect": true,
+      "lastPointsGained": 750,
+      "hasAnswered": true
     }
   ],
   "quizQueue": [
     {
-      "name": "Black Hole Sun",
-      "artist": "Soundgarden",
-      "genre": "Grunge",
-      "decade": "90s",
+      "name": "Adagio for Strings",
+      "artist": "Tiësto",
+      "genre": "Trance",
+      "decade": "00s",
       "questions": [
         {
-          "type": "GEAR",
-          "text": "Chris Cornell used what specific effect on his guitar to get the 'underwater' swirling sound?",
+          "type": "HISTORY",
+          "text": "This trance anthem is a rework of a 1936 classical composition by which composer?",
           "options": [
-            "Leslie Speaker Cabinet",
-            "Chorus Pedal",
-            "Flanger",
-            "Phaser"
+            "Samuel Barber",
+            "Philip Glass",
+            "Aaron Copland",
+            "Igor Stravinsky"
           ],
-          "correct": "Leslie Speaker Cabinet",
-          "difficulty": "Extreme",
-          "points": 5000
+          "correct": "Samuel Barber",
+          "difficulty": "Medium",
+          "points": 1000
         },
         {
-          "type": "TRIVIA",
-          "text": "The song's famous music video features 'melting' faces. What was the director's name?",
+          "type": "CULTURE",
+          "text": "Tiësto performed this track during the opening ceremony of which Olympic Games, the first DJ to ever do so?",
           "options": [
-            "Howard Greenhalgh",
-            "Samuel Bayer",
-            "Michel Gondry",
-            "Spike Jonze"
+            "Athens 2004",
+            "Sydney 2000",
+            "Beijing 2008",
+            "London 2012"
           ],
-          "correct": "Howard Greenhalgh",
+          "correct": "Athens 2004",
           "difficulty": "Hard",
           "points": 2000
         }
       ],
       "preparedQuestion": {
-        "id": "4zoarwtcdqv",
-        "type": "TRIVIA",
-        "text": "The song's famous music video features 'melting' faces. What was the director's name?",
+        "id": "sftkqyyrl7g",
+        "type": "HISTORY",
+        "text": "This trance anthem is a rework of a 1936 classical composition by which composer?",
         "options": [
-          "Howard Greenhalgh",
-          "Spike Jonze",
-          "Michel Gondry",
-          "Samuel Bayer"
+          "Philip Glass",
+          "Igor Stravinsky",
+          "Samuel Barber",
+          "Aaron Copland"
         ],
-        "correctIndex": 0,
-        "correct": "Howard Greenhalgh",
+        "correctIndex": 2,
+        "correct": "Samuel Barber",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768583906549
+      }
+    },
+    {
+      "name": "Celebrity Skin",
+      "artist": "Hole",
+      "genre": "Alternative Rock",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "Which Smashing Pumpkins frontman co-wrote much of the 'Celebrity Skin' album with Courtney Love?",
+          "options": [
+            "Billy Corgan",
+            "James Iha",
+            "Jimmy Chamberlin",
+            "D'arcy Wretzky"
+          ],
+          "correct": "Billy Corgan",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "eqd0xwms3a7",
+        "type": "HISTORY",
+        "text": "Which Smashing Pumpkins frontman co-wrote much of the 'Celebrity Skin' album with Courtney Love?",
+        "options": [
+          "D'arcy Wretzky",
+          "Billy Corgan",
+          "James Iha",
+          "Jimmy Chamberlin"
+        ],
+        "correctIndex": 1,
+        "correct": "Billy Corgan",
         "image": null,
         "points": 2000,
         "difficulty": "Hard",
-        "expiresAt": 1768493582613
+        "expiresAt": 1768583906549
+      }
+    },
+    {
+      "name": "1979",
+      "artist": "The Smashing Pumpkins",
+      "genre": "Alternative Rock",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "PRODUCTION",
+          "text": "Unlike most Smashing Pumpkins tracks, this song relies heavily on what?",
+          "options": [
+            "Electronic loops and samples",
+            "Acoustic orchestra",
+            "A 10-minute guitar solo",
+            "No lyrics"
+          ],
+          "correct": "Electronic loops and samples",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "TRIVIA",
+          "text": "The music video features the band driving around in what kind of car?",
+          "options": [
+            "A 1972 Dodge Charger",
+            "A VW Beetle",
+            "A Cadillac Eldorado",
+            "A Ford Mustang"
+          ],
+          "correct": "A 1972 Dodge Charger",
+          "difficulty": "Extreme",
+          "points": 5000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "2dbl0kvtrqf",
+        "type": "TRIVIA",
+        "text": "The music video features the band driving around in what kind of car?",
+        "options": [
+          "A Cadillac Eldorado",
+          "A VW Beetle",
+          "A 1972 Dodge Charger",
+          "A Ford Mustang"
+        ],
+        "correctIndex": 2,
+        "correct": "A 1972 Dodge Charger",
+        "image": null,
+        "points": 5000,
+        "difficulty": "Extreme",
+        "expiresAt": 1768583906549
+      }
+    },
+    {
+      "name": "At Last",
+      "artist": "Etta James",
+      "genre": "Blues / Soul",
+      "decade": "60s",
+      "questions": [
+        {
+          "type": "TRIVIA",
+          "text": "Which modern pop star portrayed Etta James in the 2008 film 'Cadillac Records'?",
+          "options": [
+            "Beyoncé",
+            "Alicia Keys",
+            "Jennifer Hudson",
+            "Janelle Monáe"
+          ],
+          "correct": "Beyoncé",
+          "difficulty": "Medium",
+          "points": 1000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "jdilk6n23k9",
+        "type": "TRIVIA",
+        "text": "Which modern pop star portrayed Etta James in the 2008 film 'Cadillac Records'?",
+        "options": [
+          "Beyoncé",
+          "Alicia Keys",
+          "Jennifer Hudson",
+          "Janelle Monáe"
+        ],
+        "correctIndex": 0,
+        "correct": "Beyoncé",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768583906549
       }
     }
   ],
   "currentTrack": {
-    "name": "Good Times",
-    "artist": "Chic",
-    "genre": "Disco",
-    "decade": "70s",
+    "name": "Take Five",
+    "artist": "The Dave Brubeck Quartet",
+    "genre": "Cool Jazz",
+    "decade": "50s",
     "questions": [
       {
-        "type": "SAMPLE",
-        "text": "The iconic bassline of 'Good Times' was the foundation for which first-ever mainstream Hip Hop hit?",
+        "type": "THEORY",
+        "text": "The song is famous for its unusual time signature, as indicated by the title. What is it?",
         "options": [
-          "Rapper's Delight",
-          "The Message",
-          "Planet Rock",
-          "White Lines"
+          "5/4",
+          "3/4",
+          "7/8",
+          "9/4"
         ],
-        "correct": "Rapper's Delight",
+        "correct": "5/4",
         "difficulty": "Medium",
         "points": 1000
+      },
+      {
+        "type": "HISTORY",
+        "text": "Who actually wrote this track, which became the first jazz instrumental to sell a million copies?",
+        "options": [
+          "Paul Desmond",
+          "Dave Brubeck",
+          "Joe Morello",
+          "Eugene Wright"
+        ],
+        "correct": "Paul Desmond",
+        "difficulty": "Hard",
+        "points": 2000
       }
     ],
     "preparedQuestion": {
-      "id": "f6ahd3qic",
-      "type": "HISTORY",
-      "text": "The song's famous 'Freak out!' refrain was originally a much ruder phrase directed at the doorman of which club?",
+      "id": "9pjjmzntso",
+      "type": "THEORY",
+      "text": "The song is famous for its unusual time signature, as indicated by the title. What is it?",
       "options": [
-        "The Roxy",
-        "Paradise Garage",
-        "The Loft",
-        "Studio 54"
+        "5/4",
+        "7/8",
+        "9/4",
+        "3/4"
       ],
-      "correctIndex": 3,
-      "correct": "Studio 54",
+      "correctIndex": 0,
+      "correct": "5/4",
       "image": null,
       "points": 1000,
       "difficulty": "Medium",
-      "expiresAt": 1768493582613
+      "expiresAt": 1768583906548
     },
-    "uri": "spotify:track:1Ket3P7fn8XF7y3f15rUH8"
+    "uri": "spotify:track:1YQWosTIljIvxAgHWTp7KP"
   },
   "isPlaying": true,
   "currentQuestion": null,
   "questionHistory": [
-    "VGhpcyBsZWdlbmRhcnkgYW50aGVtIHdhcyBvcmlnaW5hbGx5IHJlbGVhc2VkIGFzIHdoYXQ/QSBCLXNpZGUgdG8gYSBjb3ZlciBzb25n",
-    "TGlwcHMgSW5jLiB3YXMgYSAnc3R1ZGlvIGdyb3VwJyBmcm9tIHdoaWNoIHVubGlrZWx5IEFtZXJpY2FuIGNpdHk/TWlubmVhcG9saXM=",
-    "S2VuZHJpY2sgTGFtYXIgYmVjYW1lIHRoZSBmaXJzdCByYXBwZXIgdG8gd2luIHdoYXQgcHJlc3RpZ2lvdXMgcHJpemUgZm9yIHRoZSBhbGJ1bSAnREFNTi4nP1B1bGl0emVyIFByaXplIGZvciBNdXNpYw==",
-    "TW90b3duIGZvdW5kZXIgQmVycnkgR29yZHkgb3JpZ2luYWxseSByZWZ1c2VkIHRvIHJlbGVhc2UgdGhpcyBzb25nLCBjYWxsaW5nIGl0IHdoYXQ/VGhlIHdvcnN0IHRoaW5nIEkgZXZlciBoZWFyZA==",
-    "VHJhZ2ljYWxseSwgaG93IG1hbnkgZGF5cyBhZnRlciByZWNvcmRpbmcgdGhpcyBzb25nIGRpZCBPdGlzIFJlZGRpbmcgZGllIGluIGEgcGxhbmUgY3Jhc2g/VGhyZWUgZGF5cw==",
-    "TmFzIGZhbW91c2x5IHJlY29yZGVkIGhpcyBmaXJzdCB2ZXJzZSBmb3IgdGhpcyBzb25nIGluIGhvdyBtYW55IHRha2VzP09uZSB0YWtl",
-    "VGhpcyB0cmFjayBzYW1wbGVzICdUaHJvdWdoIHRoZSBGaXJlJyBieSB3aGljaCBsZWdlbmRhcnkgUiZCIHNpbmdlcj9DaGFrYSBLaGFu",
-    "V2hpY2ggcHJvZHVjZXIgY3JlYXRlZCB0aGUgYWdncmVzc2l2ZSBwaWFuby1kcml2ZW4gYmVhdCBmb3IgSFVNQkxFLj9NaWtlIFdpTEwgTWFkZS1JdA==",
-    "VGhlIHNvbmcncyBmYW1vdXMgJ0ZyZWFrIG91dCEnIHJlZnJhaW4gd2FzIG9yaWdpbmFsbHkgYSBtdWNoIHJ1ZGVyIHBocmFzZSBkaXJlY3RlZCBhdCB0aGUgZG9vcm1hbiBvZiB3aGljaCBjbHViP1N0dWRpbyA1NA==",
-    "VGhlIHNvbmcncyBmYW1vdXMgbXVzaWMgdmlkZW8gZmVhdHVyZXMgJ21lbHRpbmcnIGZhY2VzLiBXaGF0IHdhcyB0aGUgZGlyZWN0b3IncyBuYW1lP0hvd2FyZCBHcmVlbmhhbGdo",
-    "V2hvIHBlcmZvcm1zIHRoZSB0cmFjayAiSSBXaWxsIFN1cnZpdmUiP0dsb3JpYSBHYXlub3I=",
-    "SWRlbnRpZnkgdGhlIEFydGlzdCBmcm9tIHRoaXMgQWxidW1HbG9yaWEgR2F5bm9y",
-    "SWRlbnRpZnkgdGhpcyBBcnRpc3RHbG9yaWEgR2F5bm9y",
-    "SWRlbnRpZnkgdGhpcyBBcnRpc3RMaXBwcyBJbmMu",
-    "SWRlbnRpZnkgdGhlIEFydGlzdCBmcm9tIHRoaXMgQWxidW1LZW5kcmljayBMYW1hcg==",
-    "VGhlICdwYXJ0eSBjaGF0dGVyJyBoZWFyZCBpbiB0aGUgYmFja2dyb3VuZCBmZWF0dXJlcyB3aGljaCByZWFsLWxpZmUgc3BvcnRzIHN0YXJzP0RldHJvaXQgTGlvbnMgcGxheWVycw=="
+    "VGhpcyBzb25nIGZhbW91c2x5IHN0YXllZCBhdCAjMSBvbiB0aGUgQmlsbGJvYXJkIEhvdCAxMDAgZm9yIDE0IHdlZWtzLiBXaGF0IHllYXIgZGlkIGl0IHRha2Ugb3ZlciB0aGUgd29ybGQ/MTk5Ng==",
+    "VGhlIHNvbmcncyB0aXRsZSBhbmQgJ09mZiB3aXRoIGhlciBoZWFkIScgbHlyaWNzIGFyZSBhIHJlZmVyZW5jZSB0byB3aGljaCBzdG9yeT9BbGljZSBpbiBXb25kZXJsYW5k",
+    "VGhlIHNvbmcgaXMgZmFtb3VzIGZvciBpdHMgdW51c3VhbCB0aW1lIHNpZ25hdHVyZSwgYXMgaW5kaWNhdGVkIGJ5IHRoZSB0aXRsZS4gV2hhdCBpcyBpdD81LzQ=",
+    "VGhlIG11c2ljIHZpZGVvIGZlYXR1cmVzIHRoZSBiYW5kIGRyaXZpbmcgYXJvdW5kIGluIHdoYXQga2luZCBvZiBjYXI/QSAxOTcyIERvZGdlIENoYXJnZXI=",
+    "VGhpcyB0cmFuY2UgYW50aGVtIGlzIGEgcmV3b3JrIG9mIGEgMTkzNiBjbGFzc2ljYWwgY29tcG9zaXRpb24gYnkgd2hpY2ggY29tcG9zZXI/U2FtdWVsIEJhcmJlcg==",
+    "VGhpcyB0cmFjayB1c2VzIHRoZSAnRGl3YWxpIFJpZGRpbS4nIFdoaWNoIG90aGVyIG1hc3NpdmUgMjAwMHMgaGl0IHVzZWQgdGhlIHNhbWUgcmlkZGltP1dheW5lIFdvbmRlciAtIE5vIExldHRpbmcgR28=",
+    "VGhlIHNvbmcgd2FzIHdyaXR0ZW4gYXMgYSBwcm90ZXN0IGFnYWluc3QgdGhlIDE5OTMgSVJBIGJvbWJpbmcgaW4gd2hpY2ggY2l0eT9XYXJyaW5ndG9u",
+    "V2hpY2ggU21hc2hpbmcgUHVtcGtpbnMgZnJvbnRtYW4gY28td3JvdGUgbXVjaCBvZiB0aGUgJ0NlbGVicml0eSBTa2luJyBhbGJ1bSB3aXRoIENvdXJ0bmV5IExvdmU/QmlsbHkgQ29yZ2Fu",
+    "V2hpY2ggbW9kZXJuIHBvcCBzdGFyIHBvcnRyYXllZCBFdHRhIEphbWVzIGluIHRoZSAyMDA4IGZpbG0gJ0NhZGlsbGFjIFJlY29yZHMnP0JleW9uY8Op",
+    "VGhpcyAyMDIyIGFudGhlbSBmYW1vdXNseSBzYW1wbGVzICdJdCdzIE5vdCBSaWdodCBidXQgSXQncyBPa2F5JyBieSB3aGljaCBsZWdlbmRhcnkgUiZCIHNpbmdlcj9XaGl0bmV5IEhvdXN0b24=",
+    "V2hvIHBlcmZvcm1zICJNYWNhcmVuYSI/TG9zIERlbCBSaW8=",
+    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiTWFjYXJlbmEiP0xhdGluIFBvcA==",
+    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiWm9tYmllIj9BZnJvYmVhdCAoT3JpZ2luYWwp",
+    "QnVybmEgQm95IGhhaWxzIGZyb20gd2hpY2ggbWFqb3IgTmlnZXJpYW4gY2l0eSwgdGhlIGdsb2JhbCBodWIgb2YgdGhlIEFmcm9iZWF0cyBzb3VuZD9MYWdvcw==",
+    "V2hvIHBlcmZvcm1zICJMYXN0IExhc3QiP0J1cm5hIEJveQ=="
   ],
   "config": {
     "duration": 30,
-    "timePerQuestion": 18,
-    "difficultyFocus": 48,
-    "selectedGenres": [
-      "Classical",
-      "Folk",
-      "Blues",
-      "Grunge",
-      "Hip Hop",
-      "Disco",
-      "Soul"
-    ],
+    "timePerQuestion": 20,
+    "difficultyFocus": 50,
+    "selectedGenres": [],
     "selectedEras": [],
     "enablePictures": true,
     "audioFadeEnabled": true
-  },
-  "roundCount": 0,
-  "roundTimer": 0
+  }
 }

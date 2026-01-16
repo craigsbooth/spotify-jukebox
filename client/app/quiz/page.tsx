@@ -1,3 +1,4 @@
+// client/app/quiz/page.tsx
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -16,6 +17,10 @@ export default function ReactionPad() {
   const [hasAnswered, setHasAnswered] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showStandings, setShowStandings] = useState(false);
+  
+  // NEW: Timer State
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const lastVibRef = useRef<number>(-1); // To prevent double vibration in the same second
   const wakeLockRef = useRef<any>(null);
 
   // --- WAKE LOCK: Keep screen on during the quiz ---
@@ -45,10 +50,10 @@ export default function ReactionPad() {
     };
   }, []);
 
+  // --- MAIN GAME LOOP ---
   useEffect(() => {
     const savedId = localStorage.getItem('quiz_team_id');
 
-    // FIX: Connect using the correct SOCKET_URL
     const newSocket = io(SOCKET_URL, {
       transports: ['polling', 'websocket'],
       path: '/socket.io'
@@ -79,7 +84,7 @@ export default function ReactionPad() {
       }
     });
 
-    // --- VIBRATION: Alert player before question asks ---
+    // --- GAP VIBRATION: Alert player before question starts ---
     newSocket.on('autohost_countdown', (seconds: number) => {
       if (seconds <= 3 && seconds > 0) {
         if (navigator.vibrate) navigator.vibrate(100);
@@ -88,6 +93,35 @@ export default function ReactionPad() {
 
     return () => { newSocket.disconnect(); };
   }, [hasJoined]);
+
+  // --- COUNTDOWN & QUESTION END VIBRATION ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const isQuestionActive = gameState?.status === 'QUESTION_ACTIVE';
+    const expiresAt = gameState?.currentQuestion?.expiresAt;
+
+    if (isQuestionActive && expiresAt) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const diff = Math.ceil((expiresAt - now) / 1000);
+        const remaining = Math.max(0, diff);
+
+        setTimeLeft(remaining);
+
+        // Haptic Feedback: Vibrate once per second for the last 3 seconds
+        if (remaining <= 3 && remaining > 0 && remaining !== lastVibRef.current) {
+           lastVibRef.current = remaining;
+           if (navigator.vibrate) navigator.vibrate(200); // Stronger pulse for deadline
+        }
+      }, 200); // Run frequently to catch the second change efficiently
+    } else {
+      setTimeLeft(null);
+      lastVibRef.current = -1;
+    }
+
+    return () => clearInterval(interval);
+  }, [gameState?.status, gameState?.currentQuestion?.id]);
+
 
   // Force local reset when a specific question ID changes
   useEffect(() => {
@@ -110,11 +144,9 @@ export default function ReactionPad() {
     if (!name.trim()) return;
 
     try {
-      // FIX: Defined 'res' variable so it can be used below
       const res = await fetch(`${API_URL}/quiz/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Added socketId to payload to ensure robust backend linking
         body: JSON.stringify({
           name: name.toUpperCase(),
           icon: 'record',
@@ -141,7 +173,7 @@ export default function ReactionPad() {
     if (hasAnswered || !myTeamId) return;
     setHasAnswered(true);
     setSelectedIdx(index);
-    if (navigator.vibrate) navigator.vibrate(50);
+    if (navigator.vibrate) navigator.vibrate(50); // Feedback on click
 
     try {
       await fetch(`${API_URL}/quiz/answer`, {
@@ -176,8 +208,23 @@ export default function ReactionPad() {
 
   return (
     <div style={styles.container}>
+      {/* UPDATE: HUD now includes Timer */}
       <header style={styles.hud}>
         <div style={styles.hudTeam}>{myTeam?.name}</div>
+        
+        {timeLeft !== null && (
+          <div style={{
+             fontWeight: 900, 
+             fontSize: '1.4rem', 
+             color: timeLeft <= 5 ? '#e21b3c' : '#fff',
+             textShadow: '0 2px 5px rgba(0,0,0,0.5)',
+             minWidth: '40px',
+             textAlign: 'center'
+          }}>
+            {timeLeft}
+          </div>
+        )}
+        
         <div style={styles.hudScore}>{myTeam?.score || 0} PTS</div>
       </header>
 
@@ -219,7 +266,6 @@ export default function ReactionPad() {
             <div style={styles.resultIcon}>{myTeam?.lastAnswerCorrect ? '✓' : '✕'}</div>
             <h2 style={styles.resultTitle}>{myTeam?.lastAnswerCorrect ? 'CORRECT' : 'INCORRECT'}</h2>
             <div style={styles.resultPoints}>
-              {/* SYNCED POINTS: Pulls directly from the engine's calculation */}
               {myTeam?.lastAnswerCorrect ? `+${myTeam?.lastPointsGained || 0}` : '+0'}
             </div>
           </div>

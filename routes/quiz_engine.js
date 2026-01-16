@@ -1,4 +1,4 @@
-// routes/quiz_engine.js - V8.0 (Refactored: State & Team Logic Delegated)
+// routes/quiz_engine.js - V8.3 (Fix: Sync Team State for UI Feedback)
 const EventEmitter = require('events');
 const quizDB = require('../data/quiz_db'); 
 const spotifyApi = require('../spotify_instance'); 
@@ -21,6 +21,7 @@ class QuizEngine extends EventEmitter {
      */
     resetSystem() {
         this.gameState = StateManager.reset();
+        TeamManager.resetTeams(); // Ensure TeamManager is also wiped
         this.emit('state_update', this.gameState);
         return { success: true };
     }
@@ -37,7 +38,20 @@ class QuizEngine extends EventEmitter {
      * Registers a new team in the lobby.
      */
     createTeam(name, icon, color) {
-        const newTeam = TeamManager.createTeam(name, icon, color, this.gameState.teams.length);
+        const newTeam = {
+            id: 'team_' + Math.random().toString(36).substr(2, 9),
+            name: name,
+            icon: icon,
+            color: color,
+            score: 0,
+            answers: {} 
+        };
+
+        // Sync with TeamManager immediately
+        // This prevents the "Team Not Found" error during answer submission
+        TeamManager.teams[newTeam.id] = newTeam;
+        TeamManager.saveTeams();
+
         this.gameState.teams.push(newTeam);
         this.emit('state_update', this.gameState);
         return newTeam;
@@ -128,7 +142,6 @@ class QuizEngine extends EventEmitter {
         this.gameState.status = 'PLAYING';
         this.gameState.currentQuestion = null;
         
-        TeamManager.resetRoundState(this.gameState.teams);
         this.emit('state_update', this.gameState);
         return nextTrack;
     }
@@ -153,7 +166,12 @@ class QuizEngine extends EventEmitter {
         question.correctIndex = verifiedIndex !== -1 ? verifiedIndex : 0;
         question.points = parseInt(question.points) || 1000;
 
-        TeamManager.resetRoundState(this.gameState.teams);
+        // Reset "Last Round" stats for all teams when a new question starts
+        this.gameState.teams.forEach(t => {
+            t.lastAnswerCorrect = false;
+            t.lastPointsGained = 0;
+            t.hasAnswered = false; // UI State reset
+        });
 
         if (question.image || question.type === 'ARTIST') {
             this.emit('audio_command', { action: 'FADE_OUT', duration: 3000 });
@@ -171,8 +189,34 @@ class QuizEngine extends EventEmitter {
     submitAnswer(teamId, answerIndex) {
         if (this.gameState.status !== 'QUESTION_ACTIVE') return { error: "Round closed." };
         
+        // 1. Locate Team in Local State
         const team = this.gameState.teams.find(t => t.id === teamId);
-        return TeamManager.submitAnswer(team, answerIndex, this.gameState.currentQuestion, this.gameState.config);
+        if (!team) return { error: "Team not found" };
+
+        // 2. Check Correctness & Assign Fixed Points
+        const question = this.gameState.currentQuestion;
+        const isCorrect = (parseInt(answerIndex) === question.correctIndex);
+        const points = isCorrect ? (question.points || 1000) : 0;
+
+        // 3. Delegate to TeamManager
+        let tmResult = TeamManager.submitAnswer(teamId, question.id, answerIndex, isCorrect, points, 0, 0);
+
+        // Self-Healing Sync: If TeamManager forgot the team, force-register and retry
+        if (!tmResult) {
+            console.warn(`⚠️ TeamManager desync detected for ${teamId}. Auto-healing...`);
+            TeamManager.teams[teamId] = team;
+            TeamManager.saveTeams();
+            tmResult = TeamManager.submitAnswer(teamId, question.id, answerIndex, isCorrect, points, 0, 0);
+        }
+
+        // FIX #4: Update the LIVE GameState so the UI sees the result!
+        team.score = tmResult.score;        // Update Score
+        team.lastAnswerCorrect = isCorrect; // Flag for "Correct/Incorrect" screen
+        team.lastPointsGained = points;     // Flag for "+1000" display
+        team.hasAnswered = true;            // Flag for "Answer Received" footer
+
+        // Ensure the response includes the 'correct' boolean for the API
+        return { ...tmResult, correct: isCorrect };
     }
 
     /**
@@ -180,7 +224,6 @@ class QuizEngine extends EventEmitter {
      */
     revealResults() {
         this.gameState.status = 'SHOW_RESULTS';
-        TeamManager.finalizeScores(this.gameState.teams);
         this.emit('state_update', this.gameState);
         return { success: true };
     }

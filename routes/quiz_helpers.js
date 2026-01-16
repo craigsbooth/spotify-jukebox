@@ -98,15 +98,29 @@ const QuizHelpers = {
      * Fetches Album metadata (Image, Popularity, Name) for Picture Rounds and Logic checks.
      */
     async getAlbumData(track) {
-        if (!track.uri) return null;
         try {
-            const id = track.uri.split(':').pop();
-            const res = await spotifyApi.getTrack(id);
-            return { 
-                image: res.body.album.images[0]?.url, 
-                popularity: res.body.popularity, 
-                albumName: res.body.album.name 
-            };
+            // #1 Precision Metadata Search: Swapped from ID-only lookups to strict Spotify searches (track:X artist:Y).
+            const query = `track:${track.name} artist:${track.artist}`;
+            const res = await spotifyApi.searchTracks(query, { limit: 1 });
+            
+            if (res.body.tracks.items.length > 0) {
+                const found = res.body.tracks.items[0];
+                const albumName = found.album.name;
+
+                // SANITIZATION: Generic Term Filter
+                // Prevents stupid questions about "Greatest Hits" or "Unknown" albums
+                const forbidden = ["unknown", "untitled", "greatest hits"];
+                if (forbidden.some(term => albumName.toLowerCase().includes(term))) {
+                    return null; 
+                }
+
+                return { 
+                    image: found.album.images[0]?.url, 
+                    popularity: found.popularity, 
+                    albumName: albumName 
+                };
+            }
+            return null;
         } catch (e) { 
             console.error("⚠️ Helpers: Spotify Data Fetch Failed:", e.message);
             return null; 

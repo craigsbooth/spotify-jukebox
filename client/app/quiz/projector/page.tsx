@@ -1,3 +1,4 @@
+// client/app/quiz/projector/page.tsx
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
@@ -40,7 +41,7 @@ export default function KahootDeezerProjector() {
     
     socket.on('quiz_update', (state: any) => {
       setGameState(state);
-      // Clear local countdown if we move out of results mode
+      // Clear local countdown if we move out of results mode to avoid stale timer visuals
       if (state.status !== 'SHOW_RESULTS') {
         setNextQuestionTimer(null);
       }
@@ -115,14 +116,14 @@ export default function KahootDeezerProjector() {
         {isResults && (
            <div style={styles.resultsReveal}>
               {/* AUTO-HOST COUNTDOWN OVERLAY */}
-              {nextQuestionTimer !== null && (
+              {nextQuestionTimer !== null && nextQuestionTimer > 0 && (
                 <div style={{
                   position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.8)', 
                   padding: '15px 25px', borderRadius: '40px', border: '3px solid #f1c40f', zIndex: 100,
-                  textAlign: 'center', animation: 'pulse 1s infinite'
+                  textAlign: 'center', boxShadow: '0 0 20px rgba(241, 196, 15, 0.5)'
                 }}>
-                  <div style={{fontSize: '0.8rem', fontWeight: 900, opacity: 0.8}}>NEXT QUESTION IN</div>
-                  <div style={{fontSize: '2.5rem', fontWeight: 900, color: '#f1c40f'}}>{nextQuestionTimer}s</div>
+                  <div style={{fontSize: '0.8rem', fontWeight: 900, opacity: 0.8, color: '#fff'}}>NEXT ROUND IN</div>
+                  <div style={{fontSize: '2.5rem', fontWeight: 900, color: '#f1c40f'}}>{nextQuestionTimer}</div>
                 </div>
               )}
 

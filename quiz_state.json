@@ -1,281 +1,958 @@
 {
-  "status": "PLAYING",
+  "status": "QUESTION_ACTIVE",
   "teams": [
     {
-      "id": "team_nid5rqb2x",
+      "id": "team_v5cwepj5q",
       "name": "CRAIG",
       "icon": "record",
       "color": "#fff",
-      "score": 7750,
+      "score": 8000,
       "answers": {
-        "olfjfwjgk6": {
-          "answer": 3,
-          "correct": true,
-          "points": 1000,
-          "timestamp": 1768583901848
-        },
-        "c0y09zmn1e": {
+        "of3sibld1jr": {
           "answer": 3,
           "correct": true,
           "points": 5000,
-          "timestamp": 1768584076871
+          "timestamp": 1768586193192
+        },
+        "jqpf63eaxq": {
+          "answer": 1,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768586220135
+        },
+        "49gpbe4i59l": {
+          "answer": 0,
+          "correct": true,
+          "points": 1000,
+          "timestamp": 1768586266219
         }
       },
-      "lastAnswerCorrect": true,
-      "lastPointsGained": 750,
-      "hasAnswered": true
+      "lastAnswerCorrect": false,
+      "lastPointsGained": 0,
+      "hasAnswered": false
     }
   ],
   "quizQueue": [
     {
-      "name": "Adagio for Strings",
-      "artist": "Tiësto",
-      "genre": "Trance",
+      "name": "Skinny Love",
+      "artist": "Bon Iver",
+      "genre": "Indie Folk",
       "decade": "00s",
       "questions": [
         {
           "type": "HISTORY",
-          "text": "This trance anthem is a rework of a 1936 classical composition by which composer?",
+          "text": "Justin Vernon recorded the debut album 'For Emma, Forever Ago' in total isolation where?",
           "options": [
-            "Samuel Barber",
-            "Philip Glass",
-            "Aaron Copland",
-            "Igor Stravinsky"
+            "A cabin in Wisconsin",
+            "A desert in Arizona",
+            "A boat in the Atlantic",
+            "A basement in Paris"
           ],
-          "correct": "Samuel Barber",
-          "difficulty": "Medium",
-          "points": 1000
-        },
-        {
-          "type": "CULTURE",
-          "text": "Tiësto performed this track during the opening ceremony of which Olympic Games, the first DJ to ever do so?",
-          "options": [
-            "Athens 2004",
-            "Sydney 2000",
-            "Beijing 2008",
-            "London 2012"
-          ],
-          "correct": "Athens 2004",
-          "difficulty": "Hard",
-          "points": 2000
+          "correct": "A cabin in Wisconsin",
+          "difficulty": "Easy",
+          "points": 500
         }
       ],
       "preparedQuestion": {
-        "id": "sftkqyyrl7g",
+        "id": "o6d5y9g6cs",
         "type": "HISTORY",
-        "text": "This trance anthem is a rework of a 1936 classical composition by which composer?",
+        "text": "Justin Vernon recorded the debut album 'For Emma, Forever Ago' in total isolation where?",
         "options": [
-          "Philip Glass",
-          "Igor Stravinsky",
-          "Samuel Barber",
-          "Aaron Copland"
+          "A boat in the Atlantic",
+          "A desert in Arizona",
+          "A cabin in Wisconsin",
+          "A basement in Paris"
         ],
         "correctIndex": 2,
-        "correct": "Samuel Barber",
+        "correct": "A cabin in Wisconsin",
         "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768583906549
+        "points": 500,
+        "difficulty": "Easy",
+        "expiresAt": 1768586195792
       }
     },
     {
-      "name": "Celebrity Skin",
-      "artist": "Hole",
-      "genre": "Alternative Rock",
+      "name": "Creep",
+      "artist": "Radiohead",
+      "genre": "Alternative",
       "decade": "90s",
       "questions": [
         {
-          "type": "HISTORY",
-          "text": "Which Smashing Pumpkins frontman co-wrote much of the 'Celebrity Skin' album with Courtney Love?",
+          "type": "GEAR",
+          "text": "The famous 'thunk-thunk' guitar noise before the chorus was actually an attempt to do what?",
           "options": [
-            "Billy Corgan",
-            "James Iha",
-            "Jimmy Chamberlin",
-            "D'arcy Wretzky"
+            "Ruin the song because the guitarist hated it",
+            "Fix a broken amplifier",
+            "Test a new pedal",
+            "Signal the singer to start"
           ],
-          "correct": "Billy Corgan",
+          "correct": "Ruin the song because the guitarist hated it",
           "difficulty": "Hard",
           "points": 2000
+        },
+        {
+          "type": "LYRIC",
+          "text": "'I'm a creep, I'm a weirdo. What the hell am I...'",
+          "options": [
+            "Doing here",
+            "Going to do",
+            "Feeling now",
+            "Thinking of"
+          ],
+          "correct": "Doing here",
+          "difficulty": "Easy",
+          "points": 500
         }
       ],
       "preparedQuestion": {
-        "id": "eqd0xwms3a7",
-        "type": "HISTORY",
-        "text": "Which Smashing Pumpkins frontman co-wrote much of the 'Celebrity Skin' album with Courtney Love?",
+        "id": "oeqrukh50j",
+        "type": "GEAR",
+        "text": "The famous 'thunk-thunk' guitar noise before the chorus was actually an attempt to do what?",
         "options": [
-          "D'arcy Wretzky",
-          "Billy Corgan",
-          "James Iha",
-          "Jimmy Chamberlin"
+          "Signal the singer to start",
+          "Fix a broken amplifier",
+          "Ruin the song because the guitarist hated it",
+          "Test a new pedal"
         ],
-        "correctIndex": 1,
-        "correct": "Billy Corgan",
+        "correctIndex": 2,
+        "correct": "Ruin the song because the guitarist hated it",
         "image": null,
         "points": 2000,
         "difficulty": "Hard",
-        "expiresAt": 1768583906549
+        "expiresAt": 1768586195791
       }
     },
     {
-      "name": "1979",
-      "artist": "The Smashing Pumpkins",
-      "genre": "Alternative Rock",
-      "decade": "90s",
+      "name": "Stayin' Alive",
+      "artist": "Bee Gees",
+      "genre": "Disco",
+      "decade": "70s",
       "questions": [
         {
-          "type": "PRODUCTION",
-          "text": "Unlike most Smashing Pumpkins tracks, this song relies heavily on what?",
+          "type": "FILM",
+          "text": "Which movie is credited with launching the global Disco craze and stars John Travolta as Tony Manero?",
           "options": [
-            "Electronic loops and samples",
-            "Acoustic orchestra",
-            "A 10-minute guitar solo",
-            "No lyrics"
+            "Saturday Night Fever",
+            "Grease",
+            "Flashdance",
+            "Footloose"
           ],
-          "correct": "Electronic loops and samples",
-          "difficulty": "Medium",
-          "points": 1000
+          "correct": "Saturday Night Fever",
+          "difficulty": "Easy",
+          "points": 500
         },
         {
           "type": "TRIVIA",
-          "text": "The music video features the band driving around in what kind of car?",
+          "text": "The movie's soundtrack remains one of the best-selling of all time. Which band wrote most of the songs?",
           "options": [
-            "A 1972 Dodge Charger",
-            "A VW Beetle",
-            "A Cadillac Eldorado",
-            "A Ford Mustang"
+            "The Bee Gees",
+            "ABBA",
+            "The Village People",
+            "Chic"
           ],
-          "correct": "A 1972 Dodge Charger",
+          "correct": "The Bee Gees",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "preparedQuestion": {
+        "id": "gkpueyk7su",
+        "type": "TRIVIA",
+        "text": "The movie's soundtrack remains one of the best-selling of all time. Which band wrote most of the songs?",
+        "options": [
+          "The Bee Gees",
+          "Chic",
+          "ABBA",
+          "The Village People"
+        ],
+        "correctIndex": 0,
+        "correct": "The Bee Gees",
+        "image": null,
+        "points": 500,
+        "difficulty": "Easy",
+        "expiresAt": 1768586195791
+      }
+    },
+    {
+      "name": "Bad Guy",
+      "artist": "Billie Eilish",
+      "genre": "Pop",
+      "decade": "10s",
+      "questions": [
+        {
+          "type": "PRODUCTION",
+          "text": "The 'click' sound in the chorus is actually a sample of what?",
+          "options": [
+            "An Australian crosswalk signal",
+            "Billie snapping her fingers",
+            "A stapler",
+            "A computer mouse"
+          ],
+          "correct": "An Australian crosswalk signal",
           "difficulty": "Extreme",
           "points": 5000
         }
       ],
       "preparedQuestion": {
-        "id": "2dbl0kvtrqf",
-        "type": "TRIVIA",
-        "text": "The music video features the band driving around in what kind of car?",
+        "id": "e2whlxontmp",
+        "type": "PRODUCTION",
+        "text": "The 'click' sound in the chorus is actually a sample of what?",
         "options": [
-          "A Cadillac Eldorado",
-          "A VW Beetle",
-          "A 1972 Dodge Charger",
-          "A Ford Mustang"
+          "An Australian crosswalk signal",
+          "Billie snapping her fingers",
+          "A stapler",
+          "A computer mouse"
         ],
-        "correctIndex": 2,
-        "correct": "A 1972 Dodge Charger",
+        "correctIndex": 0,
+        "correct": "An Australian crosswalk signal",
         "image": null,
         "points": 5000,
         "difficulty": "Extreme",
-        "expiresAt": 1768583906549
+        "expiresAt": 1768586195791
       }
     },
     {
-      "name": "At Last",
-      "artist": "Etta James",
-      "genre": "Blues / Soul",
-      "decade": "60s",
+      "name": "What's Going On",
+      "artist": "Marvin Gaye",
+      "genre": "Soul",
+      "decade": "70s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "Motown founder Berry Gordy originally refused to release this song, calling it what?",
+          "options": [
+            "The worst thing I ever heard",
+            "Too political for radio",
+            "A jazz mess",
+            "Non-commercial garbage"
+          ],
+          "correct": "The worst thing I ever heard",
+          "difficulty": "Hard",
+          "points": 2000
+        },
+        {
+          "type": "PRODUCTION",
+          "text": "The 'party chatter' heard in the background features which real-life sports stars?",
+          "options": [
+            "Detroit Lions players",
+            "The Harlem Globetrotters",
+            "Muhammad Ali",
+            "Joe Louis"
+          ],
+          "correct": "Detroit Lions players",
+          "difficulty": "Extreme",
+          "points": 5000
+        },
+        {
+          "type": "LYRIC",
+          "text": "'Father, father, we don't need to...'",
+          "options": [
+            "Escalate",
+            "Complicate",
+            "Agitate",
+            "Calculate"
+          ],
+          "correct": "Escalate",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "preparedQuestion": {
+        "id": "qyvlucysj4c",
+        "type": "PRODUCTION",
+        "text": "The 'party chatter' heard in the background features which real-life sports stars?",
+        "options": [
+          "Muhammad Ali",
+          "Joe Louis",
+          "The Harlem Globetrotters",
+          "Detroit Lions players"
+        ],
+        "correctIndex": 3,
+        "correct": "Detroit Lions players",
+        "image": null,
+        "points": 5000,
+        "difficulty": "Extreme",
+        "expiresAt": 1768586195791
+      }
+    },
+    {
+      "name": "Holiday",
+      "artist": "Madonna",
+      "genre": "Dance",
+      "decade": "80s",
       "questions": [
         {
           "type": "TRIVIA",
-          "text": "Which modern pop star portrayed Etta James in the 2008 film 'Cadillac Records'?",
+          "text": "This song was Madonna's first major hit, but she didn't write it. Who did?",
           "options": [
-            "Beyoncé",
-            "Alicia Keys",
-            "Jennifer Hudson",
-            "Janelle Monáe"
+            "Curtis Hudson and Lisa Stevens",
+            "Prince",
+            "Nile Rodgers",
+            "Rick Rubin"
           ],
-          "correct": "Beyoncé",
+          "correct": "Curtis Hudson and Lisa Stevens",
+          "difficulty": "Extreme",
+          "points": 5000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "4e8lhqondd1",
+        "type": "CULTURE",
+        "text": "The music video for this song was a direct tribute to which Marilyn Monroe movie scene?",
+        "options": [
+          "The Seven Year Itch",
+          "The Misfits",
+          "Gentlemen Prefer Blondes",
+          "Some Like It Hot"
+        ],
+        "correctIndex": 2,
+        "correct": "Gentlemen Prefer Blondes",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768586195791
+      }
+    },
+    {
+      "name": "Blue Monday",
+      "artist": "New Order",
+      "genre": "Synth-Pop",
+      "decade": "80s",
+      "questions": [
+        {
+          "type": "PRODUCTION",
+          "text": "The original 12-inch sleeve was so expensive to print that the label reportedly...",
+          "options": [
+            "Lost money on every copy sold",
+            "Won a Pulitzer Prize",
+            "Used real silver ink",
+            "Used recycled sandpaper"
+          ],
+          "correct": "Lost money on every copy sold",
+          "difficulty": "Extreme",
+          "points": 5000
+        },
+        {
+          "type": "GEAR",
+          "text": "Which piece of gear provides the famous 'choir' sound in the track?",
+          "options": [
+            "E-mu Emulator",
+            "Fairlight CMI",
+            "Yamaha DX7",
+            "Roland Jupiter-8"
+          ],
+          "correct": "E-mu Emulator",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "rrghar88cdp",
+        "type": "GEAR",
+        "text": "Which piece of gear provides the famous 'choir' sound in the track?",
+        "options": [
+          "Roland Jupiter-8",
+          "Fairlight CMI",
+          "Yamaha DX7",
+          "E-mu Emulator"
+        ],
+        "correctIndex": 3,
+        "correct": "E-mu Emulator",
+        "image": null,
+        "points": 2000,
+        "difficulty": "Hard",
+        "expiresAt": 1768586195791
+      }
+    },
+    {
+      "name": "Losing My Religion",
+      "artist": "R.E.M.",
+      "genre": "Alternative Rock",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "TRIVIA",
+          "text": "The title 'Losing My Religion' is a Southern expression meaning what?",
+          "options": [
+            "Losing one's temper",
+            "Questioning faith",
+            "Becoming an atheist",
+            "Moving to the city"
+          ],
+          "correct": "Losing one's temper",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "GEAR",
+          "text": "What instrument provides the main driving riff of this track?",
+          "options": [
+            "Mandolin",
+            "Electric Guitar",
+            "Ukulele",
+            "Banjo"
+          ],
+          "correct": "Mandolin",
           "difficulty": "Medium",
           "points": 1000
         }
       ],
       "preparedQuestion": {
-        "id": "jdilk6n23k9",
+        "id": "jgn13p2182r",
         "type": "TRIVIA",
-        "text": "Which modern pop star portrayed Etta James in the 2008 film 'Cadillac Records'?",
+        "text": "The title 'Losing My Religion' is a Southern expression meaning what?",
         "options": [
-          "Beyoncé",
-          "Alicia Keys",
-          "Jennifer Hudson",
-          "Janelle Monáe"
+          "Moving to the city",
+          "Becoming an atheist",
+          "Questioning faith",
+          "Losing one's temper"
         ],
-        "correctIndex": 0,
-        "correct": "Beyoncé",
+        "correctIndex": 3,
+        "correct": "Losing one's temper",
         "image": null,
         "points": 1000,
         "difficulty": "Medium",
-        "expiresAt": 1768583906549
+        "expiresAt": 1768586195791
+      }
+    },
+    {
+      "name": "Despacito",
+      "artist": "Luis Fonsi & Daddy Yankee",
+      "genre": "Reggaeton",
+      "decade": "10s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "Which pop star appeared on the remix that helped 'Despacito' dominate the US charts for 16 weeks?",
+          "options": [
+            "Justin Bieber",
+            "Ed Sheeran",
+            "Shawn Mendes",
+            "Post Malone"
+          ],
+          "correct": "Justin Bieber",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "preparedQuestion": {
+        "id": "5npgu21a3ag",
+        "type": "HISTORY",
+        "text": "Which pop star appeared on the remix that helped 'Despacito' dominate the US charts for 16 weeks?",
+        "options": [
+          "Ed Sheeran",
+          "Shawn Mendes",
+          "Justin Bieber",
+          "Post Malone"
+        ],
+        "correctIndex": 2,
+        "correct": "Justin Bieber",
+        "image": null,
+        "points": 500,
+        "difficulty": "Easy",
+        "expiresAt": 1768589487213
+      }
+    },
+    {
+      "name": "Stuck in the Middle with You",
+      "artist": "Stealers Wheel",
+      "genre": "Folk Rock",
+      "decade": "70s",
+      "questions": [
+        {
+          "type": "FILM",
+          "text": "This song is famously associated with a gruesome 'ear' scene in which Quentin Tarantino film?",
+          "options": [
+            "Reservoir Dogs",
+            "Pulp Fiction",
+            "True Romance",
+            "Django Unchained"
+          ],
+          "correct": "Reservoir Dogs",
+          "difficulty": "Medium",
+          "points": 1000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "1j5rx17b8zmk",
+        "type": "FILM",
+        "text": "This song is famously associated with a gruesome 'ear' scene in which Quentin Tarantino film?",
+        "options": [
+          "Django Unchained",
+          "True Romance",
+          "Reservoir Dogs",
+          "Pulp Fiction"
+        ],
+        "correctIndex": 2,
+        "correct": "Reservoir Dogs",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768589487211
+      }
+    },
+    {
+      "name": "Mr. Brightside",
+      "artist": "The Killers",
+      "genre": "Indie Rock",
+      "decade": "00s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "This song was the first ever written by the band. Where did Brandon Flowers find the guitarist, Dave Keuning?",
+          "options": [
+            "A newspaper ad",
+            "A casino in Vegas",
+            "At a Cure concert",
+            "In high school"
+          ],
+          "correct": "A newspaper ad",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "LYRIC",
+          "text": "'I'm coming out of my cage and I've been...'",
+          "options": [
+            "Doing just fine",
+            "Feeling alive",
+            "Trying to survive",
+            "Losing my mind"
+          ],
+          "correct": "Doing just fine",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "preparedQuestion": {
+        "id": "out3ih5j27",
+        "type": "HISTORY",
+        "text": "This song was the first ever written by the band. Where did Brandon Flowers find the guitarist, Dave Keuning?",
+        "options": [
+          "In high school",
+          "At a Cure concert",
+          "A casino in Vegas",
+          "A newspaper ad"
+        ],
+        "correctIndex": 3,
+        "correct": "A newspaper ad",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768589487210
+      }
+    },
+    {
+      "name": "All Too Well (10 Minute Version)",
+      "artist": "Taylor Swift",
+      "genre": "Modern Pop",
+      "decade": "20s",
+      "questions": [
+        {
+          "type": "TRIVIA",
+          "text": "This song holds the record for being the longest song to ever reach #1. Whose record did it break?",
+          "options": [
+            "Don McLean (American Pie)",
+            "Queen (Bohemian Rhapsody)",
+            "Led Zeppelin (Stairway to Heaven)",
+            "Meat Loaf (I'd Do Anything For Love)"
+          ],
+          "correct": "Don McLean (American Pie)",
+          "difficulty": "Extreme",
+          "points": 5000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "3h3e9pmw0bg",
+        "type": "HISTORY",
+        "text": "With the album 'Midnights', Taylor Swift became the first artist in history to do what on the Billboard Hot 100?",
+        "options": [
+          "Occupy the entire Top 10",
+          "Have 5 songs at #1",
+          "Sell 2 million copies in a day",
+          "Win 10 Grammys at once"
+        ],
+        "correctIndex": 0,
+        "correct": "Occupy the entire Top 10",
+        "image": null,
+        "points": 2000,
+        "difficulty": "Hard",
+        "expiresAt": 1768589487212
+      }
+    },
+    {
+      "name": "Levitating",
+      "artist": "Dua Lipa",
+      "genre": "Disco-Pop",
+      "decade": "20s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "Despite never reaching #1 on the Hot 100, 'Levitating' was named the Billboard year-end #1 single of which year?",
+          "options": [
+            "2021",
+            "2020",
+            "2022",
+            "2019"
+          ],
+          "correct": "2021",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "sh980nad88j",
+        "type": "HISTORY",
+        "text": "Despite never reaching #1 on the Hot 100, 'Levitating' was named the Billboard year-end #1 single of which year?",
+        "options": [
+          "2019",
+          "2021",
+          "2022",
+          "2020"
+        ],
+        "correctIndex": 1,
+        "correct": "2021",
+        "image": null,
+        "points": 2000,
+        "difficulty": "Hard",
+        "expiresAt": 1768589487212
+      }
+    },
+    {
+      "name": "bad guy",
+      "artist": "Billie Eilish",
+      "genre": "Alt-Pop",
+      "decade": "10s",
+      "questions": [
+        {
+          "type": "PRODUCTION",
+          "text": "Billie Eilish and her brother Finneas recorded her debut album primarily in which unconventional location?",
+          "options": [
+            "Their childhood bedroom",
+            "A converted garage",
+            "A high-end tour bus",
+            "An empty swimming pool"
+          ],
+          "correct": "Their childhood bedroom",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "HISTORY",
+          "text": "At the 2020 Grammys, Billie became the youngest artist to win the 'Big Four' awards in one night. Which of these is NOT one of the 'Big Four'?",
+          "options": [
+            "Best Pop Vocal Album",
+            "Album of the Year",
+            "Record of the Year",
+            "Best New Artist"
+          ],
+          "correct": "Best Pop Vocal Album",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "rvu4pbji3fc",
+        "type": "ARTIST",
+        "text": "Who performs \"bad guy\"?",
+        "options": [
+          "Skrillex",
+          "Billie Eilish",
+          "Pharrell Williams",
+          "Little Mix"
+        ],
+        "correctIndex": 1,
+        "correct": "Billie Eilish",
+        "image": null,
+        "points": 500,
+        "difficulty": "Easy",
+        "expiresAt": 1768589487213
+      }
+    },
+    {
+      "name": "Enter Sandman",
+      "artist": "Metallica",
+      "genre": "Metal",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "GEAR",
+          "text": "Which guitar brand is James Hetfield most famous for using?",
+          "options": [
+            "ESP",
+            "Gibson",
+            "Fender",
+            "Jackson"
+          ],
+          "correct": "ESP",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "TRIVIA",
+          "text": "What was the original subject of the lyrics?",
+          "options": [
+            "SIDS (Crib Death)",
+            "The Vietnam War",
+            "A plane crash",
+            "A bad dream"
+          ],
+          "correct": "SIDS (Crib Death)",
+          "difficulty": "Extreme",
+          "points": 5000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "plsuzpj4x9",
+        "type": "GEAR",
+        "text": "Which guitar brand is James Hetfield most famous for using?",
+        "options": [
+          "Jackson",
+          "Fender",
+          "Gibson",
+          "ESP"
+        ],
+        "correctIndex": 3,
+        "correct": "ESP",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768589487213
+      }
+    },
+    {
+      "name": "Stairway to Heaven",
+      "artist": "Led Zeppelin",
+      "genre": "Hard Rock",
+      "decade": "70s",
+      "questions": [
+        {
+          "type": "GEAR",
+          "text": "Jimmy Page famously recorded the iconic solo using which guitar?",
+          "options": [
+            "1959 Fender Telecaster",
+            "Gibson Les Paul",
+            "Gibson Double-Neck",
+            "Fender Stratocaster"
+          ],
+          "correct": "1959 Fender Telecaster",
+          "difficulty": "Extreme",
+          "points": 5000
+        },
+        {
+          "type": "HISTORY",
+          "text": "Where was the 'Headley Grange' estate located where the band wrote much of this track?",
+          "options": [
+            "Hampshire, England",
+            "London",
+            "Wales",
+            "California"
+          ],
+          "correct": "Hampshire, England",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "scxoai750zf",
+        "type": "HISTORY",
+        "text": "Where was the 'Headley Grange' estate located where the band wrote much of this track?",
+        "options": [
+          "Wales",
+          "London",
+          "Hampshire, England",
+          "California"
+        ],
+        "correctIndex": 2,
+        "correct": "Hampshire, England",
+        "image": null,
+        "points": 2000,
+        "difficulty": "Hard",
+        "expiresAt": 1768589487211
+      }
+    },
+    {
+      "name": "Poison",
+      "artist": "Bell Biv DeVoe",
+      "genre": "New Jack Swing",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "The members of Bell Biv DeVoe were originally part of which iconic 80s boy band?",
+          "options": [
+            "New Edition",
+            "Boyz II Men",
+            "The Jackson 5",
+            "Guy"
+          ],
+          "correct": "New Edition",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "PRODUCTION",
+          "text": "Who produced this track, famously known as the 'King of New Jack Swing'?",
+          "options": [
+            "Teddy Riley",
+            "Dr. Dre",
+            "L.A. Reid",
+            "Babyface"
+          ],
+          "correct": "Teddy Riley",
+          "difficulty": "Hard",
+          "points": 2000
+        },
+        {
+          "type": "LYRIC",
+          "text": "'Never trust a big butt and a...'",
+          "options": [
+            "Smile",
+            "Eye",
+            "Grin",
+            "Lie"
+          ],
+          "correct": "Smile",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "preparedQuestion": {
+        "id": "4k2gnwpod32",
+        "type": "HISTORY",
+        "text": "The members of Bell Biv DeVoe were originally part of which iconic 80s boy band?",
+        "options": [
+          "New Edition",
+          "Boyz II Men",
+          "The Jackson 5",
+          "Guy"
+        ],
+        "correctIndex": 0,
+        "correct": "New Edition",
+        "image": null,
+        "points": 1000,
+        "difficulty": "Medium",
+        "expiresAt": 1768589487212
+      }
+    },
+    {
+      "name": "All Along the Watchtower",
+      "artist": "Jimi Hendrix",
+      "genre": "Psychedelic Rock",
+      "decade": "60s",
+      "questions": [
+        {
+          "type": "HISTORY",
+          "text": "Who originally wrote and recorded this song, later stating that Hendrix's version was better?",
+          "options": [
+            "Bob Dylan",
+            "Neil Young",
+            "Eric Clapton",
+            "John Lennon"
+          ],
+          "correct": "Bob Dylan",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "GEAR",
+          "text": "Hendrix used what household object to play the slide guitar section of the solo?",
+          "options": [
+            "A cigarette lighter",
+            "A glass bottle",
+            "A metal pipe",
+            "A knife"
+          ],
+          "correct": "A cigarette lighter",
+          "difficulty": "Hard",
+          "points": 2000
+        }
+      ],
+      "preparedQuestion": {
+        "id": "c3pcza7g88h",
+        "type": "GEAR",
+        "text": "What effect pedal is famous for its use in this track?",
+        "options": [
+          "Flanger",
+          "Wah-wah",
+          "Phaser",
+          "Octavia"
+        ],
+        "correctIndex": 3,
+        "correct": "Octavia",
+        "image": null,
+        "points": 5000,
+        "difficulty": "Extreme",
+        "expiresAt": 1768589487211
       }
     }
   ],
   "currentTrack": {
-    "name": "Take Five",
-    "artist": "The Dave Brubeck Quartet",
-    "genre": "Cool Jazz",
-    "decade": "50s",
+    "name": "Insomnia",
+    "artist": "Faithless",
+    "genre": "Trance",
+    "decade": "90s",
     "questions": [
       {
-        "type": "THEORY",
-        "text": "The song is famous for its unusual time signature, as indicated by the title. What is it?",
+        "type": "LYRIC",
+        "text": "Finish the famous spoken-word line: 'I can't get no...'",
         "options": [
-          "5/4",
-          "3/4",
-          "7/8",
-          "9/4"
+          "Sleep",
+          "Peace",
+          "Release",
+          "Satisfied"
         ],
-        "correct": "5/4",
-        "difficulty": "Medium",
-        "points": 1000
-      },
-      {
-        "type": "HISTORY",
-        "text": "Who actually wrote this track, which became the first jazz instrumental to sell a million copies?",
-        "options": [
-          "Paul Desmond",
-          "Dave Brubeck",
-          "Joe Morello",
-          "Eugene Wright"
-        ],
-        "correct": "Paul Desmond",
-        "difficulty": "Hard",
-        "points": 2000
+        "correct": "Sleep",
+        "difficulty": "Easy",
+        "points": 500
       }
     ],
-    "preparedQuestion": {
-      "id": "9pjjmzntso",
-      "type": "THEORY",
-      "text": "The song is famous for its unusual time signature, as indicated by the title. What is it?",
-      "options": [
-        "5/4",
-        "7/8",
-        "9/4",
-        "3/4"
-      ],
-      "correctIndex": 0,
-      "correct": "5/4",
-      "image": null,
-      "points": 1000,
-      "difficulty": "Medium",
-      "expiresAt": 1768583906548
-    },
-    "uri": "spotify:track:1YQWosTIljIvxAgHWTp7KP"
+    "uri": "spotify:track:3dX6WDwnHwYzB5t754oB4T"
   },
   "isPlaying": true,
-  "currentQuestion": null,
+  "currentQuestion": {
+    "id": "b2h18x9jt2a",
+    "type": "YEAR",
+    "text": "In what year was \"Insomnia\" originally released?",
+    "options": [
+      "1990",
+      "1995",
+      "2000",
+      "1997"
+    ],
+    "correctIndex": 1,
+    "correct": "1995",
+    "image": null,
+    "points": 1000,
+    "difficulty": "Medium",
+    "expiresAt": 1768589611159
+  },
   "questionHistory": [
-    "VGhpcyBzb25nIGZhbW91c2x5IHN0YXllZCBhdCAjMSBvbiB0aGUgQmlsbGJvYXJkIEhvdCAxMDAgZm9yIDE0IHdlZWtzLiBXaGF0IHllYXIgZGlkIGl0IHRha2Ugb3ZlciB0aGUgd29ybGQ/MTk5Ng==",
-    "VGhlIHNvbmcncyB0aXRsZSBhbmQgJ09mZiB3aXRoIGhlciBoZWFkIScgbHlyaWNzIGFyZSBhIHJlZmVyZW5jZSB0byB3aGljaCBzdG9yeT9BbGljZSBpbiBXb25kZXJsYW5k",
-    "VGhlIHNvbmcgaXMgZmFtb3VzIGZvciBpdHMgdW51c3VhbCB0aW1lIHNpZ25hdHVyZSwgYXMgaW5kaWNhdGVkIGJ5IHRoZSB0aXRsZS4gV2hhdCBpcyBpdD81LzQ=",
-    "VGhlIG11c2ljIHZpZGVvIGZlYXR1cmVzIHRoZSBiYW5kIGRyaXZpbmcgYXJvdW5kIGluIHdoYXQga2luZCBvZiBjYXI/QSAxOTcyIERvZGdlIENoYXJnZXI=",
-    "VGhpcyB0cmFuY2UgYW50aGVtIGlzIGEgcmV3b3JrIG9mIGEgMTkzNiBjbGFzc2ljYWwgY29tcG9zaXRpb24gYnkgd2hpY2ggY29tcG9zZXI/U2FtdWVsIEJhcmJlcg==",
-    "VGhpcyB0cmFjayB1c2VzIHRoZSAnRGl3YWxpIFJpZGRpbS4nIFdoaWNoIG90aGVyIG1hc3NpdmUgMjAwMHMgaGl0IHVzZWQgdGhlIHNhbWUgcmlkZGltP1dheW5lIFdvbmRlciAtIE5vIExldHRpbmcgR28=",
-    "VGhlIHNvbmcgd2FzIHdyaXR0ZW4gYXMgYSBwcm90ZXN0IGFnYWluc3QgdGhlIDE5OTMgSVJBIGJvbWJpbmcgaW4gd2hpY2ggY2l0eT9XYXJyaW5ndG9u",
-    "V2hpY2ggU21hc2hpbmcgUHVtcGtpbnMgZnJvbnRtYW4gY28td3JvdGUgbXVjaCBvZiB0aGUgJ0NlbGVicml0eSBTa2luJyBhbGJ1bSB3aXRoIENvdXJ0bmV5IExvdmU/QmlsbHkgQ29yZ2Fu",
-    "V2hpY2ggbW9kZXJuIHBvcCBzdGFyIHBvcnRyYXllZCBFdHRhIEphbWVzIGluIHRoZSAyMDA4IGZpbG0gJ0NhZGlsbGFjIFJlY29yZHMnP0JleW9uY8Op",
-    "VGhpcyAyMDIyIGFudGhlbSBmYW1vdXNseSBzYW1wbGVzICdJdCdzIE5vdCBSaWdodCBidXQgSXQncyBPa2F5JyBieSB3aGljaCBsZWdlbmRhcnkgUiZCIHNpbmdlcj9XaGl0bmV5IEhvdXN0b24=",
-    "V2hvIHBlcmZvcm1zICJNYWNhcmVuYSI/TG9zIERlbCBSaW8=",
-    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiTWFjYXJlbmEiP0xhdGluIFBvcA==",
-    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiWm9tYmllIj9BZnJvYmVhdCAoT3JpZ2luYWwp",
-    "QnVybmEgQm95IGhhaWxzIGZyb20gd2hpY2ggbWFqb3IgTmlnZXJpYW4gY2l0eSwgdGhlIGdsb2JhbCBodWIgb2YgdGhlIEFmcm9iZWF0cyBzb3VuZD9MYWdvcw==",
-    "V2hvIHBlcmZvcm1zICJMYXN0IExhc3QiP0J1cm5hIEJveQ=="
+    "VGhlIHRpdGxlICdMb3NpbmcgTXkgUmVsaWdpb24nIGlzIGEgU291dGhlcm4gZXhwcmVzc2lvbiBtZWFuaW5nIHdoYXQ/TG9zaW5nIG9uZSdzIHRlbXBlcg==",
+    "VGhlIGZhbW91cyAndGh1bmstdGh1bmsnIGd1aXRhciBub2lzZSBiZWZvcmUgdGhlIGNob3J1cyB3YXMgYWN0dWFsbHkgYW4gYXR0ZW1wdCB0byBkbyB3aGF0P1J1aW4gdGhlIHNvbmcgYmVjYXVzZSB0aGUgZ3VpdGFyaXN0IGhhdGVkIGl0",
+    "VGhlICdwYXJ0eSBjaGF0dGVyJyBoZWFyZCBpbiB0aGUgYmFja2dyb3VuZCBmZWF0dXJlcyB3aGljaCByZWFsLWxpZmUgc3BvcnRzIHN0YXJzP0RldHJvaXQgTGlvbnMgcGxheWVycw==",
+    "V2hpY2ggcGllY2Ugb2YgZ2VhciBwcm92aWRlcyB0aGUgZmFtb3VzICdjaG9pcicgc291bmQgaW4gdGhlIHRyYWNrP0UtbXUgRW11bGF0b3I=",
+    "V2hpY2ggbGVnZW5kYXJ5IHByb2R1Y2VyLCBmYW1vdXMgZm9yIGhpcyAnV2FsbCBvZiBTb3VuZCcsIHdhcyBvcmlnaW5hbGx5IGNvbnNpZGVyZWQgdG8gcHJvZHVjZSB0aGUgYmFuZD9QaGlsIFNwZWN0b3I=",
+    "RmluaXNoIHRoZSBmYW1vdXMgc3Bva2VuLXdvcmQgbGluZTogJ0kgY2FuJ3QgZ2V0IG5vLi4uJ1NsZWVw",
+    "VGhlICdjbGljaycgc291bmQgaW4gdGhlIGNob3J1cyBpcyBhY3R1YWxseSBhIHNhbXBsZSBvZiB3aGF0P0FuIEF1c3RyYWxpYW4gY3Jvc3N3YWxrIHNpZ25hbA==",
+    "VGhlIG1vdmllJ3Mgc291bmR0cmFjayByZW1haW5zIG9uZSBvZiB0aGUgYmVzdC1zZWxsaW5nIG9mIGFsbCB0aW1lLiBXaGljaCBiYW5kIHdyb3RlIG1vc3Qgb2YgdGhlIHNvbmdzP1RoZSBCZWUgR2Vlcw==",
+    "VGhlIG11c2ljIHZpZGVvIGZvciB0aGlzIHNvbmcgd2FzIGEgZGlyZWN0IHRyaWJ1dGUgdG8gd2hpY2ggTWFyaWx5biBNb25yb2UgbW92aWUgc2NlbmU/R2VudGxlbWVuIFByZWZlciBCbG9uZGVz",
+    "SnVzdGluIFZlcm5vbiByZWNvcmRlZCB0aGUgZGVidXQgYWxidW0gJ0ZvciBFbW1hLCBGb3JldmVyIEFnbycgaW4gdG90YWwgaXNvbGF0aW9uIHdoZXJlP0EgY2FiaW4gaW4gV2lzY29uc2lu",
+    "V2hvIHBlcmZvcm1zICJBbmFyY2h5IGluIHRoZSBVSyI/U2V4IFBpc3RvbHM=",
+    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiQW5hcmNoeSBpbiB0aGUgVUsiP1B1bmsgUm9jaw==",
+    "VGhpcyBzb25nIHdhcyB0aGUgZmlyc3QgZXZlciB3cml0dGVuIGJ5IHRoZSBiYW5kLiBXaGVyZSBkaWQgQnJhbmRvbiBGbG93ZXJzIGZpbmQgdGhlIGd1aXRhcmlzdCwgRGF2ZSBLZXVuaW5nP0EgbmV3c3BhcGVyIGFk",
+    "VGhpcyBzb25nIGlzIGZhbW91c2x5IGFzc29jaWF0ZWQgd2l0aCBhIGdydWVzb21lICdlYXInIHNjZW5lIGluIHdoaWNoIFF1ZW50aW4gVGFyYW50aW5vIGZpbG0/UmVzZXJ2b2lyIERvZ3M=",
+    "V2hhdCBlZmZlY3QgcGVkYWwgaXMgZmFtb3VzIGZvciBpdHMgdXNlIGluIHRoaXMgdHJhY2s/T2N0YXZpYQ==",
+    "V2hlcmUgd2FzIHRoZSAnSGVhZGxleSBHcmFuZ2UnIGVzdGF0ZSBsb2NhdGVkIHdoZXJlIHRoZSBiYW5kIHdyb3RlIG11Y2ggb2YgdGhpcyB0cmFjaz9IYW1wc2hpcmUsIEVuZ2xhbmQ=",
+    "VGhlIG1lbWJlcnMgb2YgQmVsbCBCaXYgRGVWb2Ugd2VyZSBvcmlnaW5hbGx5IHBhcnQgb2Ygd2hpY2ggaWNvbmljIDgwcyBib3kgYmFuZD9OZXcgRWRpdGlvbg==",
+    "RGVzcGl0ZSBuZXZlciByZWFjaGluZyAjMSBvbiB0aGUgSG90IDEwMCwgJ0xldml0YXRpbmcnIHdhcyBuYW1lZCB0aGUgQmlsbGJvYXJkIHllYXItZW5kICMxIHNpbmdsZSBvZiB3aGljaCB5ZWFyPzIwMjE=",
+    "V2l0aCB0aGUgYWxidW0gJ01pZG5pZ2h0cycsIFRheWxvciBTd2lmdCBiZWNhbWUgdGhlIGZpcnN0IGFydGlzdCBpbiBoaXN0b3J5IHRvIGRvIHdoYXQgb24gdGhlIEJpbGxib2FyZCBIb3QgMTAwP09jY3VweSB0aGUgZW50aXJlIFRvcCAxMA==",
+    "V2hvIHBlcmZvcm1zICJiYWQgZ3V5Ij9CaWxsaWUgRWlsaXNo",
+    "V2hpY2ggZ3VpdGFyIGJyYW5kIGlzIEphbWVzIEhldGZpZWxkIG1vc3QgZmFtb3VzIGZvciB1c2luZz9FU1A=",
+    "V2hpY2ggcG9wIHN0YXIgYXBwZWFyZWQgb24gdGhlIHJlbWl4IHRoYXQgaGVscGVkICdEZXNwYWNpdG8nIGRvbWluYXRlIHRoZSBVUyBjaGFydHMgZm9yIDE2IHdlZWtzP0p1c3RpbiBCaWViZXI=",
+    "V2hvIHBlcmZvcm1zICJJbnNvbW5pYSI/RmFpdGhsZXNz",
+    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiSW5zb21uaWEiP1RyYW5jZQ==",
+    "SW4gd2hhdCB5ZWFyIHdhcyAiSW5zb21uaWEiIG9yaWdpbmFsbHkgcmVsZWFzZWQ/MTk5NQ=="
   ],
   "config": {
     "duration": 30,

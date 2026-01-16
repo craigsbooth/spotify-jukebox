@@ -1,9 +1,10 @@
+// client/app/quiz/host/page.tsx
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import WebPlayer from './WebPlayer'; 
 import { styles } from './BroadcastConsole.styles';
-import { API_URL, SOCKET_URL } from '../../config'; // <--- IMPORT FROM CONFIG
+import { API_URL, SOCKET_URL } from '../../config';
 
 const GENRES = ["Rock", "Pop", "Hip Hop", "Grunge", "Indie", "Metal", "Country", "R&B", "Electronic", "Disco", "Jazz", "Soul", "Punk", "Funk", "Reggae", "Classical", "Folk", "Blues", "Latin", "Soundtrack"];
 const ERAS = ["60s", "70s", "80s", "90s", "00s", "10s", "20s"];
@@ -20,9 +21,35 @@ export default function BroadcastConsole() {
   const [isPaused, setIsPaused] = useState(false); // Pause toggle
   const GAP_TIME = 10;                             // Seconds between questions
   const socketRef = useRef<any>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  // --- WAKE LOCK: Keep screen on for the Host ---
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          console.log('🔒 Host Console: Wake Lock Active');
+        }
+      } catch (err) {
+        console.error('⚠️ Wake Lock Error:', err);
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockRef.current) wakeLockRef.current.release();
+    };
+  }, []);
 
   useEffect(() => {
-    // FIX: Using SOCKET_URL connects to the root domain correctly
     const socket = io(SOCKET_URL);
     socketRef.current = socket;
 
@@ -37,13 +64,15 @@ export default function BroadcastConsole() {
     let interval: NodeJS.Timeout;
 
     if (autoMode && !isPaused) {
-      // Logic: If we are in RESULTS mode, start counting down
-      if (gameState?.status === 'SHOW_RESULTS') {
+      // Logic: Run timer if in RESULTS (between rounds) or PLAYING (new track started)
+      const shouldRunTimer = gameState?.status === 'SHOW_RESULTS' || gameState?.status === 'PLAYING';
+
+      if (shouldRunTimer) {
         interval = setInterval(() => {
           setGapTimer((prev) => {
             const newVal = prev <= 1 ? GAP_TIME : prev - 1;
             
-            // Broadcast the countdown to the projector
+            // Broadcast the countdown to the projector/guests
             if (socketRef.current) {
                 socketRef.current.emit('autohost_countdown', newVal);
             }
@@ -57,20 +86,26 @@ export default function BroadcastConsole() {
           });
         }, 1000);
       } 
-      // Reset timer if we are manually moved out of results
       else {
         setGapTimer(GAP_TIME);
       }
     }
 
     return () => clearInterval(interval);
-  }, [autoMode, isPaused, gameState?.status]); // Dependencies
+  }, [autoMode, isPaused, gameState?.status]);
 
   // The function that decides what to do when timer hits 0
   const handleAutoNext = async () => {
     try {
         // 1. Attempt to Ask Question
         const res = await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
+        
+        // Safety Check: Ensure we got a valid JSON response before parsing
+        if (!res.ok) {
+            console.error(`Auto-Next Failed: Server returned ${res.status}`);
+            return;
+        }
+
         const data = await res.json();
         
         // 2. If no questions left, move to the next track automatically
@@ -86,8 +121,10 @@ export default function BroadcastConsole() {
   const refreshDevices = async () => {
     try {
       const res = await fetch(`${API_URL}/quiz/devices`);
-      const data = await res.json();
-      setAvailableDevices(data.devices || []);
+      if (res.ok) {
+          const data = await res.json();
+          setAvailableDevices(data.devices || []);
+      }
     } catch (e) { console.error("⚠️ Device fetch failed:", e); }
   };
 
@@ -121,8 +158,10 @@ export default function BroadcastConsole() {
 
   const searchTracks = async () => {
     const res = await fetch(`${API_URL}/quiz/search?q=${search}`);
-    const data = await res.json();
-    setResults(data.tracks || []);
+    if (res.ok) {
+        const data = await res.json();
+        setResults(data.tracks || []);
+    }
   };
 
   const addToQueue = async (track: any) => {
@@ -154,7 +193,7 @@ export default function BroadcastConsole() {
 
       <div style={styles.controlPanel}>
         <header style={styles.header}>
-            <h1 style={styles.title}>BROADCAST CONSOLE v4.5</h1>
+            <h1 style={styles.title}>BROADCAST CONSOLE v4.6</h1>
             <div style={{...styles.statusPill, color: isQuestion ? '#f1c40f' : '#2ecc71'}}>{gameState.status}</div>
         </header>
 

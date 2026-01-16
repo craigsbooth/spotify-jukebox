@@ -1,4 +1,4 @@
-// routes/quiz_question_factory.js - V8.3 (Refined Mix & Corrected Suggestion #2)
+// routes/quiz_question_factory.js - V8.5 (Deep Year Accuracy & Crash Protection)
 const quizDB = require('../data/quiz_db');
 const helpers = require('./quiz_helpers');
 
@@ -53,13 +53,30 @@ class QuestionFactory {
 
     static async generateTemplate(track, config, history) {
         const typeRoll = Math.random();
-        // DEFAULT: Artist ID (500 pts)
+        
+        // DEFAULT: Artist ID (500 pts) - The safest fallback if other data is missing
         let template = { type: 'ARTIST', text: `Who performs "${track.name}"?`, correct: track.artist, points: 500 };
         
         // 1. Manage the % Mix
-        if (typeRoll > 0.8) { // 20% Year Recognition (1000 pts)
-            template = { type: 'YEAR', text: `In what year was "${track.name}" released?`, correct: track.year.toString(), points: 1000 };
-        } else if (typeRoll > 0.6) { // 20% Genre Identification (750 pts)
+        
+        // TYPE: YEAR (20% Chance)
+        if (typeRoll > 0.8) { 
+            // FIX: Fetch ORIGINAL release year to avoid "2011 Remaster" issues
+            const deepYear = await helpers.getOriginalYear(track);
+            const bestYear = deepYear || track.year;
+
+            // Only generate if we have a valid year
+            if (bestYear) {
+                template = { 
+                    type: 'YEAR', 
+                    text: `In what year was "${track.name}" originally released?`, 
+                    correct: bestYear.toString(), 
+                    points: 1000 
+                };
+            }
+        } 
+        // TYPE: GENRE (20% Chance)
+        else if (typeRoll > 0.6 && track.genre) { 
             template = { type: 'GENRE', text: `What is the primary genre of "${track.name}"?`, correct: track.genre, points: 750 };
         }
 
@@ -67,7 +84,6 @@ class QuestionFactory {
         const spotifyData = await helpers.getAlbumData(track);
         
         // 3. Suggestion #2: Album Context Questions (Only for tracks with Popularity > 70)
-        // Replaces Genre/Year if track is famous enough
         if (spotifyData && spotifyData.popularity > 70 && Math.random() > 0.6) {
             template = { 
                 type: 'ALBUM', 
@@ -83,7 +99,7 @@ class QuestionFactory {
             const picData = Math.random() > 0.5 ? await helpers.getArtistData(track) : spotifyData;
             if (picData?.image) {
                 image = picData.image;
-                template.points += 250; // Visual bonus for identifying from imagery
+                template.points += 250; // Visual bonus
             }
         }
 
@@ -92,13 +108,14 @@ class QuestionFactory {
 
         // Generate Options via Helpers
         let options = [];
-        if (template.type === 'YEAR') options = helpers.getDecoyYears(template.correct);
-        else if (template.type === 'GENRE') options = helpers.getDecoyGenres(template.correct);
+        // Helper Safety: Ensure we don't pass undefined values
+        if (template.type === 'YEAR' && template.correct) options = helpers.getDecoyYears(template.correct);
+        else if (template.type === 'GENRE' && template.correct) options = helpers.getDecoyGenres(template.correct);
         else if (template.type === 'ALBUM') options = helpers.getDecoyAlbums(track);
         else options = helpers.getDecoyArtists(track);
 
         history.push(qHash);
-        if (history.length > 50) history.shift(); // Maintain memory efficiency
+        if (history.length > 50) history.shift(); 
 
         return {
             id: Math.random().toString(36).substr(2),

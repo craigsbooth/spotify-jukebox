@@ -1,35 +1,44 @@
 {
-  "team_nid5rqb2x": {
-    "id": "team_nid5rqb2x",
+  "team_v5cwepj5q": {
+    "id": "team_v5cwepj5q",
     "name": "CRAIG",
     "icon": "record",
     "color": "#fff",
-    "score": 7750,
+    "score": 8000,
     "answers": {
-      "olfjfwjgk6": {
-        "answer": 3,
-        "correct": true,
-        "points": 1000,
-        "timestamp": 1768583901848
-      },
-      "c0y09zmn1e": {
+      "of3sibld1jr": {
         "answer": 3,
         "correct": true,
         "points": 5000,
-        "timestamp": 1768584076871
+        "timestamp": 1768586193192
       },
-      "mjar0n44t0q": {
-        "answer": 2,
-        "correct": true,
-        "points": 1000,
-        "timestamp": 1768584582929
-      },
-      "wl2qdoix6ks": {
-        "answer": 3,
+      "jqpf63eaxq": {
+        "answer": 1,
         "correct": true,
         "points": 750,
-        "timestamp": 1768584615803
+        "timestamp": 1768586220135
+      },
+      "49gpbe4i59l": {
+        "answer": 0,
+        "correct": true,
+        "points": 1000,
+        "timestamp": 1768586266219
+      },
+      "mf4r8729ja": {
+        "answer": 1,
+        "correct": true,
+        "points": 500,
+        "timestamp": 1768589485543
+      },
+      "ov2c774cez": {
+        "answer": 0,
+        "correct": true,
+        "points": 750,
+        "timestamp": 1768589515815
       }
-    }
+    },
+    "lastAnswerCorrect": false,
+    "lastPointsGained": 0,
+    "hasAnswered": false
   }
 }

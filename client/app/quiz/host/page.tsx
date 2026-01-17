@@ -1,4 +1,3 @@
-// client/app/quiz/host/page.tsx
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
@@ -16,14 +15,17 @@ export default function BroadcastConsole() {
   const [results, setResults] = useState([]);
   const [deviceId, setDeviceId] = useState('');
   const [availableDevices, setAvailableDevices] = useState<any[]>([]);
+  
+  // --- AUTOMATION STATE ---
   const [autoMode, setAutoMode] = useState(false); // Master switch
   const [gapTimer, setGapTimer] = useState(0);     // The countdown value
   const [isPaused, setIsPaused] = useState(false); // Pause toggle
-  const GAP_TIME = 10;                             // Seconds between questions
+  const GAP_TIME = 8;                              // Seconds to admire results before next track
   const socketRef = useRef<any>(null);
   const wakeLockRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement>(null); // REF FOR AUDIO VOLUME
 
-  // --- WAKE LOCK: Keep screen on for the Host ---
+  // --- WAKE LOCK: Keep screen on ---
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
@@ -35,20 +37,18 @@ export default function BroadcastConsole() {
         console.error('⚠️ Wake Lock Error:', err);
       }
     };
-
     requestWakeLock();
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') requestWakeLock();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (wakeLockRef.current) wakeLockRef.current.release();
     };
   }, []);
 
+  // --- SOCKET CONNECTION ---
   useEffect(() => {
     const socket = io(SOCKET_URL);
     socketRef.current = socket;
@@ -63,29 +63,27 @@ export default function BroadcastConsole() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (autoMode && !isPaused) {
-      // Logic: Run timer if in RESULTS (between rounds) or PLAYING (new track started)
-      const shouldRunTimer = gameState?.status === 'SHOW_RESULTS' || gameState?.status === 'PLAYING';
-
-      if (shouldRunTimer) {
+    if (autoMode && !isPaused && gameState) {
+      // 1. If Showing Results: Run Timer to start Next Track
+      if (gameState.status === 'SHOW_RESULTS') {
         interval = setInterval(() => {
           setGapTimer((prev) => {
             const newVal = prev <= 1 ? GAP_TIME : prev - 1;
             
-            // Broadcast the countdown to the projector/guests
-            if (socketRef.current) {
-                socketRef.current.emit('autohost_countdown', newVal);
-            }
+            // Broadcast countdown to projector
+            if (socketRef.current) socketRef.current.emit('autohost_countdown', newVal);
 
             if (prev <= 1) {
-              // TIMER FINISHED: TRIGGER NEXT STEP
-              handleAutoNext();
+              handleAutoNext(); // Trigger Next Step
               return GAP_TIME; 
             }
             return newVal;
           });
         }, 1000);
       } 
+      else if (gameState.status === 'PLAYING') {
+         setGapTimer(0); 
+      }
       else {
         setGapTimer(GAP_TIME);
       }
@@ -94,24 +92,41 @@ export default function BroadcastConsole() {
     return () => clearInterval(interval);
   }, [autoMode, isPaused, gameState?.status]);
 
-  // The function that decides what to do when timer hits 0
-  const handleAutoNext = async () => {
-    try {
-        // 1. Attempt to Ask Question
-        const res = await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
-        
-        // Safety Check: Ensure we got a valid JSON response before parsing
-        if (!res.ok) {
-            console.error(`Auto-Next Failed: Server returned ${res.status}`);
-            return;
-        }
+  // --- MUTE AUDIO ELEMENT ON MOUNT ---
+  // Fix for TypeScript error: Volume is set via JS ref, not JSX prop
+  useEffect(() => {
+    if (audioRef.current) {
+        audioRef.current.volume = 0; // Force silence via JS
+    }
+  }, [gameState?.currentTrack]); // Re-run when track changes
 
-        const data = await res.json();
-        
-        // 2. If no questions left, move to the next track automatically
-        if (data.error === "No question available") {
-            console.log("⏭️ No more questions for track. Advancing...");
-            handlePlayNext();
+  // --- AUDIO AUTOMATION HANDLER ---
+  const handleTrackFinished = () => {
+    if (autoMode && !isPaused && gameState?.status === 'PLAYING') {
+        console.log("🎵 Track Finished -> Auto-Asking Question");
+        fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
+    }
+  };
+
+  const handleAutoNext = async () => {
+    if (!gameState) return;
+    try {
+        if (gameState.status === 'SHOW_RESULTS') {
+            // STEP 1: Try to ask another question for the current track
+            console.log("🤔 Results done. Attempting next question...");
+            const res = await fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
+            const data = await res.json();
+
+            // STEP 2: If server says "No question available", THEN play next track
+            if (!res.ok || data.error === "No question available") {
+                console.log("⏭️ Track exhausted. Playing Next Track.");
+                handlePlayNext();
+            } else {
+                console.log("❓ Next question started.");
+            }
+        } 
+        else if (gameState.status === 'PLAYING') {
+            fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' });
         }
     } catch (e) {
         console.error("Auto-Next Error:", e);
@@ -186,21 +201,38 @@ export default function BroadcastConsole() {
   const currentQ = gameState.currentQuestion;
   const config = gameState.config || {};
   const teams = gameState.teams || [];
+  
+  // V11: Calculate remaining questions in the batch
+  const questionsLeft = gameState.currentTrack?.questionQueue?.length || 0;
+  
+  // Safe explicit check (default to true if undefined)
+  const explicitAllowed = config.allowExplicit !== false; 
 
   return (
     <div style={styles.container}>
       <WebPlayer apiUrl={API_URL} onDeviceReady={(id) => { setDeviceId(id); refreshDevices(); }} />
 
+      {/* HIDDEN AUDIO PLAYER FOR AUTOMATION TIMING */}
+      {/* Volume is set to 0 via useEffect ref to fix TypeScript error */}
+      {gameState.status === 'PLAYING' && gameState.currentTrack?.preview_url && (
+        <audio 
+            ref={audioRef}
+            src={gameState.currentTrack.preview_url} 
+            autoPlay 
+            onEnded={handleTrackFinished} 
+        />
+      )}
+
       <div style={styles.controlPanel}>
         <header style={styles.header}>
-            <h1 style={styles.title}>BROADCAST CONSOLE v4.6</h1>
+            <h1 style={styles.title}>BROADCAST CONSOLE v11.0</h1>
             <div style={{...styles.statusPill, color: isQuestion ? '#f1c40f' : '#2ecc71'}}>{gameState.status}</div>
         </header>
 
         {/* AUTO DIRECTOR PANEL */}
         <div style={{...styles.settingsSection, border: autoMode ? '1px solid #2ecc71' : '1px solid #333'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <label style={styles.label}>🤖 AUTO-HOST ({gapTimer}s)</label>
+                <label style={styles.label}>🤖 AUTO-HOST ({gameState.status === 'SHOW_RESULTS' ? `${gapTimer}s` : 'WAITING'})</label>
                 <button 
                     onClick={() => setAutoMode(!autoMode)} 
                     style={{
@@ -235,7 +267,20 @@ export default function BroadcastConsole() {
 
         <div style={styles.masterActions}>
             <button onClick={handlePlayNext} style={{...styles.mainBtn, background: '#2ecc71'}}>▶ PLAY NEXT TRACK <span style={styles.subBtn}>Queue: {gameState.quizQueue?.length || 0} left</span></button>
-            <button onClick={() => fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#95a5a6' : '#e21b3c'}} disabled={isQuestion || !gameState.isPlaying}>❓ ASK QUESTION</button>
+            
+            {/* V11: UPDATED ASK BUTTON WITH BATCH COUNTER */}
+            <button 
+                onClick={() => fetch(`${API_URL}/quiz/ask-question`, { method: 'POST' })} 
+                style={{
+                    ...styles.mainBtn, 
+                    background: isQuestion ? '#95a5a6' : (questionsLeft > 0 ? '#e21b3c' : '#7f8c8d'),
+                    opacity: isQuestion ? 0.6 : 1
+                }} 
+                disabled={isQuestion || !gameState.isPlaying}
+            >
+                {questionsLeft > 0 ? `❓ ASK QUESTION (${questionsLeft} LEFT)` : '❓ ASK QUESTION (0 LEFT)'}
+            </button>
+
             <button onClick={() => fetch(`${API_URL}/quiz/reveal-answer`, { method: 'POST' })} style={{...styles.mainBtn, background: isQuestion ? '#f1c40f' : '#333', color: isQuestion ? '#000' : '#666'}} disabled={!isQuestion}>🏆 REVEAL WINNERS</button>
             <button onClick={() => window.confirm("End Quiz?") && fetch(`${API_URL}/quiz/end-quiz`, { method: 'POST' })} style={{...styles.mainBtn, background: '#f1c40f', color: '#000'}}>🥇 END QUIZ</button>
         </div>
@@ -298,7 +343,7 @@ export default function BroadcastConsole() {
 
         <div style={styles.settingsGrid}>
             <div style={styles.settingsSection}>
-                <label style={styles.label}>DIFFICULTY Focus ({config.difficultyFocus || 0}%)</label>
+                <label style={styles.label}>DIFFICULTY ({config.difficultyFocus || 0}%)</label>
                 <input type="range" min="0" max="100" value={config.difficultyFocus || 50} onChange={(e) => updateGlobalConfig({ difficultyFocus: parseInt(e.target.value) })} style={styles.slider} />
             </div>
             <div style={styles.settingsSection}>
@@ -307,8 +352,24 @@ export default function BroadcastConsole() {
             </div>
         </div>
 
+        {/* FILTERS & EXPLICIT TOGGLE */}
         <div style={styles.filterSection}>
-            <label style={styles.label}>GENRE & ERA FILTERS</label>
+            <label style={styles.label}>CONTENT FILTERS</label>
+            <div style={{display: 'flex', gap: 10, marginBottom: 10}}>
+                <button 
+                    onClick={() => updateGlobalConfig({ allowExplicit: !explicitAllowed })}
+                    style={{
+                        ...styles.tag,
+                        background: explicitAllowed ? '#e74c3c' : '#2ecc71',
+                        border: '1px solid #fff',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {explicitAllowed ? '🤬 EXPLICIT: ALLOWED' : '😇 EXPLICIT: BLOCKED'}
+                </button>
+            </div>
+
+            <label style={styles.label}>GENRES</label>
             <div style={styles.tagCloud}>
                 {GENRES.map(g => (<button key={g} onClick={() => toggleFilter('selectedGenres', g)} style={{...styles.tag, background: config.selectedGenres?.includes(g) ? '#f1c40f' : '#222', color: config.selectedGenres?.includes(g) ? '#000' : '#fff'}}>{g}</button>))}
             </div>

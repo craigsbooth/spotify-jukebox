@@ -1,3 +1,4 @@
+// routes/quiz_routes.js - V11.0 (Added Socket Relay for Automation)
 const express = require('express');
 const router = express.Router();
 const spotifyApi = require('../spotify_instance');
@@ -6,6 +7,29 @@ const quizEngine = require('./quiz_engine');
 let revealTimeout = null;
 
 module.exports = (io) => {
+    
+    // --- SOCKET.IO RELAY & CONNECTION LOGIC ---
+    io.on('connection', (socket) => {
+        // 1. Room Management
+        socket.on('join_room', (room) => {
+            socket.join(room);
+        });
+
+        // 2. Guest Setup (Auto-join broadcast channel)
+        socket.on('join_team', (teamId) => {
+            socket.join(teamId);
+            socket.join('quiz_guests'); 
+        });
+
+        // 3. AUTO-HOST RELAY (Critical for V11)
+        // Relays the countdown timer from Host -> Projector & Guests
+        socket.on('autohost_countdown', (seconds) => {
+            io.to('quiz_projector').emit('autohost_countdown', seconds);
+            // Optional: Send to guests if you want their phones to vibrate/beep
+            io.to('quiz_guests').emit('autohost_countdown', seconds);
+        });
+    });
+
     /**
      * DUAL BROADCAST SYSTEM
      * Projector/Host get 'full_state' (unmasked)
@@ -146,6 +170,7 @@ module.exports = (io) => {
         // Wait for async generation (DB or Spotify API)
         const question = await quizEngine.generateQuestion();
         
+        // V11: Engine returns null if Batch is empty (End of Track)
         if (!question) return res.status(400).json({ error: "No question available" });
 
         const timerMs = (quizEngine.gameState.config.timePerQuestion || 20) * 1000;

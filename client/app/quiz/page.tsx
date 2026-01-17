@@ -98,22 +98,31 @@ export default function ReactionPad() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     const isQuestionActive = gameState?.status === 'QUESTION_ACTIVE';
-    const expiresAt = gameState?.currentQuestion?.expiresAt;
+    // Use configured time per question as fallback if no expiresAt
+    const timePerQ = gameState?.config?.timePerQuestion || 20;
 
-    if (isQuestionActive && expiresAt) {
+    // Reset timer when question starts
+    if (isQuestionActive) {
+      if (timeLeft === null) setTimeLeft(timePerQ);
+
       interval = setInterval(() => {
-        const now = Date.now();
-        const diff = Math.ceil((expiresAt - now) / 1000);
-        const remaining = Math.max(0, diff);
-
-        setTimeLeft(remaining);
-
-        // Haptic Feedback: Vibrate once per second for the last 3 seconds
-        if (remaining <= 3 && remaining > 0 && remaining !== lastVibRef.current) {
-           lastVibRef.current = remaining;
-           if (navigator.vibrate) navigator.vibrate(200); // Stronger pulse for deadline
-        }
-      }, 200); // Run frequently to catch the second change efficiently
+        setTimeLeft((prev) => {
+          if (prev === null) return timePerQ;
+          const next = prev - 1;
+          
+          // Haptic Feedback: Vibrate once per second for the last 3 seconds
+          if (next <= 3 && next > 0 && next !== lastVibRef.current) {
+             lastVibRef.current = next;
+             if (navigator.vibrate) navigator.vibrate(200); // Pulse
+          }
+          if (next === 0 && lastVibRef.current !== 0) {
+             lastVibRef.current = 0;
+             if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // End buzz
+          }
+          
+          return next > 0 ? next : 0;
+        });
+      }, 1000);
     } else {
       setTimeLeft(null);
       lastVibRef.current = -1;

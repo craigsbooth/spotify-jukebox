@@ -1,30 +1,102 @@
 {
-  "status": "QUESTION_ACTIVE",
+  "status": "PLAYING",
   "teams": [
     {
-      "id": "team_v5cwepj5q",
+      "id": "team_1i1ldmy2d",
       "name": "CRAIG",
       "icon": "record",
       "color": "#fff",
-      "score": 8000,
+      "score": 9750,
       "answers": {
-        "of3sibld1jr": {
+        "7arruvnkqfs": {
           "answer": 3,
           "correct": true,
-          "points": 5000,
-          "timestamp": 1768586193192
+          "points": 500,
+          "timestamp": 1768593825076
         },
-        "jqpf63eaxq": {
-          "answer": 1,
-          "correct": true,
-          "points": 750,
-          "timestamp": 1768586220135
-        },
-        "49gpbe4i59l": {
-          "answer": 0,
+        "18xkm60w6ps": {
+          "answer": 2,
           "correct": true,
           "points": 1000,
-          "timestamp": 1768586266219
+          "timestamp": 1768593856582
+        },
+        "ohxuiovzm8d": {
+          "answer": 2,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594238342
+        },
+        "org3gg0kr9": {
+          "answer": 3,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594274265
+        },
+        "6ejav0hc0mb": {
+          "answer": 3,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768594301455
+        },
+        "l47zy2a8ikq": {
+          "answer": 0,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594332331
+        },
+        "3volzd4xf3v": {
+          "answer": 2,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768594363554
+        },
+        "irlo2a2301a": {
+          "answer": 1,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594397425
+        },
+        "ksyb6mucdy": {
+          "answer": 2,
+          "correct": true,
+          "points": 1000,
+          "timestamp": 1768594425700
+        },
+        "6a4m57a7p": {
+          "answer": 3,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594475712
+        },
+        "7w8ehebjvkc": {
+          "answer": 3,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768594502996
+        },
+        "c8pill348d": {
+          "answer": 3,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594546811
+        },
+        "3vx7zecycqn": {
+          "answer": 0,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768594575762
+        },
+        "vw6uprpx8k": {
+          "answer": 0,
+          "correct": true,
+          "points": 500,
+          "timestamp": 1768594623344
+        },
+        "m6ie7mtwl4": {
+          "answer": 2,
+          "correct": true,
+          "points": 750,
+          "timestamp": 1768594671002
         }
       },
       "lastAnswerCorrect": false,
@@ -34,182 +106,392 @@
   ],
   "quizQueue": [
     {
-      "name": "Skinny Love",
-      "artist": "Bon Iver",
-      "genre": "Indie Folk",
-      "decade": "00s",
+      "name": "Children",
+      "artist": "Robert Miles",
+      "genre": "Dream Trance",
+      "decade": "90s",
       "questions": [
         {
           "type": "HISTORY",
-          "text": "Justin Vernon recorded the debut album 'For Emma, Forever Ago' in total isolation where?",
+          "text": "Robert Miles wrote this piano-driven track as a 'calming' record for DJs to play to prevent what?",
           "options": [
-            "A cabin in Wisconsin",
-            "A desert in Arizona",
-            "A boat in the Atlantic",
-            "A basement in Paris"
+            "Car accidents after raves",
+            "Fights on the dancefloor",
+            "Drug overdoses",
+            "Police raids"
           ],
-          "correct": "A cabin in Wisconsin",
-          "difficulty": "Easy",
-          "points": 500
+          "correct": "Car accidents after raves",
+          "difficulty": "Hard",
+          "points": 2000
         }
       ],
-      "preparedQuestion": {
-        "id": "o6d5y9g6cs",
-        "type": "HISTORY",
-        "text": "Justin Vernon recorded the debut album 'For Emma, Forever Ago' in total isolation where?",
-        "options": [
-          "A boat in the Atlantic",
-          "A desert in Arizona",
-          "A cabin in Wisconsin",
-          "A basement in Paris"
-        ],
-        "correctIndex": 2,
-        "correct": "A cabin in Wisconsin",
-        "image": null,
-        "points": 500,
-        "difficulty": "Easy",
-        "expiresAt": 1768586195792
-      }
+      "questionQueue": [
+        {
+          "id": "522qkw35epy",
+          "type": "ARTIST",
+          "text": "Who performs \"Children\"?",
+          "options": [
+            "Robert Miles",
+            "Shania Twain",
+            "2Pac",
+            "The Cranberries"
+          ],
+          "correctIndex": 0,
+          "correct": "Robert Miles",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594720330
+        },
+        {
+          "id": "k218rbcxiu9",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "Lisa Loeb",
+            "The Smashing Pumpkins",
+            "Nine Inch Nails",
+            "Robert Miles"
+          ],
+          "correctIndex": 3,
+          "correct": "Robert Miles",
+          "image": "https://i.scdn.co/image/270333abeb769990ca788d54758ba7eff4488775",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594720330
+        },
+        {
+          "id": "9fomxdd63o9",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Children\"?",
+          "options": [
+            "Dream Trance",
+            "Rock",
+            "Punk",
+            "R&B"
+          ],
+          "correctIndex": 0,
+          "correct": "Dream Trance",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594720330
+        },
+        {
+          "id": "u9zckk03q7",
+          "type": "YEAR",
+          "text": "In what year was \"Children\" originally released?",
+          "options": [
+            "1993",
+            "1995",
+            "1994",
+            "1998"
+          ],
+          "correctIndex": 1,
+          "correct": "1995",
+          "image": null,
+          "points": 1000,
+          "difficultyVal": 4,
+          "difficulty": "Expert",
+          "expiresAt": 1768594720330
+        }
+      ]
     },
     {
-      "name": "Creep",
-      "artist": "Radiohead",
-      "genre": "Alternative",
+      "name": "Enter Sandman",
+      "artist": "Metallica",
+      "genre": "Metal",
       "decade": "90s",
       "questions": [
         {
           "type": "GEAR",
-          "text": "The famous 'thunk-thunk' guitar noise before the chorus was actually an attempt to do what?",
+          "text": "Which guitar brand is James Hetfield most famous for using?",
           "options": [
-            "Ruin the song because the guitarist hated it",
-            "Fix a broken amplifier",
-            "Test a new pedal",
-            "Signal the singer to start"
+            "ESP",
+            "Gibson",
+            "Fender",
+            "Jackson"
           ],
-          "correct": "Ruin the song because the guitarist hated it",
-          "difficulty": "Hard",
-          "points": 2000
-        },
-        {
-          "type": "LYRIC",
-          "text": "'I'm a creep, I'm a weirdo. What the hell am I...'",
-          "options": [
-            "Doing here",
-            "Going to do",
-            "Feeling now",
-            "Thinking of"
-          ],
-          "correct": "Doing here",
-          "difficulty": "Easy",
-          "points": 500
-        }
-      ],
-      "preparedQuestion": {
-        "id": "oeqrukh50j",
-        "type": "GEAR",
-        "text": "The famous 'thunk-thunk' guitar noise before the chorus was actually an attempt to do what?",
-        "options": [
-          "Signal the singer to start",
-          "Fix a broken amplifier",
-          "Ruin the song because the guitarist hated it",
-          "Test a new pedal"
-        ],
-        "correctIndex": 2,
-        "correct": "Ruin the song because the guitarist hated it",
-        "image": null,
-        "points": 2000,
-        "difficulty": "Hard",
-        "expiresAt": 1768586195791
-      }
-    },
-    {
-      "name": "Stayin' Alive",
-      "artist": "Bee Gees",
-      "genre": "Disco",
-      "decade": "70s",
-      "questions": [
-        {
-          "type": "FILM",
-          "text": "Which movie is credited with launching the global Disco craze and stars John Travolta as Tony Manero?",
-          "options": [
-            "Saturday Night Fever",
-            "Grease",
-            "Flashdance",
-            "Footloose"
-          ],
-          "correct": "Saturday Night Fever",
-          "difficulty": "Easy",
-          "points": 500
+          "correct": "ESP",
+          "difficulty": "Medium",
+          "points": 1000
         },
         {
           "type": "TRIVIA",
-          "text": "The movie's soundtrack remains one of the best-selling of all time. Which band wrote most of the songs?",
+          "text": "What was the original subject of the lyrics?",
           "options": [
-            "The Bee Gees",
-            "ABBA",
-            "The Village People",
-            "Chic"
+            "SIDS (Crib Death)",
+            "The Vietnam War",
+            "A plane crash",
+            "A bad dream"
           ],
-          "correct": "The Bee Gees",
-          "difficulty": "Easy",
-          "points": 500
-        }
-      ],
-      "preparedQuestion": {
-        "id": "gkpueyk7su",
-        "type": "TRIVIA",
-        "text": "The movie's soundtrack remains one of the best-selling of all time. Which band wrote most of the songs?",
-        "options": [
-          "The Bee Gees",
-          "Chic",
-          "ABBA",
-          "The Village People"
-        ],
-        "correctIndex": 0,
-        "correct": "The Bee Gees",
-        "image": null,
-        "points": 500,
-        "difficulty": "Easy",
-        "expiresAt": 1768586195791
-      }
-    },
-    {
-      "name": "Bad Guy",
-      "artist": "Billie Eilish",
-      "genre": "Pop",
-      "decade": "10s",
-      "questions": [
-        {
-          "type": "PRODUCTION",
-          "text": "The 'click' sound in the chorus is actually a sample of what?",
-          "options": [
-            "An Australian crosswalk signal",
-            "Billie snapping her fingers",
-            "A stapler",
-            "A computer mouse"
-          ],
-          "correct": "An Australian crosswalk signal",
+          "correct": "SIDS (Crib Death)",
           "difficulty": "Extreme",
           "points": 5000
         }
       ],
-      "preparedQuestion": {
-        "id": "e2whlxontmp",
-        "type": "PRODUCTION",
-        "text": "The 'click' sound in the chorus is actually a sample of what?",
-        "options": [
-          "An Australian crosswalk signal",
-          "Billie snapping her fingers",
-          "A stapler",
-          "A computer mouse"
-        ],
-        "correctIndex": 0,
-        "correct": "An Australian crosswalk signal",
-        "image": null,
-        "points": 5000,
-        "difficulty": "Extreme",
-        "expiresAt": 1768586195791
-      }
+      "questionQueue": [
+        {
+          "id": "2k982pneagz",
+          "type": "ARTIST",
+          "text": "Who performs \"Enter Sandman\"?",
+          "options": [
+            "Deep Blue Something",
+            "Ace of Base",
+            "Aphex Twin",
+            "Metallica"
+          ],
+          "correctIndex": 3,
+          "correct": "Metallica",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594723322
+        },
+        {
+          "id": "cmx33if7eph",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "Underworld",
+            "Fiona Apple",
+            "Metallica",
+            "Mary J. Blige"
+          ],
+          "correctIndex": 2,
+          "correct": "Metallica",
+          "image": "https://i.scdn.co/image/ab6761610000e5eb69ca98dd3083f1082d740e44",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594723322
+        },
+        {
+          "id": "bcwwvnyfd2k",
+          "type": "YEAR",
+          "text": "In what year was \"Enter Sandman\" originally released?",
+          "options": [
+            "1993",
+            "1991",
+            "1990",
+            "1988"
+          ],
+          "correctIndex": 1,
+          "correct": "1991",
+          "image": null,
+          "points": 1000,
+          "difficultyVal": 4,
+          "difficulty": "Expert",
+          "expiresAt": 1768594723322
+        },
+        {
+          "id": "cldunivfiq",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Enter Sandman\"?",
+          "options": [
+            "Hip Hop",
+            "Metal",
+            "Indie",
+            "Reggae"
+          ],
+          "correctIndex": 1,
+          "correct": "Metal",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594723322
+        }
+      ]
+    },
+    {
+      "name": "Genie in a Bottle",
+      "artist": "Christina Aguilera",
+      "genre": "Pop",
+      "decade": "90s",
+      "questions": [
+        {
+          "type": "TRIVIA",
+          "text": "Christina won the Grammy for Best New Artist in 2000, beating which fellow pop rival?",
+          "options": [
+            "Britney Spears",
+            "Mandy Moore",
+            "Pink",
+            "Jessica Simpson"
+          ],
+          "correct": "Britney Spears",
+          "difficulty": "Medium",
+          "points": 1000
+        },
+        {
+          "type": "LYRIC",
+          "text": "'I'm a genie in a bottle, baby. You gotta rub me...'",
+          "options": [
+            "The right way",
+            "Every day",
+            "In the hay",
+            "Come what may"
+          ],
+          "correct": "The right way",
+          "difficulty": "Easy",
+          "points": 500
+        }
+      ],
+      "questionQueue": [
+        {
+          "id": "sadpq15x3",
+          "type": "ARTIST",
+          "text": "Who performs \"Genie in a Bottle\"?",
+          "options": [
+            "AC/DC",
+            "Ms. Lauryn Hill",
+            "Nine Inch Nails",
+            "Christina Aguilera"
+          ],
+          "correctIndex": 3,
+          "correct": "Christina Aguilera",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594722030
+        },
+        {
+          "id": "9di4y3dmw2g",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "R.E.M.",
+            "Christina Aguilera",
+            "Ricky Martin",
+            "George Michael"
+          ],
+          "correctIndex": 1,
+          "correct": "Christina Aguilera",
+          "image": "https://i.scdn.co/image/ab6761610000e5eb3e1a1553086d60940e7037ca",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594722030
+        },
+        {
+          "id": "lotzi8my1th",
+          "type": "YEAR",
+          "text": "In what year was \"Genie in a Bottle\" originally released?",
+          "options": [
+            "1999",
+            "2003",
+            "2002",
+            "1996"
+          ],
+          "correctIndex": 0,
+          "correct": "1999",
+          "image": null,
+          "points": 1000,
+          "difficultyVal": 4,
+          "difficulty": "Expert",
+          "expiresAt": 1768594722030
+        },
+        {
+          "id": "je19jwe5mw",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Genie in a Bottle\"?",
+          "options": [
+            "Rock",
+            "Metal",
+            "Pop",
+            "Hip Hop"
+          ],
+          "correctIndex": 2,
+          "correct": "Pop",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594722030
+        }
+      ]
+    },
+    {
+      "name": "Welcome to Jamrock",
+      "artist": "Damian 'Jr. Gong' Marley",
+      "genre": "Reggae / Dancehall",
+      "decade": "00s",
+      "questions": [
+        {
+          "type": "SAMPLE",
+          "text": "The main bassline and vocal loop of this track are sampled from 'World-A-Music' by which artist?",
+          "options": [
+            "Ini Kamoze",
+            "Barrington Levy",
+            "Yellowman",
+            "Beenie Man"
+          ],
+          "correct": "Ini Kamoze",
+          "difficulty": "Extreme",
+          "points": 5000
+        }
+      ],
+      "questionQueue": [
+        {
+          "id": "5oqrekr7sed",
+          "type": "ARTIST",
+          "text": "Who performs \"Welcome to Jamrock\"?",
+          "options": [
+            "Carrie Underwood",
+            "The Pussycat Dolls",
+            "Damian 'Jr. Gong' Marley",
+            "Paramore"
+          ],
+          "correctIndex": 2,
+          "correct": "Damian 'Jr. Gong' Marley",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594719137
+        },
+        {
+          "id": "e3k67nv2x0u",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "Kanye West",
+            "50 Cent",
+            "All Time Low",
+            "Damian 'Jr. Gong' Marley"
+          ],
+          "correctIndex": 3,
+          "correct": "Damian 'Jr. Gong' Marley",
+          "image": "https://i.scdn.co/image/f05f2667aac2bbccd9bf8fcc658b647533257f16",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594719137
+        },
+        {
+          "id": "n2v68w7lngm",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Welcome to Jamrock\"?",
+          "options": [
+            "Pop",
+            "Funk",
+            "Soul",
+            "Reggae / Dancehall"
+          ],
+          "correctIndex": 3,
+          "correct": "Reggae / Dancehall",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594719137
+        }
+      ]
     },
     {
       "name": "What's Going On",
@@ -257,703 +539,411 @@
           "points": 500
         }
       ],
-      "preparedQuestion": {
-        "id": "qyvlucysj4c",
-        "type": "PRODUCTION",
-        "text": "The 'party chatter' heard in the background features which real-life sports stars?",
-        "options": [
-          "Muhammad Ali",
-          "Joe Louis",
-          "The Harlem Globetrotters",
-          "Detroit Lions players"
-        ],
-        "correctIndex": 3,
-        "correct": "Detroit Lions players",
-        "image": null,
-        "points": 5000,
-        "difficulty": "Extreme",
-        "expiresAt": 1768586195791
-      }
-    },
-    {
-      "name": "Holiday",
-      "artist": "Madonna",
-      "genre": "Dance",
-      "decade": "80s",
-      "questions": [
+      "questionQueue": [
         {
-          "type": "TRIVIA",
-          "text": "This song was Madonna's first major hit, but she didn't write it. Who did?",
+          "id": "a222jcyu8y",
+          "type": "ARTIST",
+          "text": "Who performs \"What's Going On\"?",
           "options": [
-            "Curtis Hudson and Lisa Stevens",
-            "Prince",
-            "Nile Rodgers",
-            "Rick Rubin"
+            "Ramones",
+            "James Brown",
+            "Pink Floyd",
+            "Marvin Gaye"
           ],
-          "correct": "Curtis Hudson and Lisa Stevens",
-          "difficulty": "Extreme",
-          "points": 5000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "4e8lhqondd1",
-        "type": "CULTURE",
-        "text": "The music video for this song was a direct tribute to which Marilyn Monroe movie scene?",
-        "options": [
-          "The Seven Year Itch",
-          "The Misfits",
-          "Gentlemen Prefer Blondes",
-          "Some Like It Hot"
-        ],
-        "correctIndex": 2,
-        "correct": "Gentlemen Prefer Blondes",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768586195791
-      }
-    },
-    {
-      "name": "Blue Monday",
-      "artist": "New Order",
-      "genre": "Synth-Pop",
-      "decade": "80s",
-      "questions": [
-        {
-          "type": "PRODUCTION",
-          "text": "The original 12-inch sleeve was so expensive to print that the label reportedly...",
-          "options": [
-            "Lost money on every copy sold",
-            "Won a Pulitzer Prize",
-            "Used real silver ink",
-            "Used recycled sandpaper"
-          ],
-          "correct": "Lost money on every copy sold",
-          "difficulty": "Extreme",
-          "points": 5000
+          "correctIndex": 3,
+          "correct": "Marvin Gaye",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594723873
         },
         {
-          "type": "GEAR",
-          "text": "Which piece of gear provides the famous 'choir' sound in the track?",
+          "id": "e6p1bmreagk",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
           "options": [
-            "E-mu Emulator",
-            "Fairlight CMI",
-            "Yamaha DX7",
-            "Roland Jupiter-8"
+            "Bruce Springsteen",
+            "Bob Marley & The Wailers",
+            "Fleetwood Mac",
+            "Marvin Gaye"
           ],
-          "correct": "E-mu Emulator",
-          "difficulty": "Hard",
-          "points": 2000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "rrghar88cdp",
-        "type": "GEAR",
-        "text": "Which piece of gear provides the famous 'choir' sound in the track?",
-        "options": [
-          "Roland Jupiter-8",
-          "Fairlight CMI",
-          "Yamaha DX7",
-          "E-mu Emulator"
-        ],
-        "correctIndex": 3,
-        "correct": "E-mu Emulator",
-        "image": null,
-        "points": 2000,
-        "difficulty": "Hard",
-        "expiresAt": 1768586195791
-      }
-    },
-    {
-      "name": "Losing My Religion",
-      "artist": "R.E.M.",
-      "genre": "Alternative Rock",
-      "decade": "90s",
-      "questions": [
-        {
-          "type": "TRIVIA",
-          "text": "The title 'Losing My Religion' is a Southern expression meaning what?",
-          "options": [
-            "Losing one's temper",
-            "Questioning faith",
-            "Becoming an atheist",
-            "Moving to the city"
-          ],
-          "correct": "Losing one's temper",
-          "difficulty": "Medium",
-          "points": 1000
+          "correctIndex": 3,
+          "correct": "Marvin Gaye",
+          "image": "https://i.scdn.co/image/cf79bd3e5c787e2ec152eeb1ea5538b0d4cf1434",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594723873
         },
         {
-          "type": "GEAR",
-          "text": "What instrument provides the main driving riff of this track?",
+          "id": "jry5q6uryi",
+          "type": "YEAR",
+          "text": "In what year was \"What's Going On\" originally released?",
           "options": [
-            "Mandolin",
-            "Electric Guitar",
-            "Ukulele",
-            "Banjo"
+            "1969",
+            "1972",
+            "1971",
+            "1968"
           ],
-          "correct": "Mandolin",
+          "correctIndex": 2,
+          "correct": "1971",
+          "image": null,
+          "points": 1000,
+          "difficultyVal": 4,
+          "difficulty": "Expert",
+          "expiresAt": 1768594723873
+        },
+        {
+          "id": "dvaetdhrlc",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"What's Going On\"?",
+          "options": [
+            "Soul",
+            "Reggae",
+            "Hip Hop",
+            "Electronic"
+          ],
+          "correctIndex": 0,
+          "correct": "Soul",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
           "difficulty": "Medium",
-          "points": 1000
+          "expiresAt": 1768594723873
         }
-      ],
-      "preparedQuestion": {
-        "id": "jgn13p2182r",
-        "type": "TRIVIA",
-        "text": "The title 'Losing My Religion' is a Southern expression meaning what?",
-        "options": [
-          "Moving to the city",
-          "Becoming an atheist",
-          "Questioning faith",
-          "Losing one's temper"
-        ],
-        "correctIndex": 3,
-        "correct": "Losing one's temper",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768586195791
-      }
+      ]
     },
     {
-      "name": "Despacito",
-      "artist": "Luis Fonsi & Daddy Yankee",
-      "genre": "Reggaeton",
-      "decade": "10s",
+      "name": "The Dark Side of the Moon",
+      "artist": "Pink Floyd",
       "questions": [
         {
-          "type": "HISTORY",
-          "text": "Which pop star appeared on the remix that helped 'Despacito' dominate the US charts for 16 weeks?",
+          "type": "PICTURE",
+          "text": "Identify this iconic album cover from the refracted light prism.",
+          "imagePath": "/assets/images/quiz/floyd_prism.jpg",
           "options": [
-            "Justin Bieber",
-            "Ed Sheeran",
-            "Shawn Mendes",
-            "Post Malone"
+            "Dark Side of the Moon",
+            "The Wall",
+            "Meddle",
+            "Animals"
           ],
-          "correct": "Justin Bieber",
+          "correct": "Dark Side of the Moon",
           "difficulty": "Easy",
           "points": 500
         }
       ],
-      "preparedQuestion": {
-        "id": "5npgu21a3ag",
-        "type": "HISTORY",
-        "text": "Which pop star appeared on the remix that helped 'Despacito' dominate the US charts for 16 weeks?",
-        "options": [
-          "Ed Sheeran",
-          "Shawn Mendes",
-          "Justin Bieber",
-          "Post Malone"
-        ],
-        "correctIndex": 2,
-        "correct": "Justin Bieber",
-        "image": null,
-        "points": 500,
-        "difficulty": "Easy",
-        "expiresAt": 1768589487213
-      }
-    },
-    {
-      "name": "Stuck in the Middle with You",
-      "artist": "Stealers Wheel",
-      "genre": "Folk Rock",
-      "decade": "70s",
-      "questions": [
+      "questionQueue": [
         {
-          "type": "FILM",
-          "text": "This song is famously associated with a gruesome 'ear' scene in which Quentin Tarantino film?",
+          "id": "890w8bnjca7",
+          "type": "ARTIST",
+          "text": "Who performs \"The Dark Side of the Moon\"?",
           "options": [
-            "Reservoir Dogs",
-            "Pulp Fiction",
-            "True Romance",
-            "Django Unchained"
+            "David Bowie",
+            "Adele",
+            "The Beatles",
+            "Pink Floyd"
           ],
-          "correct": "Reservoir Dogs",
-          "difficulty": "Medium",
-          "points": 1000
+          "correctIndex": 3,
+          "correct": "Pink Floyd",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594718180
+        },
+        {
+          "id": "o21bnr8h85e",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "Pink Floyd",
+            "The Beatles",
+            "Adele",
+            "David Bowie"
+          ],
+          "correctIndex": 0,
+          "correct": "Pink Floyd",
+          "image": "https://i.scdn.co/image/ab6761610000e5eb97885ce689d644c91dfba05c",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594718180
         }
-      ],
-      "preparedQuestion": {
-        "id": "1j5rx17b8zmk",
-        "type": "FILM",
-        "text": "This song is famously associated with a gruesome 'ear' scene in which Quentin Tarantino film?",
-        "options": [
-          "Django Unchained",
-          "True Romance",
-          "Reservoir Dogs",
-          "Pulp Fiction"
-        ],
-        "correctIndex": 2,
-        "correct": "Reservoir Dogs",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768589487211
-      }
+      ]
     },
     {
-      "name": "Mr. Brightside",
-      "artist": "The Killers",
-      "genre": "Indie Rock",
+      "name": "Music Is Math",
+      "artist": "Boards of Canada",
+      "genre": "IDM / Downtempo",
       "decade": "00s",
       "questions": [
         {
           "type": "HISTORY",
-          "text": "This song was the first ever written by the band. Where did Brandon Flowers find the guitarist, Dave Keuning?",
+          "text": "The duo Boards of Canada are famously reclusive and hail from which country?",
           "options": [
-            "A newspaper ad",
-            "A casino in Vegas",
-            "At a Cure concert",
-            "In high school"
+            "Scotland",
+            "Canada",
+            "Iceland",
+            "Denmark"
           ],
-          "correct": "A newspaper ad",
+          "correct": "Scotland",
           "difficulty": "Medium",
           "points": 1000
-        },
+        }
+      ],
+      "questionQueue": [
         {
-          "type": "LYRIC",
-          "text": "'I'm coming out of my cage and I've been...'",
+          "id": "1fmf3e0lwqp",
+          "type": "ARTIST",
+          "text": "Who performs \"Music Is Math\"?",
           "options": [
-            "Doing just fine",
-            "Feeling alive",
-            "Trying to survive",
-            "Losing my mind"
+            "Boards of Canada",
+            "N'Sync",
+            "The Killers",
+            "Soulja Boy Tell'em"
           ],
-          "correct": "Doing just fine",
+          "correctIndex": 0,
+          "correct": "Boards of Canada",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
           "difficulty": "Easy",
-          "points": 500
-        }
-      ],
-      "preparedQuestion": {
-        "id": "out3ih5j27",
-        "type": "HISTORY",
-        "text": "This song was the first ever written by the band. Where did Brandon Flowers find the guitarist, Dave Keuning?",
-        "options": [
-          "In high school",
-          "At a Cure concert",
-          "A casino in Vegas",
-          "A newspaper ad"
-        ],
-        "correctIndex": 3,
-        "correct": "A newspaper ad",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768589487210
-      }
-    },
-    {
-      "name": "All Too Well (10 Minute Version)",
-      "artist": "Taylor Swift",
-      "genre": "Modern Pop",
-      "decade": "20s",
-      "questions": [
-        {
-          "type": "TRIVIA",
-          "text": "This song holds the record for being the longest song to ever reach #1. Whose record did it break?",
-          "options": [
-            "Don McLean (American Pie)",
-            "Queen (Bohemian Rhapsody)",
-            "Led Zeppelin (Stairway to Heaven)",
-            "Meat Loaf (I'd Do Anything For Love)"
-          ],
-          "correct": "Don McLean (American Pie)",
-          "difficulty": "Extreme",
-          "points": 5000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "3h3e9pmw0bg",
-        "type": "HISTORY",
-        "text": "With the album 'Midnights', Taylor Swift became the first artist in history to do what on the Billboard Hot 100?",
-        "options": [
-          "Occupy the entire Top 10",
-          "Have 5 songs at #1",
-          "Sell 2 million copies in a day",
-          "Win 10 Grammys at once"
-        ],
-        "correctIndex": 0,
-        "correct": "Occupy the entire Top 10",
-        "image": null,
-        "points": 2000,
-        "difficulty": "Hard",
-        "expiresAt": 1768589487212
-      }
-    },
-    {
-      "name": "Levitating",
-      "artist": "Dua Lipa",
-      "genre": "Disco-Pop",
-      "decade": "20s",
-      "questions": [
-        {
-          "type": "HISTORY",
-          "text": "Despite never reaching #1 on the Hot 100, 'Levitating' was named the Billboard year-end #1 single of which year?",
-          "options": [
-            "2021",
-            "2020",
-            "2022",
-            "2019"
-          ],
-          "correct": "2021",
-          "difficulty": "Hard",
-          "points": 2000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "sh980nad88j",
-        "type": "HISTORY",
-        "text": "Despite never reaching #1 on the Hot 100, 'Levitating' was named the Billboard year-end #1 single of which year?",
-        "options": [
-          "2019",
-          "2021",
-          "2022",
-          "2020"
-        ],
-        "correctIndex": 1,
-        "correct": "2021",
-        "image": null,
-        "points": 2000,
-        "difficulty": "Hard",
-        "expiresAt": 1768589487212
-      }
-    },
-    {
-      "name": "bad guy",
-      "artist": "Billie Eilish",
-      "genre": "Alt-Pop",
-      "decade": "10s",
-      "questions": [
-        {
-          "type": "PRODUCTION",
-          "text": "Billie Eilish and her brother Finneas recorded her debut album primarily in which unconventional location?",
-          "options": [
-            "Their childhood bedroom",
-            "A converted garage",
-            "A high-end tour bus",
-            "An empty swimming pool"
-          ],
-          "correct": "Their childhood bedroom",
-          "difficulty": "Medium",
-          "points": 1000
+          "expiresAt": 1768594717489
         },
         {
-          "type": "HISTORY",
-          "text": "At the 2020 Grammys, Billie became the youngest artist to win the 'Big Four' awards in one night. Which of these is NOT one of the 'Big Four'?",
+          "id": "skcxixuf9q",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
           "options": [
-            "Best Pop Vocal Album",
-            "Album of the Year",
-            "Record of the Year",
-            "Best New Artist"
+            "The Used",
+            "We The Kings",
+            "Boards of Canada",
+            "Yeah Yeah Yeahs"
           ],
-          "correct": "Best Pop Vocal Album",
-          "difficulty": "Hard",
-          "points": 2000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "rvu4pbji3fc",
-        "type": "ARTIST",
-        "text": "Who performs \"bad guy\"?",
-        "options": [
-          "Skrillex",
-          "Billie Eilish",
-          "Pharrell Williams",
-          "Little Mix"
-        ],
-        "correctIndex": 1,
-        "correct": "Billie Eilish",
-        "image": null,
-        "points": 500,
-        "difficulty": "Easy",
-        "expiresAt": 1768589487213
-      }
-    },
-    {
-      "name": "Enter Sandman",
-      "artist": "Metallica",
-      "genre": "Metal",
-      "decade": "90s",
-      "questions": [
-        {
-          "type": "GEAR",
-          "text": "Which guitar brand is James Hetfield most famous for using?",
-          "options": [
-            "ESP",
-            "Gibson",
-            "Fender",
-            "Jackson"
-          ],
-          "correct": "ESP",
-          "difficulty": "Medium",
-          "points": 1000
-        },
-        {
-          "type": "TRIVIA",
-          "text": "What was the original subject of the lyrics?",
-          "options": [
-            "SIDS (Crib Death)",
-            "The Vietnam War",
-            "A plane crash",
-            "A bad dream"
-          ],
-          "correct": "SIDS (Crib Death)",
-          "difficulty": "Extreme",
-          "points": 5000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "plsuzpj4x9",
-        "type": "GEAR",
-        "text": "Which guitar brand is James Hetfield most famous for using?",
-        "options": [
-          "Jackson",
-          "Fender",
-          "Gibson",
-          "ESP"
-        ],
-        "correctIndex": 3,
-        "correct": "ESP",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768589487213
-      }
-    },
-    {
-      "name": "Stairway to Heaven",
-      "artist": "Led Zeppelin",
-      "genre": "Hard Rock",
-      "decade": "70s",
-      "questions": [
-        {
-          "type": "GEAR",
-          "text": "Jimmy Page famously recorded the iconic solo using which guitar?",
-          "options": [
-            "1959 Fender Telecaster",
-            "Gibson Les Paul",
-            "Gibson Double-Neck",
-            "Fender Stratocaster"
-          ],
-          "correct": "1959 Fender Telecaster",
-          "difficulty": "Extreme",
-          "points": 5000
-        },
-        {
-          "type": "HISTORY",
-          "text": "Where was the 'Headley Grange' estate located where the band wrote much of this track?",
-          "options": [
-            "Hampshire, England",
-            "London",
-            "Wales",
-            "California"
-          ],
-          "correct": "Hampshire, England",
-          "difficulty": "Hard",
-          "points": 2000
-        }
-      ],
-      "preparedQuestion": {
-        "id": "scxoai750zf",
-        "type": "HISTORY",
-        "text": "Where was the 'Headley Grange' estate located where the band wrote much of this track?",
-        "options": [
-          "Wales",
-          "London",
-          "Hampshire, England",
-          "California"
-        ],
-        "correctIndex": 2,
-        "correct": "Hampshire, England",
-        "image": null,
-        "points": 2000,
-        "difficulty": "Hard",
-        "expiresAt": 1768589487211
-      }
-    },
-    {
-      "name": "Poison",
-      "artist": "Bell Biv DeVoe",
-      "genre": "New Jack Swing",
-      "decade": "90s",
-      "questions": [
-        {
-          "type": "HISTORY",
-          "text": "The members of Bell Biv DeVoe were originally part of which iconic 80s boy band?",
-          "options": [
-            "New Edition",
-            "Boyz II Men",
-            "The Jackson 5",
-            "Guy"
-          ],
-          "correct": "New Edition",
-          "difficulty": "Medium",
-          "points": 1000
-        },
-        {
-          "type": "PRODUCTION",
-          "text": "Who produced this track, famously known as the 'King of New Jack Swing'?",
-          "options": [
-            "Teddy Riley",
-            "Dr. Dre",
-            "L.A. Reid",
-            "Babyface"
-          ],
-          "correct": "Teddy Riley",
-          "difficulty": "Hard",
-          "points": 2000
-        },
-        {
-          "type": "LYRIC",
-          "text": "'Never trust a big butt and a...'",
-          "options": [
-            "Smile",
-            "Eye",
-            "Grin",
-            "Lie"
-          ],
-          "correct": "Smile",
+          "correctIndex": 2,
+          "correct": "Boards of Canada",
+          "image": "https://i.scdn.co/image/c533bf6f08a42119065d8c2171cdfa8e96720b4c",
+          "points": 800,
+          "difficultyVal": 1,
           "difficulty": "Easy",
-          "points": 500
+          "expiresAt": 1768594717489
+        },
+        {
+          "id": "85vp54g66z8",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Music Is Math\"?",
+          "options": [
+            "Disco",
+            "Reggae",
+            "IDM / Downtempo",
+            "Rock"
+          ],
+          "correctIndex": 2,
+          "correct": "IDM / Downtempo",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594717489
         }
-      ],
-      "preparedQuestion": {
-        "id": "4k2gnwpod32",
-        "type": "HISTORY",
-        "text": "The members of Bell Biv DeVoe were originally part of which iconic 80s boy band?",
-        "options": [
-          "New Edition",
-          "Boyz II Men",
-          "The Jackson 5",
-          "Guy"
-        ],
-        "correctIndex": 0,
-        "correct": "New Edition",
-        "image": null,
-        "points": 1000,
-        "difficulty": "Medium",
-        "expiresAt": 1768589487212
-      }
+      ]
     },
     {
-      "name": "All Along the Watchtower",
-      "artist": "Jimi Hendrix",
-      "genre": "Psychedelic Rock",
-      "decade": "60s",
+      "name": "Tainted Love",
+      "artist": "Soft Cell",
+      "genre": "Synth-Pop",
+      "decade": "80s",
       "questions": [
         {
           "type": "HISTORY",
-          "text": "Who originally wrote and recorded this song, later stating that Hendrix's version was better?",
+          "text": "This 1981 synth-pop smash is actually a cover of a 1964 song by which Northern Soul artist?",
           "options": [
-            "Bob Dylan",
-            "Neil Young",
-            "Eric Clapton",
-            "John Lennon"
+            "Gloria Jones",
+            "Tammi Terrell",
+            "Martha Reeves",
+            "Darlene Love"
           ],
-          "correct": "Bob Dylan",
-          "difficulty": "Medium",
-          "points": 1000
-        },
-        {
-          "type": "GEAR",
-          "text": "Hendrix used what household object to play the slide guitar section of the solo?",
-          "options": [
-            "A cigarette lighter",
-            "A glass bottle",
-            "A metal pipe",
-            "A knife"
-          ],
-          "correct": "A cigarette lighter",
+          "correct": "Gloria Jones",
           "difficulty": "Hard",
           "points": 2000
         }
       ],
-      "preparedQuestion": {
-        "id": "c3pcza7g88h",
-        "type": "GEAR",
-        "text": "What effect pedal is famous for its use in this track?",
-        "options": [
-          "Flanger",
-          "Wah-wah",
-          "Phaser",
-          "Octavia"
-        ],
-        "correctIndex": 3,
-        "correct": "Octavia",
-        "image": null,
-        "points": 5000,
-        "difficulty": "Extreme",
-        "expiresAt": 1768589487211
-      }
+      "questionQueue": [
+        {
+          "id": "nyj5y7ku1sb",
+          "type": "ARTIST",
+          "text": "Who performs \"Tainted Love\"?",
+          "options": [
+            "Soft Cell",
+            "Toto",
+            "Guns N' Roses",
+            "The Smiths"
+          ],
+          "correctIndex": 0,
+          "correct": "Soft Cell",
+          "image": null,
+          "points": 500,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594716813
+        },
+        {
+          "id": "tiucp0am0uk",
+          "type": "PICTURE_ARTIST",
+          "text": "Who is the artist shown in this picture?",
+          "options": [
+            "Daryl Hall & John Oates",
+            "The Replacements",
+            "Kool & The Gang",
+            "Soft Cell"
+          ],
+          "correctIndex": 3,
+          "correct": "Soft Cell",
+          "image": "https://i.scdn.co/image/ab6772690000c46c0564b6c825349fc15885bd76",
+          "points": 800,
+          "difficultyVal": 1,
+          "difficulty": "Easy",
+          "expiresAt": 1768594716813
+        },
+        {
+          "id": "0bt2i8up9wb",
+          "type": "YEAR",
+          "text": "In what year was \"Tainted Love\" originally released?",
+          "options": [
+            "1986",
+            "1976",
+            "1978",
+            "1981"
+          ],
+          "correctIndex": 3,
+          "correct": "1981",
+          "image": null,
+          "points": 1000,
+          "difficultyVal": 4,
+          "difficulty": "Expert",
+          "expiresAt": 1768594716813
+        },
+        {
+          "id": "0crfik9xoy9c",
+          "type": "GENRE",
+          "text": "What is the primary genre of \"Tainted Love\"?",
+          "options": [
+            "Indie",
+            "Synth-Pop",
+            "Rock",
+            "Grunge"
+          ],
+          "correctIndex": 1,
+          "correct": "Synth-Pop",
+          "image": null,
+          "points": 750,
+          "difficultyVal": 2,
+          "difficulty": "Medium",
+          "expiresAt": 1768594716813
+        }
+      ]
     }
   ],
   "currentTrack": {
-    "name": "Insomnia",
-    "artist": "Faithless",
-    "genre": "Trance",
-    "decade": "90s",
+    "name": "Dynamite",
+    "artist": "BTS",
+    "genre": "K-Pop",
+    "decade": "20s",
     "questions": [
       {
-        "type": "LYRIC",
-        "text": "Finish the famous spoken-word line: 'I can't get no...'",
+        "type": "HISTORY",
+        "text": "This was the first song by a South Korean act to reach #1 on the Billboard Hot 100. What made the song unique for the group at the time?",
         "options": [
-          "Sleep",
-          "Peace",
-          "Release",
-          "Satisfied"
+          "It was entirely in English",
+          "It was a solo track",
+          "It was a live recording",
+          "It featured a 10-minute dance break"
         ],
-        "correct": "Sleep",
-        "difficulty": "Easy",
-        "points": 500
+        "correct": "It was entirely in English",
+        "difficulty": "Medium",
+        "points": 1000
       }
     ],
-    "uri": "spotify:track:3dX6WDwnHwYzB5t754oB4T"
+    "questionQueue": [
+      {
+        "id": "2tvucgpzdy",
+        "type": "ARTIST",
+        "text": "Who performs \"Dynamite\"?",
+        "options": [
+          "BTS",
+          "The Weeknd",
+          "Burna Boy",
+          "Phoebe Bridgers"
+        ],
+        "correctIndex": 0,
+        "correct": "BTS",
+        "image": null,
+        "points": 500,
+        "difficultyVal": 1,
+        "difficulty": "Easy",
+        "expiresAt": 1768594719749
+      },
+      {
+        "id": "u23zyc0jh0l",
+        "type": "PICTURE_ARTIST",
+        "text": "Who is the artist shown in this picture?",
+        "options": [
+          "The Kinks vs. Modern Indie",
+          "BTS",
+          "Dua Lipa",
+          "Sabrina Carpenter"
+        ],
+        "correctIndex": 1,
+        "correct": "BTS",
+        "image": "https://i.scdn.co/image/ab6761610000e5ebd642648235ebf3460d2d1f6a",
+        "points": 800,
+        "difficultyVal": 1,
+        "difficulty": "Easy",
+        "expiresAt": 1768594719749
+      },
+      {
+        "id": "hzd40wlqkym",
+        "type": "YEAR",
+        "text": "In what year was \"Dynamite\" originally released?",
+        "options": [
+          "2020",
+          "2017",
+          "2024",
+          "2023"
+        ],
+        "correctIndex": 0,
+        "correct": "2020",
+        "image": null,
+        "points": 1000,
+        "difficultyVal": 4,
+        "difficulty": "Expert",
+        "expiresAt": 1768594719749
+      },
+      {
+        "id": "5aaopgc1tj8",
+        "type": "GENRE",
+        "text": "What is the primary genre of \"Dynamite\"?",
+        "options": [
+          "Hip Hop",
+          "K-Pop",
+          "Grunge",
+          "Electronic"
+        ],
+        "correctIndex": 1,
+        "correct": "K-Pop",
+        "image": null,
+        "points": 750,
+        "difficultyVal": 2,
+        "difficulty": "Medium",
+        "expiresAt": 1768594719749
+      }
+    ],
+    "uri": "spotify:track:5QDLhrAOJJdNAmCTJ8xMyW"
   },
   "isPlaying": true,
-  "currentQuestion": {
-    "id": "b2h18x9jt2a",
-    "type": "YEAR",
-    "text": "In what year was \"Insomnia\" originally released?",
-    "options": [
-      "1990",
-      "1995",
-      "2000",
-      "1997"
-    ],
-    "correctIndex": 1,
-    "correct": "1995",
-    "image": null,
-    "points": 1000,
-    "difficulty": "Medium",
-    "expiresAt": 1768589611159
-  },
-  "questionHistory": [
-    "VGhlIHRpdGxlICdMb3NpbmcgTXkgUmVsaWdpb24nIGlzIGEgU291dGhlcm4gZXhwcmVzc2lvbiBtZWFuaW5nIHdoYXQ/TG9zaW5nIG9uZSdzIHRlbXBlcg==",
-    "VGhlIGZhbW91cyAndGh1bmstdGh1bmsnIGd1aXRhciBub2lzZSBiZWZvcmUgdGhlIGNob3J1cyB3YXMgYWN0dWFsbHkgYW4gYXR0ZW1wdCB0byBkbyB3aGF0P1J1aW4gdGhlIHNvbmcgYmVjYXVzZSB0aGUgZ3VpdGFyaXN0IGhhdGVkIGl0",
-    "VGhlICdwYXJ0eSBjaGF0dGVyJyBoZWFyZCBpbiB0aGUgYmFja2dyb3VuZCBmZWF0dXJlcyB3aGljaCByZWFsLWxpZmUgc3BvcnRzIHN0YXJzP0RldHJvaXQgTGlvbnMgcGxheWVycw==",
-    "V2hpY2ggcGllY2Ugb2YgZ2VhciBwcm92aWRlcyB0aGUgZmFtb3VzICdjaG9pcicgc291bmQgaW4gdGhlIHRyYWNrP0UtbXUgRW11bGF0b3I=",
-    "V2hpY2ggbGVnZW5kYXJ5IHByb2R1Y2VyLCBmYW1vdXMgZm9yIGhpcyAnV2FsbCBvZiBTb3VuZCcsIHdhcyBvcmlnaW5hbGx5IGNvbnNpZGVyZWQgdG8gcHJvZHVjZSB0aGUgYmFuZD9QaGlsIFNwZWN0b3I=",
-    "RmluaXNoIHRoZSBmYW1vdXMgc3Bva2VuLXdvcmQgbGluZTogJ0kgY2FuJ3QgZ2V0IG5vLi4uJ1NsZWVw",
-    "VGhlICdjbGljaycgc291bmQgaW4gdGhlIGNob3J1cyBpcyBhY3R1YWxseSBhIHNhbXBsZSBvZiB3aGF0P0FuIEF1c3RyYWxpYW4gY3Jvc3N3YWxrIHNpZ25hbA==",
-    "VGhlIG1vdmllJ3Mgc291bmR0cmFjayByZW1haW5zIG9uZSBvZiB0aGUgYmVzdC1zZWxsaW5nIG9mIGFsbCB0aW1lLiBXaGljaCBiYW5kIHdyb3RlIG1vc3Qgb2YgdGhlIHNvbmdzP1RoZSBCZWUgR2Vlcw==",
-    "VGhlIG11c2ljIHZpZGVvIGZvciB0aGlzIHNvbmcgd2FzIGEgZGlyZWN0IHRyaWJ1dGUgdG8gd2hpY2ggTWFyaWx5biBNb25yb2UgbW92aWUgc2NlbmU/R2VudGxlbWVuIFByZWZlciBCbG9uZGVz",
-    "SnVzdGluIFZlcm5vbiByZWNvcmRlZCB0aGUgZGVidXQgYWxidW0gJ0ZvciBFbW1hLCBGb3JldmVyIEFnbycgaW4gdG90YWwgaXNvbGF0aW9uIHdoZXJlP0EgY2FiaW4gaW4gV2lzY29uc2lu",
-    "V2hvIHBlcmZvcm1zICJBbmFyY2h5IGluIHRoZSBVSyI/U2V4IFBpc3RvbHM=",
-    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiQW5hcmNoeSBpbiB0aGUgVUsiP1B1bmsgUm9jaw==",
-    "VGhpcyBzb25nIHdhcyB0aGUgZmlyc3QgZXZlciB3cml0dGVuIGJ5IHRoZSBiYW5kLiBXaGVyZSBkaWQgQnJhbmRvbiBGbG93ZXJzIGZpbmQgdGhlIGd1aXRhcmlzdCwgRGF2ZSBLZXVuaW5nP0EgbmV3c3BhcGVyIGFk",
-    "VGhpcyBzb25nIGlzIGZhbW91c2x5IGFzc29jaWF0ZWQgd2l0aCBhIGdydWVzb21lICdlYXInIHNjZW5lIGluIHdoaWNoIFF1ZW50aW4gVGFyYW50aW5vIGZpbG0/UmVzZXJ2b2lyIERvZ3M=",
-    "V2hhdCBlZmZlY3QgcGVkYWwgaXMgZmFtb3VzIGZvciBpdHMgdXNlIGluIHRoaXMgdHJhY2s/T2N0YXZpYQ==",
-    "V2hlcmUgd2FzIHRoZSAnSGVhZGxleSBHcmFuZ2UnIGVzdGF0ZSBsb2NhdGVkIHdoZXJlIHRoZSBiYW5kIHdyb3RlIG11Y2ggb2YgdGhpcyB0cmFjaz9IYW1wc2hpcmUsIEVuZ2xhbmQ=",
-    "VGhlIG1lbWJlcnMgb2YgQmVsbCBCaXYgRGVWb2Ugd2VyZSBvcmlnaW5hbGx5IHBhcnQgb2Ygd2hpY2ggaWNvbmljIDgwcyBib3kgYmFuZD9OZXcgRWRpdGlvbg==",
-    "RGVzcGl0ZSBuZXZlciByZWFjaGluZyAjMSBvbiB0aGUgSG90IDEwMCwgJ0xldml0YXRpbmcnIHdhcyBuYW1lZCB0aGUgQmlsbGJvYXJkIHllYXItZW5kICMxIHNpbmdsZSBvZiB3aGljaCB5ZWFyPzIwMjE=",
-    "V2l0aCB0aGUgYWxidW0gJ01pZG5pZ2h0cycsIFRheWxvciBTd2lmdCBiZWNhbWUgdGhlIGZpcnN0IGFydGlzdCBpbiBoaXN0b3J5IHRvIGRvIHdoYXQgb24gdGhlIEJpbGxib2FyZCBIb3QgMTAwP09jY3VweSB0aGUgZW50aXJlIFRvcCAxMA==",
-    "V2hvIHBlcmZvcm1zICJiYWQgZ3V5Ij9CaWxsaWUgRWlsaXNo",
-    "V2hpY2ggZ3VpdGFyIGJyYW5kIGlzIEphbWVzIEhldGZpZWxkIG1vc3QgZmFtb3VzIGZvciB1c2luZz9FU1A=",
-    "V2hpY2ggcG9wIHN0YXIgYXBwZWFyZWQgb24gdGhlIHJlbWl4IHRoYXQgaGVscGVkICdEZXNwYWNpdG8nIGRvbWluYXRlIHRoZSBVUyBjaGFydHMgZm9yIDE2IHdlZWtzP0p1c3RpbiBCaWViZXI=",
-    "V2hvIHBlcmZvcm1zICJJbnNvbW5pYSI/RmFpdGhsZXNz",
-    "V2hhdCBpcyB0aGUgcHJpbWFyeSBnZW5yZSBvZiAiSW5zb21uaWEiP1RyYW5jZQ==",
-    "SW4gd2hhdCB5ZWFyIHdhcyAiSW5zb21uaWEiIG9yaWdpbmFsbHkgcmVsZWFzZWQ/MTk5NQ=="
-  ],
+  "currentQuestion": null,
+  "questionHistory": [],
   "config": {
     "duration": 30,
     "timePerQuestion": 20,
@@ -961,6 +951,8 @@
     "selectedGenres": [],
     "selectedEras": [],
     "enablePictures": true,
-    "audioFadeEnabled": true
-  }
+    "audioFadeEnabled": true,
+    "allowExplicit": false
+  },
+  "questionsRemaining": 0
 }

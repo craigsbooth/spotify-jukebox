@@ -1,4 +1,4 @@
-// routes/quiz_helpers.js - V9.7 (Final Production: Confidence Thresholds)
+// routes/quiz_helpers.js - V11.0 (Batch Compatible)
 const quizDB = require('../data/quiz_db');
 const spotifyApi = require('../spotify_instance');
 
@@ -39,6 +39,7 @@ const QuizHelpers = {
         }
 
         const selected = decoys.sort(() => Math.random() - 0.5).slice(0, 3);
+        // Fallback: Engine QC will filter out questions with "Artist X"
         while (selected.length < 3) selected.push(`Artist ${selected.length + 1}`);
 
         return [correct, ...selected].sort(() => Math.random() - 0.5);
@@ -92,6 +93,7 @@ const QuizHelpers = {
 
         const selected = decoys.sort(() => Math.random() - 0.5).slice(0, 3);
         
+        // Fallback: Engine QC will filter out questions with "Album X"
         while (selected.length < 3) {
             selected.push(`Album ${selected.length + 1}`);
         }
@@ -174,8 +176,6 @@ const QuizHelpers = {
             }
 
             // FINAL SAFETY: Low Confidence Check
-            // If we only found 1 result total, or the winner has only 1 vote in a small pool, skip it.
-            // This avoids basing a question on a single random metadata entry.
             const bestVotes = yearCounts[bestYear];
             if (bestVotes === 1 && totalValidResults < 3) {
                 console.warn(`⚠️ Skipped Year Question: Low confidence for "${track.name}" (${bestYear} has 1 vote).`);

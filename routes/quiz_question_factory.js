@@ -1,134 +1,158 @@
-// routes/quiz_question_factory.js - V8.5 (Deep Year Accuracy & Crash Protection)
+// routes/quiz_question_factory.js - V11.0 (Batch Generation & Difficulty Sorting)
 const quizDB = require('../data/quiz_db');
 const helpers = require('./quiz_helpers');
 
 class QuestionFactory {
-    static async generate(track, config, history) {
-        if (!track) return null;
+    
+    /**
+     * Generates a comprehensive list of ALL valid questions for a specific track.
+     * Returns an array sorted by the user's difficulty preference.
+     */
+    static async generateBatch(track, config) {
+        if (!track) return [];
 
-        // 1. Try finding a curated track in the DB
-        const vaultTrack = quizDB.tracks.find(t => 
-            t.name.toLowerCase() === track.name.toLowerCase() || 
-            t.artist.toLowerCase() === track.artist.toLowerCase()
-        );
+        const questions = [];
+        
+        // 1. GATHER DATA (Parallel Fetching for Speed)
+        // We fetch Year, Album, and Artist Image upfront
+        const [deepYear, spotifyData, artistImage] = await Promise.all([
+            helpers.getOriginalYear(track),
+            helpers.getAlbumData(track),
+            helpers.getArtistData(track)
+        ]);
 
-        let pool = [];
-        if (vaultTrack && vaultTrack.questions) {
-            pool = vaultTrack.questions.filter(q => {
-                const diff = config.difficultyFocus;
-                const matchesDiff = (diff < 30) ? (q.difficulty === 'Easy' || q.difficulty === 'Medium') :
-                                    (diff > 70) ? (q.difficulty === 'Hard' || q.difficulty === 'Extreme') : true;
-                const matchesPic = config.enablePictures || !q.type.includes('PICTURE');
-                const qHash = Buffer.from(q.text + q.correct).toString('base64');
-                return matchesDiff && matchesPic && !history.includes(qHash);
+        const bestYear = deepYear || track.year;
+        const albumName = track.album || spotifyData?.albumName;
+        const primaryImage = artistImage?.image || spotifyData?.image;
+
+        // 2. DEFINE POSSIBLE QUESTION TYPES
+        // We create a "Candidate List". We will attempt to build each one.
+        const candidates = [
+            {
+                type: 'ARTIST',
+                text: `Who performs "${track.name}"?`,
+                correct: track.artist,
+                points: 500,
+                difficulty: 1, // Easy
+                hasImage: false
+            },
+            {
+                type: 'GENRE',
+                text: `What is the primary genre of "${track.name}"?`,
+                correct: track.genre,
+                points: 750,
+                difficulty: 2, // Medium
+                hasImage: false
+            }
+        ];
+
+        // Add YEAR if valid
+        if (bestYear) {
+            candidates.push({
+                type: 'YEAR',
+                text: `In what year was "${track.name}" originally released?`,
+                correct: bestYear.toString(),
+                points: 1000,
+                difficulty: 4, // Hard
+                hasImage: false
             });
         }
 
-        // 2. Fallback to Generator
-        if (pool.length === 0) return await this.generateTemplate(track, config, history);
+        // Add ALBUM if valid (and popular enough to likely be known)
+        if (albumName && (!spotifyData || spotifyData.popularity > 50)) {
+            candidates.push({
+                type: 'ALBUM',
+                text: `On which album does the track "${track.name}" appear?`,
+                correct: albumName,
+                points: 1250,
+                difficulty: 3, // Hard
+                hasImage: false
+            });
+        }
 
-        // 3. Process curated question
-        const selected = pool[Math.floor(Math.random() * pool.length)];
-        const shuffledOptions = [...selected.options].sort(() => Math.random() - 0.5);
-        const calculatedIndex = shuffledOptions.indexOf(selected.correct);
-        
-        if (calculatedIndex === -1) return await this.generateTemplate(track, config, history);
+        // Add PICTURE Questions (if enabled)
+        if (config.enablePictures && primaryImage) {
+            candidates.push({
+                type: 'PICTURE_ARTIST',
+                text: "Who is the artist shown in this picture?",
+                correct: track.artist,
+                points: 800,
+                difficulty: 1, // Visuals are usually easier
+                hasImage: true,
+                imagePath: primaryImage
+            });
+        }
 
-        const selectedHash = Buffer.from(selected.text + selected.correct).toString('base64');
-        history.push(selectedHash);
+        // 3. GENERATE & VALIDATE EACH CANDIDATE
+        for (const template of candidates) {
+            // Check for duplicate types (e.g. don't ask Artist twice if we have text + picture)
+            // Strategy: Allow both, but we will shuffle them later. 
+            // Or prioritize Picture if available? Let's keep both for variety in the batch.
 
-        return {
-            id: Math.random().toString(36).substr(2),
-            type: selected.type,
-            text: selected.text,
-            options: shuffledOptions,
-            correctIndex: calculatedIndex,
-            correct: selected.correct,
-            image: selected.imagePath || null, 
-            points: parseInt(selected.points) || 1000,
-            difficulty: selected.difficulty,
-            expiresAt: Date.now() + (config.timePerQuestion * 1000)
-        };
+            // GENERATE OPTIONS (Decoys)
+            let options = [];
+            if (template.type === 'YEAR') options = helpers.getDecoyYears(template.correct);
+            else if (template.type === 'GENRE') options = helpers.getDecoyGenres(template.correct);
+            else if (template.type === 'ALBUM') options = helpers.getDecoyAlbums(track);
+            else options = helpers.getDecoyArtists(track); // Works for ARTIST and PICTURE_ARTIST
+
+            // QUALITY CONTROL (The V10.2 Fix)
+            // Reject if any option is "Unknown", empty, or generic "Album X"
+            const hasBadData = [template.correct, ...options].some(ans => {
+                if (!ans) return true;
+                const str = ans.toString();
+                return str.includes("Unknown") || str.trim() === "" || /^Album \d+$/i.test(str);
+            });
+
+            if (!hasBadData) {
+                // Determine randomized correct index
+                const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+                const correctIndex = shuffledOptions.indexOf(template.correct);
+
+                if (correctIndex !== -1) {
+                    questions.push({
+                        id: Math.random().toString(36).substr(2),
+                        type: template.type,
+                        text: template.text,
+                        options: shuffledOptions,
+                        correctIndex: correctIndex,
+                        correct: template.correct,
+                        image: template.hasImage ? template.imagePath : null,
+                        points: template.points,
+                        difficultyVal: template.difficulty, // Internal use for sorting
+                        difficulty: this.getDifficultyLabel(template.difficulty),
+                        expiresAt: Date.now() + (config.timePerQuestion * 1000)
+                    });
+                }
+            }
+        }
+
+        // 4. APPLY DIFFICULTY SLIDER (Sorting)
+        // config.difficultyFocus is 0 (Easy) to 100 (Hard)
+        const focus = config.difficultyFocus || 50;
+
+        if (focus < 30) {
+            // EASY MODE: Sort by Difficulty Ascending (1 -> 4)
+            questions.sort((a, b) => a.difficultyVal - b.difficultyVal);
+        } else if (focus > 70) {
+            // HARD MODE: Sort by Difficulty Descending (4 -> 1)
+            questions.sort((a, b) => b.difficultyVal - a.difficultyVal);
+        } else {
+            // BALANCED MODE: 
+            // Keep Artist/Picture (1) first as a warm-up, then shuffle the rest
+            const easy = questions.filter(q => q.difficultyVal === 1);
+            const hard = questions.filter(q => q.difficultyVal > 1).sort(() => Math.random() - 0.5);
+            return [...easy, ...hard];
+        }
+
+        return questions;
     }
 
-    static async generateTemplate(track, config, history) {
-        const typeRoll = Math.random();
-        
-        // DEFAULT: Artist ID (500 pts) - The safest fallback if other data is missing
-        let template = { type: 'ARTIST', text: `Who performs "${track.name}"?`, correct: track.artist, points: 500 };
-        
-        // 1. Manage the % Mix
-        
-        // TYPE: YEAR (20% Chance)
-        if (typeRoll > 0.8) { 
-            // FIX: Fetch ORIGINAL release year to avoid "2011 Remaster" issues
-            const deepYear = await helpers.getOriginalYear(track);
-            const bestYear = deepYear || track.year;
-
-            // Only generate if we have a valid year
-            if (bestYear) {
-                template = { 
-                    type: 'YEAR', 
-                    text: `In what year was "${track.name}" originally released?`, 
-                    correct: bestYear.toString(), 
-                    points: 1000 
-                };
-            }
-        } 
-        // TYPE: GENRE (20% Chance)
-        else if (typeRoll > 0.6 && track.genre) { 
-            template = { type: 'GENRE', text: `What is the primary genre of "${track.name}"?`, correct: track.genre, points: 750 };
-        }
-
-        // 2. Fetch Spotify Metadata (Popularity & Images)
-        const spotifyData = await helpers.getAlbumData(track);
-        
-        // 3. Suggestion #2: Album Context Questions (Only for tracks with Popularity > 70)
-        if (spotifyData && spotifyData.popularity > 70 && Math.random() > 0.6) {
-            template = { 
-                type: 'ALBUM', 
-                text: `On which album does the track "${track.name}" appear?`, 
-                correct: track.album || spotifyData.albumName, 
-                points: 1250 
-            };
-        }
-
-        // 4. Picture Round Enhancement
-        let image = null;
-        if (config.enablePictures && Math.random() > 0.3) {
-            const picData = Math.random() > 0.5 ? await helpers.getArtistData(track) : spotifyData;
-            if (picData?.image) {
-                image = picData.image;
-                template.points += 250; // Visual bonus
-            }
-        }
-
-        const qHash = Buffer.from(template.text + template.correct).toString('base64');
-        if (history.includes(qHash)) return null; 
-
-        // Generate Options via Helpers
-        let options = [];
-        // Helper Safety: Ensure we don't pass undefined values
-        if (template.type === 'YEAR' && template.correct) options = helpers.getDecoyYears(template.correct);
-        else if (template.type === 'GENRE' && template.correct) options = helpers.getDecoyGenres(template.correct);
-        else if (template.type === 'ALBUM') options = helpers.getDecoyAlbums(track);
-        else options = helpers.getDecoyArtists(track);
-
-        history.push(qHash);
-        if (history.length > 50) history.shift(); 
-
-        return {
-            id: Math.random().toString(36).substr(2),
-            type: template.type,
-            text: template.text,
-            options: options,
-            correctIndex: options.indexOf(template.correct),
-            correct: template.correct,
-            image: image,
-            points: template.points,
-            difficulty: template.points >= 1250 ? 'Hard' : (template.points >= 750 ? 'Medium' : 'Easy'),
-            expiresAt: Date.now() + (config.timePerQuestion * 1000)
-        };
+    static getDifficultyLabel(val) {
+        if (val === 1) return "Easy";
+        if (val === 2) return "Medium";
+        if (val === 3) return "Hard";
+        return "Expert";
     }
 }
 
